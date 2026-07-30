@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 export function Card({
@@ -65,21 +64,6 @@ export function statusTone(status: string): Tone {
   if (["CALLBACK", "CALLBACK_REQUESTED", "BUSY", "NO_ANSWER", "SWITCHED_OFF", "PENDING"].includes(status)) return "amber";
   if (["IN_PROGRESS", "EXISTING_CUSTOMER"].includes(status)) return "blue";
   return "slate";
-}
-
-export function NavLink({ href, children, active }: { href: string; children: ReactNode; active: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-        active
-          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-          : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-      }`}
-    >
-      {children}
-    </Link>
-  );
 }
 
 export const inputClass =
