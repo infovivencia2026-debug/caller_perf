@@ -1,0 +1,17 @@
+import type { ReactNode } from "react";
+import AppShell from "@/components/app-shell";
+import { requireCaller } from "@/lib/auth";
+
+const NAV = [
+  { href: "/caller", label: "Dashboard" },
+  { href: "/caller/call", label: "Calling screen" },
+];
+
+export default async function CallerLayout({ children }: { children: ReactNode }) {
+  const session = await requireCaller();
+  return (
+    <AppShell session={session} nav={NAV}>
+      {children}
+    </AppShell>
+  );
+}

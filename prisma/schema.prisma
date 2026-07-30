@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  TELECALLER
+}
+
+enum CustomerStatus {
+  NEW
+  IN_PROGRESS
+  INTERESTED
+  NOT_INTERESTED
+  CALLBACK
+  MEETING_SCHEDULED
+  CLOSED
+  INVALID
+}
+
+enum CallStatus {
+  INTERESTED
+  NOT_INTERESTED
+  NO_ANSWER
+  BUSY
+  SWITCHED_OFF
+  WRONG_NUMBER
+  CALLBACK_REQUESTED
+  MEETING_SCHEDULED
+  EXISTING_CUSTOMER
+  SALE_CLOSED
+  INVALID_NUMBER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  MISSED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(TELECALLER)
+  active       Boolean   @default(true)
+  dailyTarget  Int       @default(50)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  customers  Customer[]  @relation("AssignedCustomers")
+  calls      Call[]
+  followUps  FollowUp[]
+  activities ActivityLog[]
+}
+
+model Customer {
+  id        String         @id @default(cuid())
+  name      String
+  phone     String         @unique
+  company   String?
+  email     String?
+  city      String?
+  notes     String?
+  status    CustomerStatus @default(NEW)
+  priority  Priority       @default(MEDIUM)
+  tags      String[]       @default([])
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  assignedToId String?
+  assignedTo   User?   @relation("AssignedCustomers", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  calls     Call[]
+  followUps FollowUp[]
+
+  @@index([assignedToId, status])
+  @@index([status])
+  @@index([name])
+}
+
+model Call {
+  id         String     @id @default(cuid())
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  callerId   String
+  caller     User       @relation(fields: [callerId], references: [id], onDelete: Cascade)
+  status     CallStatus
+  response   String?
+  comments   String?
+  startedAt  DateTime
+  endedAt    DateTime
+  duration   Int // seconds
+  createdAt  DateTime   @default(now())
+
+  followUp FollowUp?
+
+  @@index([callerId, startedAt])
+  @@index([customerId, startedAt])
+  @@index([startedAt])
+}
+
+model FollowUp {
+  id         String         @id @default(cuid())
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  callerId   String
+  caller     User           @relation(fields: [callerId], references: [id], onDelete: Cascade)
+  callId     String?        @unique
+  call       Call?          @relation(fields: [callId], references: [id], onDelete: SetNull)
+  dueAt      DateTime
+  priority   Priority       @default(MEDIUM)
+  status     FollowUpStatus @default(PENDING)
+  notes      String?
+  completedAt DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([callerId, status, dueAt])
+  @@index([dueAt])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String?
+  entityId  String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

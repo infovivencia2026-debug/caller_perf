@@ -1,0 +1,5 @@
+Name,Phone Number,Company,Email,City,Notes
+Kavitha Iyer,9845012345,Iyer Foods,kavitha@example.com,Madurai,Referred by Ravi
+Vikram Singh,9812309876,Singh Logistics,,Jaipur,
+Kavitha Iyer,98450 12345,Iyer Foods,,Madurai,duplicate row in file
+Ravi Kumar,9876543210,Sri Traders,,Hyderabad,already in database

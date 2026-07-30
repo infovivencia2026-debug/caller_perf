@@ -1,0 +1,74 @@
+import { prisma } from "@/lib/prisma";
+
+/** Customer statuses that take a customer out of the calling queue. */
+export const CLOSED_STATUSES = ["NOT_INTERESTED", "CLOSED", "INVALID"] as const;
+
+const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
+
+/**
+ * Picks the next customer to call: assigned to this caller, still open, and not
+ * skipped this session. Ordered by follow-up due first, then priority, then the
+ * least recently contacted.
+ */
+export async function getNextCustomer(callerId: string, skipIds: string[] = []) {
+  const now = new Date();
+  const candidates = await prisma.customer.findMany({
+    where: {
+      assignedToId: callerId,
+      status: { notIn: CLOSED_STATUSES as unknown as never },
+      ...(skipIds.length > 0 ? { id: { notIn: skipIds } } : {}),
+      // Either a follow-up is due now, or the customer is not scheduled for later
+      // and has not been called today.
+      OR: [
+        { followUps: { some: { status: "PENDING", dueAt: { lte: now } } } },
+        {
+          AND: [
+            { followUps: { none: { status: "PENDING" } } },
+            { calls: { none: { startedAt: { gte: startOfToday(now) } } } },
+          ],
+        },
+      ],
+    },
+    include: {
+      calls: { orderBy: { startedAt: "desc" }, take: 3, include: { caller: { select: { name: true } } } },
+      followUps: { where: { status: "PENDING" }, orderBy: { dueAt: "asc" }, take: 1 },
+    },
+    take: 200,
+  });
+
+  if (candidates.length === 0) return null;
+
+  const nowMs = now.getTime();
+  const scored = candidates.map((customer) => {
+    const dueAt = customer.followUps[0]?.dueAt.getTime();
+    return {
+      customer,
+      dueSoon: dueAt !== undefined && dueAt <= nowMs ? 0 : 1,
+      dueAt: dueAt ?? Number.MAX_SAFE_INTEGER,
+      priority: PRIORITY_ORDER[customer.priority],
+      lastCalledAt: customer.calls[0]?.startedAt.getTime() ?? 0,
+    };
+  });
+
+  scored.sort(
+    (a, b) =>
+      a.dueSoon - b.dueSoon ||
+      a.dueAt - b.dueAt ||
+      a.priority - b.priority ||
+      a.lastCalledAt - b.lastCalledAt,
+  );
+
+  return scored[0].customer;
+}
+
+export async function getQueueCount(callerId: string) {
+  return prisma.customer.count({
+    where: { assignedToId: callerId, status: { notIn: CLOSED_STATUSES as unknown as never } },
+  });
+}
+
+function startOfToday(reference: Date) {
+  const d = new Date(reference);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
