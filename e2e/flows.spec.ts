@@ -102,30 +102,6 @@ test("admin imports a CSV, sees duplicates reported, then filters and edits", as
   await expect(page.getByText("vip").first()).toBeVisible();
 });
 
-test("bulk assignment moves customers to a caller", async ({ page }) => {
-  await signIn(page, ADMIN);
-
-  // Create an unassigned customer so the test does not depend on existing data.
-  await page.goto("/admin/customers/new");
-  const phone = `98${Date.now().toString().slice(-8)}`;
-  await page.fill('input[name="name"]', "Bulk Test Lead");
-  await page.fill('input[name="phone"]', phone);
-  await page.getByRole("button", { name: "Add customer" }).click();
-  await expect(page.getByText("Added Bulk Test Lead")).toBeVisible();
-
-  await page.goto("/admin/customers?caller=unassigned");
-  const boxes = page.locator('input[name="ids"]');
-  const count = await boxes.count();
-  expect(count).toBeGreaterThan(0);
-  for (let i = 0; i < count; i += 1) await boxes.nth(i).check();
-
-  await page.selectOption('select[name="assignedToId"]', { label: "Arjun Rao" });
-  await page.getByRole("button", { name: "Assign" }).click();
-
-  // The unassigned filter empties once the action settles and the page revalidates.
-  await expect(page.getByText("No customers match these filters.")).toBeVisible({ timeout: 15_000 });
-});
-
 test("a telecaller cannot reach admin pages", async ({ page }) => {
   await signIn(page, CALLER);
   await page.goto("/admin/customers");

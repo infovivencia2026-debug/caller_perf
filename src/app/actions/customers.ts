@@ -118,19 +118,3 @@ export async function updateCustomer(
   revalidatePath(`/admin/customers/${id}`);
   return { success: "Saved" };
 }
-
-export async function bulkAssign(formData: FormData) {
-  const session = await requireAdmin();
-  const ids = formData.getAll("ids").map(String).filter(Boolean);
-  const assignedToId = String(formData.get("assignedToId") ?? "") || null;
-  if (ids.length === 0) return;
-
-  await prisma.customer.updateMany({ where: { id: { in: ids } }, data: { assignedToId } });
-  await logActivity({
-    userId: session.userId,
-    action: "ASSIGNMENT_CHANGED",
-    entity: "Customer",
-    detail: `${ids.length} customer(s) ${assignedToId ? `assigned to ${assignedToId}` : "unassigned"}`,
-  });
-  revalidatePath("/admin/customers");
-}

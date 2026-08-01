@@ -2,7 +2,6 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
 import { CUSTOMER_STATUSES, PRIORITIES, customerLabel, humanize, normalizePhone } from "@/lib/labels";
-import BulkAssignBar from "./bulk-assign-bar";
 import ImportWizard from "./import/import-wizard";
 import { parseTags } from "@/lib/tags";
 import type { Prisma } from "@/generated/prisma/client";
@@ -142,12 +141,11 @@ export default async function CustomersPage({
         </form>
       </Card>
 
-      <BulkAssignBar callers={callers}>
+      <Card title="Customers">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <tr>
-                <th className="w-8 px-3 py-2" />
                 <th className="px-3 py-2">Name</th>
                 <th className="px-3 py-2">Phone</th>
                 <th className="px-3 py-2">Company</th>
@@ -161,7 +159,7 @@ export default async function CustomersPage({
             <tbody>
               {customers.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-3 py-6 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500 dark:text-slate-400">
                     No customers match these filters.
                   </td>
                 </tr>
@@ -171,9 +169,6 @@ export default async function CustomersPage({
                   key={customer.id}
                   className="border-b border-slate-100 last:border-0 dark:border-slate-800"
                 >
-                  <td className="px-3 py-2">
-                    <input type="checkbox" name="ids" value={customer.id} aria-label={`Select ${customerLabel(customer)}`} />
-                  </td>
                   <td className="px-3 py-2 font-medium">
                     <Link href={`/admin/customers/${customer.id}`} className="hover:underline">
                       {customerLabel(customer)}
@@ -200,7 +195,7 @@ export default async function CustomersPage({
             </tbody>
           </table>
         </div>
-      </BulkAssignBar>
+      </Card>
 
       {pages > 1 && (
         <nav className="flex items-center gap-2 text-sm">
