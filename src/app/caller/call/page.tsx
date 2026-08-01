@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
-import { Badge, Card, statusTone } from "@/components/ui";
+import { Badge, Card, Row, statusTone } from "@/components/ui";
 import { formatDuration, humanize } from "@/lib/labels";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { readCallTiming } from "@/lib/call-timer";
@@ -66,105 +66,29 @@ export default async function CallingScreen({
     .filter((entry): entry is (typeof skippedCustomers)[number] => Boolean(entry));
 
   const skippedCard = skippedInOrder.length > 0 && (
-    <Card
-      title={`Skipped this session (${skippedInOrder.length})`}
-      action={
-        <Link href="/caller/call" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
-          Bring them back
-        </Link>
-      }
+    // The whole box is one link: hovering highlights it, clicking opens the full
+    // details on their own page rather than cramming them into the calling screen.
+    <Link
+      href={`/caller/call/skipped?skip=${skipIds.join(",")}`}
+      className="block rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:border-slate-400 focus-visible:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-500 dark:hover:bg-slate-800 dark:focus-visible:border-slate-500 dark:focus-visible:bg-slate-800"
     >
-      {/* Clicking any row opens one popup listing every skipped customer in full.
-          Native popover: opens without JavaScript, same as the call history. */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+          Skipped this session ({skippedInOrder.length})
+        </h2>
+        <span className="text-sm text-blue-600 dark:text-blue-400">View details →</span>
+      </div>
       <ul className="space-y-1 text-sm">
         {skippedInOrder.map((entry) => (
-          <li key={entry.id}>
-            <button
-              type="button"
-              popoverTarget="skipped-detail"
-              className="flex w-full flex-wrap items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-slate-100 focus-visible:bg-slate-100 dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800"
-            >
-              <span className="font-medium">{entry.name}</span>
-              <span className="tabular-nums text-slate-500 dark:text-slate-400">{entry.phone}</span>
-              <Badge tone={statusTone(entry.status)}>{humanize(entry.status)}</Badge>
-              <span className="text-slate-500 dark:text-slate-400">{humanize(entry.priority)}</span>
-            </button>
+          <li key={entry.id} className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">{entry.name}</span>
+            <span className="tabular-nums text-slate-500 dark:text-slate-400">{entry.phone}</span>
+            <Badge tone={statusTone(entry.status)}>{humanize(entry.status)}</Badge>
+            <span className="text-slate-500 dark:text-slate-400">{humanize(entry.priority)}</span>
           </li>
         ))}
       </ul>
-
-      <div
-        id="skipped-detail"
-        popover="auto"
-        className="w-[min(34rem,92vw)] rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-900 shadow-lg backdrop:bg-slate-900/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-      >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold">
-            Skipped this session ({skippedInOrder.length})
-          </h3>
-          <button
-            type="button"
-            popoverTarget="skipped-detail"
-            popoverTargetAction="hide"
-            className="rounded-md px-2 py-1 text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-
-        <ol className="max-h-[70vh] space-y-4 overflow-y-auto">
-          {skippedInOrder.map((entry, index) => {
-            const lastCall = entry.calls[0];
-            return (
-              <li
-                key={entry.id}
-                className="border-t border-slate-200 pt-4 first:border-t-0 first:pt-0 dark:border-slate-800"
-              >
-                <p className="mb-2 font-semibold">
-                  {index + 1}. {entry.name}
-                </p>
-                <dl className="space-y-2">
-                  <Row label="Phone">
-                    <a href={`tel:${entry.phone}`} className="tabular-nums tracking-wide hover:underline">
-                      {entry.phone}
-                    </a>
-                  </Row>
-                  <Row label="Company">{entry.company ?? "—"}</Row>
-                  <Row label="City">{entry.city ?? "—"}</Row>
-                  <Row label="Email">{entry.email ?? "—"}</Row>
-                  <Row label="Status">
-                    <Badge tone={statusTone(entry.status)}>{humanize(entry.status)}</Badge>
-                  </Row>
-                  <Row label="Priority">{humanize(entry.priority)}</Row>
-                  {parseTags(entry.tags).length > 0 && (
-                    <Row label="Tags">
-                      <span className="space-x-1">
-                        {parseTags(entry.tags).map((tag) => (
-                          <Badge key={tag}>{tag}</Badge>
-                        ))}
-                      </span>
-                    </Row>
-                  )}
-                  <Row label="Last call">
-                    {lastCall
-                      ? `${formatDateTime(lastCall.startedAt)} · ${humanize(lastCall.status)} · ${formatDuration(
-                          lastCall.duration,
-                        )}`
-                      : "Never called"}
-                  </Row>
-                  {entry.notes && (
-                    <Row label="Notes">
-                      <span className="whitespace-pre-wrap">{entry.notes}</span>
-                    </Row>
-                  )}
-                </dl>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-    </Card>
+    </Link>
   );
 
   if (!customer) {
@@ -354,15 +278,6 @@ export default async function CallingScreen({
           error={error}
         />
       </div>
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex gap-3">
-      <dt className="w-24 shrink-0 text-slate-500 dark:text-slate-400">{label}</dt>
-      <dd className="min-w-0 flex-1">{children}</dd>
     </div>
   );
 }
