@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, statusTone } from "@/components/ui";
-import { formatDuration, humanize } from "@/lib/labels";
+import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { formatDateTime } from "@/lib/datetime";
 import CustomerForm from "../customer-form";
 
@@ -36,7 +36,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-lg font-semibold">{customer.name}</h1>
+        <h1 className="text-lg font-semibold">{customerLabel(customer)}</h1>
         <Badge tone={statusTone(customer.status)}>{humanize(customer.status)}</Badge>
         <span className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">{customer.phone}</span>
       </div>

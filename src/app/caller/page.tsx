@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, Stat, buttonClass, statusTone } from "@/components/ui";
-import { formatDuration, humanize } from "@/lib/labels";
+import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metrics";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
@@ -30,7 +30,7 @@ export default async function CallerDashboard() {
       where: { callerId: session.userId },
       orderBy: { startedAt: "desc" },
       take: 8,
-      include: { customer: { select: { name: true } } },
+      include: { customer: { select: { name: true, phone: true } } },
     }),
   ]);
 
@@ -57,7 +57,7 @@ export default async function CallerDashboard() {
         <Card title="Next customer">
           {next ? (
             <div className="space-y-2 text-sm">
-              <p className="text-base font-semibold">{next.name}</p>
+              <p className="text-base font-semibold">{customerLabel(next)}</p>
               <p className="tabular-nums text-slate-600 dark:text-slate-300">{next.phone}</p>
               <p className="text-slate-500 dark:text-slate-400">
                 {next.company ?? "No company"} · {next.city ?? "No city"} · {humanize(next.priority)} priority
@@ -95,7 +95,7 @@ export default async function CallerDashboard() {
                 <Badge tone={isOverdue(followUp.dueAt) ? "red" : "amber"}>
                   {formatShortTime(followUp.dueAt)}
                 </Badge>
-                <span className="font-medium">{followUp.customer.name}</span>
+                <span className="font-medium">{customerLabel(followUp.customer)}</span>
                 <span className="tabular-nums text-slate-500 dark:text-slate-400">{followUp.customer.phone}</span>
                 {followUp.notes && <span className="w-full text-slate-600 dark:text-slate-300">{followUp.notes}</span>}
               </li>
@@ -112,7 +112,7 @@ export default async function CallerDashboard() {
             {recentCalls.map((call) => (
               <li key={call.id} className="flex flex-wrap items-center gap-2">
                 <Badge tone={statusTone(call.status)}>{humanize(call.status)}</Badge>
-                <span className="font-medium">{call.customer.name}</span>
+                <span className="font-medium">{customerLabel(call.customer)}</span>
                 <span className="text-slate-500 dark:text-slate-400">
                   {formatDateTime(call.startedAt)} · {formatDuration(call.duration)}
                 </span>

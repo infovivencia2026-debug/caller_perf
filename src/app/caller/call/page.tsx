@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, Row, statusTone } from "@/components/ui";
-import { formatDuration, humanize } from "@/lib/labels";
+import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
@@ -81,7 +81,7 @@ export default async function CallingScreen({
       <ul className="space-y-1 text-sm">
         {skippedInOrder.map((entry) => (
           <li key={entry.id} className="flex flex-wrap items-center gap-2">
-            <span className="font-medium">{entry.name}</span>
+            <span className="font-medium">{customerLabel(entry)}</span>
             <span className="tabular-nums text-slate-500 dark:text-slate-400">{entry.phone}</span>
             <Badge tone={statusTone(entry.status)}>{humanize(entry.status)}</Badge>
             <span className="text-slate-500 dark:text-slate-400">{humanize(entry.priority)}</span>
@@ -138,7 +138,7 @@ export default async function CallingScreen({
           <Card title="Current customer">
             <dl className="space-y-2 text-sm">
               <Row label="Name">
-                <span className="text-base font-semibold">{customer.name}</span>
+                <span className="text-base font-semibold">{customerLabel(customer)}</span>
               </Row>
               <Row label="Phone">
                 <a href={`tel:${customer.phone}`} className="text-base font-semibold tabular-nums tracking-wide">
@@ -174,7 +174,7 @@ export default async function CallingScreen({
             ) : (
               <dl className="space-y-2 text-sm">
                 <Row label="Name">
-                  <span className="text-base font-semibold">{lastCall.customer.name}</span>
+                  <span className="text-base font-semibold">{customerLabel(lastCall.customer)}</span>
                 </Row>
                 <Row label="Phone">
                   <a
@@ -249,7 +249,7 @@ export default async function CallingScreen({
                         </button>
                       </div>
                       <dl className="space-y-2">
-                        <Row label="Customer">{customer.name}</Row>
+                        <Row label="Customer">{customerLabel(customer)}</Row>
                         <Row label="Outcome">
                           <Badge tone={statusTone(call.status)}>{humanize(call.status)}</Badge>
                         </Row>
@@ -271,7 +271,7 @@ export default async function CallingScreen({
 
         <CallPanel
           customerId={customer.id}
-          customerName={customer.name}
+          customerName={customerLabel(customer)}
           phone={customer.phone}
           skipped={skipIds}
           timing={timing}

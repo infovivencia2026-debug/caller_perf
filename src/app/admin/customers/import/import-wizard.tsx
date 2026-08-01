@@ -36,9 +36,9 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
       header: true,
       skipEmptyLines: true,
       complete: (parsed) => {
-        const mapped = parsed.data.map(pickRow).filter((row) => row.name || row.phone);
+        const mapped = parsed.data.map(pickRow).filter((row) => row.phone);
         if (mapped.length === 0) {
-          setParseError("No usable rows found. Check that the file has a header row with name and phone.");
+          setParseError("No usable rows found. Check that the file has a header row with a phone column.");
           setRows(null);
           return;
         }

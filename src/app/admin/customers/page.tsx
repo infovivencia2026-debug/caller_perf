@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
-import { CUSTOMER_STATUSES, PRIORITIES, humanize, normalizePhone } from "@/lib/labels";
+import { CUSTOMER_STATUSES, PRIORITIES, customerLabel, humanize, normalizePhone } from "@/lib/labels";
 import BulkAssignBar from "./bulk-assign-bar";
 import { parseTags } from "@/lib/tags";
 import type { Prisma } from "@/generated/prisma/client";
@@ -158,11 +158,11 @@ export default async function CustomersPage({
                   className="border-b border-slate-100 last:border-0 dark:border-slate-800"
                 >
                   <td className="px-3 py-2">
-                    <input type="checkbox" name="ids" value={customer.id} aria-label={`Select ${customer.name}`} />
+                    <input type="checkbox" name="ids" value={customer.id} aria-label={`Select ${customerLabel(customer)}`} />
                   </td>
                   <td className="px-3 py-2 font-medium">
                     <Link href={`/admin/customers/${customer.id}`} className="hover:underline">
-                      {customer.name}
+                      {customerLabel(customer)}
                     </Link>
                     {parseTags(customer.tags).length > 0 && (
                       <span className="ml-2 space-x-1">

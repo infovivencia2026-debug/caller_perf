@@ -9,7 +9,8 @@ import { normalizePhone } from "@/lib/labels";
 import { parseTags, serializeTags } from "@/lib/tags";
 
 const customerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  // Phone is the only required field; name and the rest are optional.
+  name: z.string().optional(),
   phone: z.string().min(7, "A valid phone number is required"),
   company: z.string().optional(),
   email: z.union([z.string().email("Enter a valid email"), z.literal("")]).optional(),
@@ -49,7 +50,7 @@ function parseForm(formData: FormData) {
 
 function toData(input: z.infer<typeof customerSchema>) {
   return {
-    name: input.name,
+    name: input.name?.trim() ?? "",
     phone: normalizePhone(input.phone),
     company: input.company || null,
     email: input.email || null,

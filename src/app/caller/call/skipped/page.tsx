@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, Row, buttonClass, secondaryButtonClass, statusTone } from "@/components/ui";
-import { formatDuration, humanize } from "@/lib/labels";
+import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { formatDateTime } from "@/lib/datetime";
 import { parseTags } from "@/lib/tags";
 
@@ -83,7 +83,7 @@ export default async function SkippedPage({
 
           <div className="grid gap-6 lg:grid-cols-2">
             {ordered.map((entry, index) => (
-              <Card key={entry.id} title={`${index + 1}. ${entry.name}`}>
+              <Card key={entry.id} title={`${index + 1}. ${customerLabel(entry)}`}>
                 <dl className="space-y-2 text-sm">
                   <Row label="Phone">
                     <a

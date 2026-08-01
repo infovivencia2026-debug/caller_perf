@@ -13,6 +13,9 @@ import { CLOSED_STATUSES } from "@/lib/queue";
 /** A sane ceiling — a typo like 5000 would swallow the whole customer list. */
 const MAX_DAILY_TARGET = 500;
 
+/** New telecallers get this password when the admin leaves the field blank. */
+const DEFAULT_CALLER_PASSWORD = "password123";
+
 const targetSchema = z.object({
   callerId: z.string().min(1),
   dailyTarget: z.coerce.number().int().min(0).max(MAX_DAILY_TARGET),
@@ -29,7 +32,8 @@ function callersHref(message?: string, error?: string) {
 const createSchema = z.object({
   name: z.string().min(1, "Name is required").max(80),
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  // Blank means "use the default password"; a typed value must be at least 8 chars.
+  password: z.union([z.string().min(8, "Password must be at least 8 characters"), z.literal("")]),
   dailyTarget: z.coerce.number().int().min(0).max(MAX_DAILY_TARGET),
 });
 
@@ -51,11 +55,12 @@ export async function createCaller(formData: FormData) {
     redirect(callersHref(undefined, `${parsed.data.email} is already registered`));
   }
 
+  const password = parsed.data.password || DEFAULT_CALLER_PASSWORD;
   const created = await prisma.user.create({
     data: {
       name: parsed.data.name,
       email: parsed.data.email,
-      passwordHash: await bcrypt.hash(parsed.data.password, 10),
+      passwordHash: await bcrypt.hash(password, 10),
       role: "TELECALLER",
       dailyTarget: parsed.data.dailyTarget,
     },

@@ -53,6 +53,12 @@ export const CALL_TO_CUSTOMER_STATUS: Record<CallStatus, CustomerStatus> = {
   INVALID_NUMBER: "INVALID",
 };
 
+/** A customer's display label — their name, or their phone number when unnamed. */
+export function customerLabel(customer: { name?: string | null; phone: string }) {
+  const name = customer.name?.trim();
+  return name && name.length > 0 ? name : customer.phone;
+}
+
 export function humanize(value: string) {
   return value
     .toLowerCase()

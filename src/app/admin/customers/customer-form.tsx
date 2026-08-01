@@ -34,7 +34,7 @@ export default function CustomerForm({
     <form action={formAction} className="grid gap-4 sm:grid-cols-2">
       {customer?.id && <input type="hidden" name="id" value={customer.id} />}
 
-      <Field label="Name" name="name" defaultValue={customer?.name} required />
+      <Field label="Name (optional)" name="name" defaultValue={customer?.name} />
       <Field label="Phone number" name="phone" defaultValue={customer?.phone} required />
       <Field label="Company" name="company" defaultValue={customer?.company ?? ""} />
       <Field label="Email (optional)" name="email" type="email" defaultValue={customer?.email ?? ""} />

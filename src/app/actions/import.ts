@@ -8,7 +8,7 @@ import { logActivity } from "@/lib/activity";
 import { normalizePhone } from "@/lib/labels";
 
 const rowSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().optional(),
   phone: z.string().min(1),
   company: z.string().optional(),
   email: z.string().optional(),
@@ -45,7 +45,7 @@ export async function importCustomers(
   rows.forEach((raw, index) => {
     const parsed = rowSchema.safeParse(raw);
     if (!parsed.success) {
-      invalid.push({ row: index + 2, reason: "Name and phone are required" });
+      invalid.push({ row: index + 2, reason: "A phone number is required" });
       return;
     }
     const phone = normalizePhone(parsed.data.phone);
@@ -59,7 +59,7 @@ export async function importCustomers(
     }
     seen.add(phone);
     candidates.push({
-      name: parsed.data.name.trim(),
+      name: parsed.data.name?.trim() || "",
       phone,
       company: parsed.data.company?.trim() || null,
       email: parsed.data.email?.trim() || null,

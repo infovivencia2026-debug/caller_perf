@@ -68,7 +68,9 @@ model User {
 
 model Customer {
   id        String         @id @default(cuid())
-  name      String
+  // Phone is the only required field and the natural key; name and the rest are
+  // optional. An unnamed customer is shown by phone number (see customerLabel).
+  name      String         @default("")
   phone     String         @unique
   company   String?
   email     String?

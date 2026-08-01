@@ -77,17 +77,17 @@ export default async function CallersPage({
             />
           </label>
           <label className="block text-sm font-medium">
-            Password
+            Password (optional)
             <input
               type="password"
               name="password"
-              required
               minLength={8}
-              placeholder="At least 8 characters"
+              placeholder="Leave blank for default: password123"
               className={`${inputClass} mt-1`}
             />
             <span className="mt-1 block text-xs font-normal text-slate-500 dark:text-slate-400">
-              Share this with them; they can sign in straight away.
+              Leave blank and the telecaller gets the default password{" "}
+              <span className="font-mono">password123</span>. Share it so they can sign in.
             </span>
           </label>
           <label className="block text-sm font-medium">
