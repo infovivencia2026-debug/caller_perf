@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
-import { Badge, Card, Row, statusTone } from "@/components/ui";
+import { Badge, Card, Row, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
 import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
 import { formatDateTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
+import { saveCustomerDetails } from "@/app/actions/calls";
 import CallPanel from "./call-panel";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +16,10 @@ export const dynamic = "force-dynamic";
 export default async function CallingScreen({
   searchParams,
 }: {
-  searchParams: Promise<{ skip?: string; error?: string }>;
+  searchParams: Promise<{ skip?: string; error?: string; saved?: string }>;
 }) {
   const session = await requireCaller();
-  const { skip, error } = await searchParams;
+  const { skip, error, saved } = await searchParams;
   const skipIds = (skip ?? "").split(",").filter(Boolean);
 
   const [customer, queueCount, callsToday, me, lastCall] = await Promise.all([
@@ -136,32 +137,69 @@ export default async function CallingScreen({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="space-y-6">
           <Card title="Current customer">
-            <dl className="space-y-2 text-sm">
-              <Row label="Name">
-                <span className="text-base font-semibold">{customerLabel(customer)}</span>
-              </Row>
-              <Row label="Phone">
-                <a href={`tel:${customer.phone}`} className="text-base font-semibold tabular-nums tracking-wide">
-                  {customer.phone}
-                </a>
-              </Row>
-              <Row label="Company">{customer.company ?? "—"}</Row>
-              <Row label="City">{customer.city ?? "—"}</Row>
-              <Row label="Email">{customer.email ?? "—"}</Row>
-              <Row label="Status">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+              <a
+                href={`tel:${customer.phone}`}
+                className="text-base font-semibold tabular-nums tracking-wide hover:underline"
+              >
+                {customer.phone}
+              </a>
+              <span className="flex items-center gap-2">
                 <Badge tone={statusTone(customer.status)}>{humanize(customer.status)}</Badge>
-              </Row>
-              <Row label="Priority">{humanize(customer.priority)}</Row>
-              {parseTags(customer.tags).length > 0 && (
-                <Row label="Tags">
-                  <span className="space-x-1">
-                    {parseTags(customer.tags).map((tag) => (
-                      <Badge key={tag}>{tag}</Badge>
-                    ))}
-                  </span>
-                </Row>
-              )}
-            </dl>
+                <span className="text-slate-500 dark:text-slate-400">{humanize(customer.priority)}</span>
+              </span>
+            </div>
+            {parseTags(customer.tags).length > 0 && (
+              <p className="mb-4 space-x-1">
+                {parseTags(customer.tags).map((tag) => (
+                  <Badge key={tag}>{tag}</Badge>
+                ))}
+              </p>
+            )}
+
+            {saved && (
+              <p className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                Customer details saved.
+              </p>
+            )}
+
+            {/* Editable so the caller can fill in what was missing at import, or fix
+                anything that turns out wrong on the call. Phone and status are not
+                edited here — phone is the identity, status comes from the call outcome. */}
+            <form action={saveCustomerDetails} className="space-y-3 text-sm">
+              <input type="hidden" name="customerId" value={customer.id} />
+              <input type="hidden" name="skipped" value={skipIds.join(",")} />
+              <label className="block font-medium">
+                Name
+                <input name="name" defaultValue={customer.name} className={`${inputClass} mt-1`} />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block font-medium">
+                  Company
+                  <input name="company" defaultValue={customer.company ?? ""} className={`${inputClass} mt-1`} />
+                </label>
+                <label className="block font-medium">
+                  City
+                  <input name="city" defaultValue={customer.city ?? ""} className={`${inputClass} mt-1`} />
+                </label>
+              </div>
+              <label className="block font-medium">
+                Email
+                <input
+                  type="email"
+                  name="email"
+                  defaultValue={customer.email ?? ""}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="block font-medium">
+                Notes
+                <textarea name="notes" rows={3} defaultValue={customer.notes ?? ""} className={`${inputClass} mt-1`} />
+              </label>
+              <button type="submit" className={secondaryButtonClass}>
+                Save customer details
+              </button>
+            </form>
           </Card>
 
           {skippedCard}

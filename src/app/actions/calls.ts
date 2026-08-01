@@ -20,11 +20,12 @@ const saveSchema = z.object({
   priority: z.enum(["LOW", "MEDIUM", "HIGH", ""]),
 });
 
-/** Rebuilds the calling-screen URL, preserving the skip list and surfacing an error. */
-function queueHref(skipped: string, error?: string) {
+/** Rebuilds the calling-screen URL, preserving the skip list and surfacing a message. */
+function queueHref(skipped: string, error?: string, saved?: boolean) {
   const params = new URLSearchParams();
   if (skipped) params.set("skip", skipped);
   if (error) params.set("error", error);
+  if (saved) params.set("saved", "1");
   const query = params.toString();
   return query ? `/caller/call?${query}` : "/caller/call";
 }
@@ -186,4 +187,63 @@ export async function skipCustomer(formData: FormData) {
   // Drop any half-stamped timing so it cannot leak onto the next customer.
   await clearCallTiming();
   redirect(queueHref(next.join(",")));
+}
+
+const detailsSchema = z.object({
+  customerId: z.string().min(1),
+  name: z.string().optional(),
+  company: z.string().optional(),
+  city: z.string().optional(),
+  email: z.union([z.string().email("Enter a valid email"), z.literal("")]).optional(),
+  notes: z.string().optional(),
+});
+
+/**
+ * Lets the caller fill in or correct the customer's details during the call — the
+ * fields left empty at import time, or anything that turns out wrong on the phone.
+ * Scoped to the caller's own customers; phone and status are not editable here.
+ */
+export async function saveCustomerDetails(formData: FormData) {
+  const session = await requireCaller();
+  const skipped = skippedFrom(formData);
+
+  const parsed = detailsSchema.safeParse({
+    customerId: String(formData.get("customerId") ?? ""),
+    name: String(formData.get("name") ?? "").trim(),
+    company: String(formData.get("company") ?? "").trim(),
+    city: String(formData.get("city") ?? "").trim(),
+    email: String(formData.get("email") ?? "").trim(),
+    notes: String(formData.get("notes") ?? "").trim(),
+  });
+  if (!parsed.success) {
+    redirect(queueHref(skipped, parsed.error.issues[0].message ?? "Could not save the details"));
+  }
+
+  const customer = await prisma.customer.findUnique({ where: { id: parsed.data.customerId } });
+  if (!customer) redirect(queueHref(skipped, "Customer not found"));
+  if (customer.assignedToId !== session.userId) {
+    redirect(queueHref(skipped, "This customer is not assigned to you"));
+  }
+
+  await prisma.customer.update({
+    where: { id: customer.id },
+    data: {
+      name: parsed.data.name?.trim() ?? "",
+      company: parsed.data.company?.trim() || null,
+      city: parsed.data.city?.trim() || null,
+      email: parsed.data.email?.trim() || null,
+      notes: parsed.data.notes?.trim() || null,
+    },
+  });
+
+  await logActivity({
+    userId: session.userId,
+    action: "CUSTOMER_UPDATED",
+    entity: "Customer",
+    entityId: customer.id,
+    detail: `${customer.name || customer.phone} — details updated by ${session.name}`,
+  });
+
+  revalidatePath("/caller/call");
+  redirect(queueHref(skipped, undefined, true));
 }

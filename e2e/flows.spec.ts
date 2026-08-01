@@ -28,7 +28,10 @@ test("telecaller logs a call with a follow-up and advances the queue", async ({ 
   await page.getByRole("link", { name: "Open calling screen" }).click();
   await expect(page).toHaveURL(/\/caller\/call/);
 
-  const firstCustomer = await page.locator("dd").first().innerText();
+  // The current customer is identified by their phone (the first tel: link) and name.
+  const firstPhone = await page.locator('a[href^="tel:"]').first().innerText();
+  const firstName = await page.locator('input[name="name"]').inputValue();
+  const firstLabel = firstName || firstPhone;
 
   // Saving is blocked until the call has been timed.
   await expect(page.getByRole("button", { name: /Save response/ })).toBeDisabled();
@@ -47,13 +50,13 @@ test("telecaller logs a call with a follow-up and advances the queue", async ({ 
 
   // Lands back on the calling screen with the next customer in the queue.
   await expect(page).toHaveURL(/\/caller\/call/);
-  await expect(page.locator("dd").first()).not.toHaveText(firstCustomer);
+  await expect(page.locator('a[href^="tel:"]').first()).not.toHaveText(firstPhone);
 
   // Recent activity on the dashboard reflects the logged call.
   await page.goto("/caller");
   await expect(page.getByText("Recent activity")).toBeVisible();
   await expect(page.getByText("Interested").first()).toBeVisible();
-  await expect(page.getByText(firstCustomer).first()).toBeVisible();
+  await expect(page.getByText(firstLabel).first()).toBeVisible();
 
   // The follow-up is scheduled for a future date, so it is not in today's list
   // but is recorded against the customer.
@@ -63,10 +66,10 @@ test("telecaller logs a call with a follow-up and advances the queue", async ({ 
 test("skip moves past a customer without logging a call", async ({ page }) => {
   await signIn(page, CALLER);
   await page.goto("/caller/call");
-  const name = await page.locator("dd").first().innerText();
-  await page.getByRole("button", { name: `Skip ${name}` }).click();
+  const firstPhone = await page.locator('a[href^="tel:"]').first().innerText();
+  await page.getByRole("button", { name: /^Skip/ }).click();
   await expect(page).toHaveURL(/skip=/);
-  await expect(page.locator("dd").first()).not.toHaveText(name);
+  await expect(page.locator('a[href^="tel:"]').first()).not.toHaveText(firstPhone);
 });
 
 test("admin imports a CSV, sees duplicates reported, then filters and edits", async ({ page }) => {
@@ -76,7 +79,7 @@ test("admin imports a CSV, sees duplicates reported, then filters and edits", as
 
   await page.goto("/admin/customers/import");
   await page.setInputFiles('input[type="file"]', path.join(__dirname, "fixtures", "customers.csv"));
-  await expect(page.getByText(/Preview — 4 row\(s\)/)).toBeVisible();
+  await expect(page.getByText(/Preview — all 4 customer\(s\)/)).toBeVisible();
   await page.getByRole("button", { name: /Import 4 row/ }).click();
 
   await expect(page.getByText("Imported 2 customer(s).")).toBeVisible();

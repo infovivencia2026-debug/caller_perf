@@ -24,3 +24,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Hide the browser's built-in password reveal/clear controls (Edge, IE) so they don't
+   overlap or fight with our own show/hide eye button, which was making it flicker or
+   look like it disappeared on hover/focus. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
