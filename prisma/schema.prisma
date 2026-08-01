@@ -56,6 +56,9 @@ model User {
   passwordHash String
   role         Role      @default(TELECALLER)
   active       Boolean   @default(true)
+  // Bumped whenever the password changes; a session carries the version it was issued
+  // with, so old sessions (and thus the old password's logins) stop being valid.
+  tokenVersion Int       @default(0)
   dailyTarget  Int       @default(50)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth";
+import { createSession, requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 
 function settingsHref(ok?: string, error?: string) {
@@ -47,10 +47,14 @@ export async function changeOwnPassword(formData: FormData) {
     redirect(settingsHref(undefined, "The new password must be different from the current one"));
   }
 
-  await prisma.user.update({
+  // Bump the token version to invalidate every existing session, then re-issue this
+  // admin a fresh one so they stay signed in with the new password.
+  const updated = await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: await bcrypt.hash(parsed.data.newPassword, 10) },
+    data: { passwordHash: await bcrypt.hash(parsed.data.newPassword, 10), tokenVersion: { increment: 1 } },
+    select: { id: true, name: true, role: true, tokenVersion: true },
   });
+  await createSession({ userId: updated.id, name: updated.name, role: updated.role }, updated.tokenVersion);
   await logActivity({
     userId: session.userId,
     action: "PASSWORD_CHANGED",
@@ -82,9 +86,11 @@ export async function resetCallerPassword(formData: FormData) {
     redirect(settingsHref(undefined, "Telecaller not found"));
   }
 
+  // Bump the token version so the telecaller's current sessions (and the old password)
+  // stop working — they must sign in again with the new password.
   await prisma.user.update({
     where: { id: caller.id },
-    data: { passwordHash: await bcrypt.hash(parsed.data.newPassword, 10) },
+    data: { passwordHash: await bcrypt.hash(parsed.data.newPassword, 10), tokenVersion: { increment: 1 } },
   });
   await logActivity({
     userId: session.userId,

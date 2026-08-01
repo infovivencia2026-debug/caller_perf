@@ -7,7 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
-import { planAssignments, type CallerCapacity } from "@/lib/assign";
+import { planEqualAssignments, type CallerQueue } from "@/lib/assign";
 import { CLOSED_STATUSES } from "@/lib/queue";
 
 /** A sane ceiling — a typo like 5000 would swallow the whole customer list. */
@@ -112,25 +112,43 @@ export async function updateDailyTarget(formData: FormData) {
   redirect(callersHref(`${caller.name}'s daily target is now ${parsed.data.dailyTarget}`));
 }
 
+const autoAssignSchema = z.object({
+  target: z.coerce.number().int().min(1).max(MAX_DAILY_TARGET),
+});
+
 /**
- * Hands unassigned, still-open customers to active telecallers, filling each up to
- * their daily target. Highest-priority and longest-waiting customers go out first.
+ * Distributes unassigned, still-open customers equally across active telecallers, up to
+ * the chosen target each. The target also becomes every active telecaller's daily
+ * target. Highest-priority and longest-waiting customers go out first; anyone already
+ * holding open customers is topped up toward the target rather than reset.
  */
-export async function autoAssign() {
+export async function autoAssign(formData: FormData) {
   const session = await requireAdmin();
+
+  const parsed = autoAssignSchema.safeParse({ target: String(formData.get("target") ?? "") });
+  if (!parsed.success) {
+    redirect(callersHref(undefined, `Enter a target between 1 and ${MAX_DAILY_TARGET}`));
+  }
+  const target = parsed.data.target;
 
   const openWhere = { status: { notIn: CLOSED_STATUSES as unknown as never } };
 
   const callers = await prisma.user.findMany({
     where: { role: "TELECALLER", active: true },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, dailyTarget: true },
+    select: { id: true, name: true },
   });
   if (callers.length === 0) {
     redirect(callersHref(undefined, "No active telecallers to assign to"));
   }
 
-  const capacities: CallerCapacity[] = await Promise.all(
+  // The chosen target becomes everyone's daily target.
+  await prisma.user.updateMany({
+    where: { role: "TELECALLER", active: true },
+    data: { dailyTarget: target },
+  });
+
+  const queues: CallerQueue[] = await Promise.all(
     callers.map(async (caller) => ({
       ...caller,
       queued: await prisma.customer.count({ where: { assignedToId: caller.id, ...openWhere } }),
@@ -143,44 +161,44 @@ export async function autoAssign() {
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     select: { id: true },
   });
-  if (pool.length === 0) {
-    redirect(callersHref(undefined, "No unassigned customers to distribute"));
-  }
 
-  const plan = planAssignments(
-    capacities,
+  const plan = planEqualAssignments(
+    queues,
     pool.map((customer) => customer.id),
+    target,
   );
-  if (plan.assigned === 0) {
-    redirect(
-      callersHref(undefined, "Every active telecaller is already at their daily target — raise a target first"),
+
+  if (plan.assigned > 0) {
+    await prisma.$transaction(
+      [...plan.byCaller.entries()].map(([callerId, customerIds]) =>
+        prisma.customer.updateMany({
+          where: { id: { in: customerIds } },
+          data: { assignedToId: callerId },
+        }),
+      ),
     );
   }
 
-  await prisma.$transaction(
-    [...plan.byCaller.entries()].map(([callerId, customerIds]) =>
-      prisma.customer.updateMany({
-        where: { id: { in: customerIds } },
-        data: { assignedToId: callerId },
-      }),
-    ),
-  );
-
-  const summary = [...plan.byCaller.entries()]
-    .map(([callerId, ids]) => `${callers.find((c) => c.id === callerId)?.name ?? callerId}: ${ids.length}`)
-    .join(", ");
+  const summary =
+    plan.assigned > 0
+      ? [...plan.byCaller.entries()]
+          .map(([callerId, ids]) => `${callers.find((c) => c.id === callerId)?.name ?? callerId}: ${ids.length}`)
+          .join(", ")
+      : "none — every telecaller was already at the target";
 
   await logActivity({
     userId: session.userId,
     action: "AUTO_ASSIGNED",
     entity: "Customer",
-    detail: `${plan.assigned} customer(s) auto-assigned (${summary})`,
+    detail: `target ${target}; ${plan.assigned} assigned (${summary})`,
   });
 
   revalidatePath("/admin/callers");
   revalidatePath("/admin/customers");
   revalidatePath("/admin");
 
-  const leftOver = plan.leftOver > 0 ? ` ${plan.leftOver} left unassigned (all targets full).` : "";
-  redirect(callersHref(`Assigned ${plan.assigned} customer(s) — ${summary}.${leftOver}`));
+  const leftOver = plan.leftOver > 0 ? ` ${plan.leftOver} left unassigned (targets full).` : "";
+  redirect(
+    callersHref(`Daily target set to ${target}. Assigned ${plan.assigned} customer(s) equally — ${summary}.${leftOver}`),
+  );
 }

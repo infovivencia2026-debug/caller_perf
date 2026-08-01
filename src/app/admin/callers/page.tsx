@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { Badge, Card, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
 import { PasswordInput } from "@/components/password-input";
-import { capacityOf } from "@/lib/assign";
 import { CLOSED_STATUSES } from "@/lib/queue";
 import { endOfDay, percent, startOfDay } from "@/lib/metrics";
 
@@ -42,9 +41,7 @@ export default async function CallersPage({
     }),
   );
 
-  const totalCapacity = rows
-    .filter((row) => row.active)
-    .reduce((sum, row) => sum + capacityOf(row), 0);
+  const activeCallers = rows.filter((row) => row.active).length;
 
   return (
     <div className="space-y-6">
@@ -111,29 +108,34 @@ export default async function CallersPage({
         </form>
       </Card>
 
-      <Card title="Auto-assign by daily target">
+      <Card title="Auto-assign customers">
         <div className="space-y-3 text-sm">
           <p className="text-slate-600 dark:text-slate-300">
-            Distributes unassigned customers to active telecallers, topping each up to their daily
-            target. Highest priority and longest waiting go out first. Nobody is pushed past their
-            target, so it is safe to run repeatedly.
+            Set a target and split the unassigned customers equally among active telecallers, up to
+            that many each. The target becomes every telecaller&apos;s daily target. Highest priority
+            and longest waiting go out first; it is safe to run again to top everyone up.
           </p>
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="tabular-nums">
-              <strong>{unassigned}</strong> unassigned ·{" "}
-              <strong>{totalCapacity}</strong> free capacity across active callers
+          <form action={autoAssign} className="flex flex-wrap items-end gap-3">
+            <span className="tabular-nums text-slate-600 dark:text-slate-300">
+              <strong>{unassigned}</strong> unassigned · <strong>{activeCallers}</strong> active telecallers
             </span>
-            <form action={autoAssign}>
-              <button type="submit" className={buttonClass} disabled={unassigned === 0 || totalCapacity === 0}>
-                Auto-assign now
-              </button>
-            </form>
-          </div>
-          {unassigned > 0 && totalCapacity === 0 && (
-            <p className="text-amber-600 dark:text-amber-400">
-              Every active telecaller is at their daily target. Raise a target below to make room.
-            </p>
-          )}
+            <label className="block text-sm font-medium">
+              Target per telecaller
+              <input
+                type="number"
+                name="target"
+                min={1}
+                max={500}
+                step={1}
+                required
+                defaultValue={50}
+                className={`${inputClass} mt-1 w-28`}
+              />
+            </label>
+            <button type="submit" className={buttonClass} disabled={unassigned === 0 || activeCallers === 0}>
+              Auto-assign equally
+            </button>
+          </form>
         </div>
       </Card>
 
@@ -148,7 +150,6 @@ export default async function CallersPage({
                   <th className="px-3 py-2">Telecaller</th>
                   <th className="px-3 py-2">Calls today</th>
                   <th className="px-3 py-2">In queue</th>
-                  <th className="px-3 py-2">Free capacity</th>
                   <th className="px-3 py-2">Daily target</th>
                 </tr>
               </thead>
@@ -172,7 +173,6 @@ export default async function CallersPage({
                       </span>
                     </td>
                     <td className="px-3 py-2 tabular-nums">{row.queued}</td>
-                    <td className="px-3 py-2 tabular-nums">{capacityOf(row)}</td>
                     <td className="px-3 py-2">
                       <form action={updateDailyTarget} className="flex items-center gap-2">
                         <input type="hidden" name="callerId" value={row.id} />

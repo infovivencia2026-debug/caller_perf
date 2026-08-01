@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
+import { prisma } from "@/lib/prisma";
 import type { Role } from "@/generated/prisma/enums";
 
 const COOKIE = "cp_session";
@@ -18,8 +19,8 @@ function secret() {
   return new TextEncoder().encode(value);
 }
 
-export async function createSession(session: Session) {
-  const token = await new SignJWT({ ...session })
+export async function createSession(session: Session, tokenVersion: number) {
+  const token = await new SignJWT({ ...session, v: tokenVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE_SECONDS}s`)
@@ -43,8 +44,16 @@ export async function getSession(): Promise<Session | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret());
+    const userId = payload.userId as string;
+    // A session is only valid if the account still exists, is active, and its token
+    // version still matches — a password change bumps the version and kills old sessions.
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { tokenVersion: true, active: true },
+    });
+    if (!user || !user.active || user.tokenVersion !== (payload.v as number)) return null;
     return {
-      userId: payload.userId as string,
+      userId,
       name: payload.name as string,
       role: payload.role as Role,
     };

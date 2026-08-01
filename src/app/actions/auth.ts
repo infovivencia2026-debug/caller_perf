@@ -31,7 +31,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
     return { error: "This account is disabled" };
   }
 
-  await createSession({ userId: user.id, name: user.name, role: user.role });
+  await createSession({ userId: user.id, name: user.name, role: user.role }, user.tokenVersion);
   await logActivity({ userId: user.id, action: "LOGIN", entity: "User", entityId: user.id });
 
   redirect(user.role === "ADMIN" ? "/admin" : "/caller");
