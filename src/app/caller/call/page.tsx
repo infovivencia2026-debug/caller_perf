@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
-import { Badge, Card, Row, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
+import { Badge, Card, Row, statusTone } from "@/components/ui";
 import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
 import { formatDateTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
-import { saveCustomerDetails } from "@/app/actions/calls";
 import CallPanel from "./call-panel";
 
 export const dynamic = "force-dynamic";
@@ -163,43 +162,19 @@ export default async function CallingScreen({
               </p>
             )}
 
-            {/* Editable so the caller can fill in what was missing at import, or fix
-                anything that turns out wrong on the call. Phone and status are not
-                edited here — phone is the identity, status comes from the call outcome. */}
-            <form action={saveCustomerDetails} className="space-y-3 text-sm">
-              <input type="hidden" name="customerId" value={customer.id} />
-              <input type="hidden" name="skipped" value={skipIds.join(",")} />
-              <label className="block font-medium">
-                Name
-                <input name="name" defaultValue={customer.name} className={`${inputClass} mt-1`} />
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block font-medium">
-                  Company
-                  <input name="company" defaultValue={customer.company ?? ""} className={`${inputClass} mt-1`} />
-                </label>
-                <label className="block font-medium">
-                  City
-                  <input name="city" defaultValue={customer.city ?? ""} className={`${inputClass} mt-1`} />
-                </label>
-              </div>
-              <label className="block font-medium">
-                Email
-                <input
-                  type="email"
-                  name="email"
-                  defaultValue={customer.email ?? ""}
-                  className={`${inputClass} mt-1`}
-                />
-              </label>
-              <label className="block font-medium">
-                Notes
-                <textarea name="notes" rows={3} defaultValue={customer.notes ?? ""} className={`${inputClass} mt-1`} />
-              </label>
-              <button type="submit" className={secondaryButtonClass}>
-                Save customer details
-              </button>
-            </form>
+            {/* Read-only here; the editable fields live in the call form so edits save
+                together with the call. */}
+            <dl className="space-y-2 text-sm">
+              <Row label="Name">{customerLabel(customer)}</Row>
+              <Row label="Company">{customer.company ?? "—"}</Row>
+              <Row label="City">{customer.city ?? "—"}</Row>
+              <Row label="Email">{customer.email ?? "—"}</Row>
+              {customer.notes && (
+                <Row label="Notes">
+                  <span className="whitespace-pre-wrap">{customer.notes}</span>
+                </Row>
+              )}
+            </dl>
           </Card>
 
           {skippedCard}
@@ -311,6 +286,13 @@ export default async function CallingScreen({
           customerId={customer.id}
           customerName={customerLabel(customer)}
           phone={customer.phone}
+          customer={{
+            name: customer.name,
+            company: customer.company,
+            city: customer.city,
+            email: customer.email,
+            notes: customer.notes,
+          }}
           skipped={skipIds}
           timing={timing}
           error={error}

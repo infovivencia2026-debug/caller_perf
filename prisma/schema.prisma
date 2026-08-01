@@ -63,10 +63,23 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  customers  Customer[]  @relation("AssignedCustomers")
-  calls      Call[]
-  followUps  FollowUp[]
-  activities ActivityLog[]
+  customers   Customer[]   @relation("AssignedCustomers")
+  calls       Call[]
+  followUps   FollowUp[]
+  activities  ActivityLog[]
+  attendance  Attendance[]
+}
+
+/** One row per telecaller per day they were present (marked or derived from a call). */
+model Attendance {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([date])
 }
 
 model Customer {

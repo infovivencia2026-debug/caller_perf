@@ -1,50 +1,60 @@
 /**
- * Auto-assignment spreads unassigned customers equally across telecallers, giving each
- * up to a chosen target. Distribution is round-robin, so everyone ends up within one
- * customer of each other. A caller already holding open customers is topped up toward
- * the target rather than reset, so running it again does not double-load anyone.
+ * Auto-assignment distributes unassigned customers to telecallers up to a chosen
+ * target each, but balanced by how many calls they have made recently: each customer
+ * goes to whoever has the lowest projected call load. So a caller who has been calling
+ * a lot gets fewer new customers, and over time everyone's call volume evens out — the
+ * "more calls today, fewer tomorrow" rule. A caller already holding open customers is
+ * topped up toward the target rather than reset.
  */
 export type CallerQueue = {
   id: string;
   name: string;
   /** Open customers already assigned to this caller. */
   queued: number;
+  /** Calls made in the recent balancing window — the starting "load". */
+  recentCalls: number;
 };
 
 export type AssignmentPlan = {
-  /** callerId -> customer ids to hand them. Callers already at the target are omitted. */
   byCaller: Map<string, string[]>;
   assigned: number;
   /** Customers left over because every caller reached the target. */
   leftOver: number;
 };
 
-export function planEqualAssignments(
+export function planBalancedAssignments(
   callers: CallerQueue[],
   customerIds: string[],
   target: number,
 ): AssignmentPlan {
-  // Remaining room per caller, sorted by name so the result is deterministic.
-  const room = callers
-    .map((caller) => ({ id: caller.id, name: caller.name, left: Math.max(0, target - caller.queued) }))
-    .filter((caller) => caller.left > 0)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const state = callers
+    .map((caller) => ({
+      id: caller.id,
+      name: caller.name,
+      left: Math.max(0, target - caller.queued),
+      load: caller.recentCalls,
+    }))
+    .filter((caller) => caller.left > 0);
 
   const byCaller = new Map<string, string[]>();
   let assigned = 0;
-  let cursor = 0;
 
-  while (assigned < customerIds.length) {
-    const withRoom = room.filter((caller) => caller.left > 0);
-    if (withRoom.length === 0) break;
+  for (const customerId of customerIds) {
+    // Whoever has the smallest projected load and still has room; ties break on name.
+    let best: (typeof state)[number] | null = null;
+    for (const caller of state) {
+      if (caller.left <= 0) continue;
+      if (!best || caller.load < best.load || (caller.load === best.load && caller.name < best.name)) {
+        best = caller;
+      }
+    }
+    if (!best) break;
 
-    const caller = withRoom[cursor % withRoom.length];
-    cursor += 1;
-
-    const list = byCaller.get(caller.id);
-    if (list) list.push(customerIds[assigned]);
-    else byCaller.set(caller.id, [customerIds[assigned]]);
-    caller.left -= 1;
+    const list = byCaller.get(best.id);
+    if (list) list.push(customerId);
+    else byCaller.set(best.id, [customerId]);
+    best.left -= 1;
+    best.load += 1;
     assigned += 1;
   }
 

@@ -6,6 +6,25 @@
 export const TIME_ZONE = "Asia/Kolkata";
 const LOCALE = "en-IN";
 
+// en-CA renders as YYYY-MM-DD, which is exactly the day key we want.
+const dayKeyFmt = new Intl.DateTimeFormat("en-CA", {
+  timeZone: TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** The India-time calendar day of a moment, as "YYYY-MM-DD". */
+export function istDayKey(date: Date) {
+  return dayKeyFmt.format(date);
+}
+
+/** UTC-midnight Date for the India-time calendar day — used for the Postgres DATE column. */
+export function istDayUTC(date = new Date()) {
+  const [y, m, d] = istDayKey(date).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
 const dateTime = new Intl.DateTimeFormat(LOCALE, {
   timeZone: TIME_ZONE,
   day: "2-digit",

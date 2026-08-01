@@ -1,8 +1,23 @@
-import { endCall, resetCall, saveCall, skipCustomer, startCall } from "@/app/actions/calls";
+import {
+  endCall,
+  resetCall,
+  saveCall,
+  saveCustomerDetails,
+  skipCustomer,
+  startCall,
+} from "@/app/actions/calls";
 import { Card, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
 import type { CallTiming } from "@/lib/call-timer";
 import { currentClock, elapsedSecondsSince, formatClock } from "@/lib/datetime";
 import { CALL_STATUSES, PRIORITIES, formatDuration, humanize } from "@/lib/labels";
+
+type CustomerDetails = {
+  name: string;
+  company: string | null;
+  city: string | null;
+  email: string | null;
+  notes: string | null;
+};
 
 /**
  * Plain-HTML calling panel: no client JavaScript at all. Every button is a submit
@@ -14,6 +29,7 @@ export default function CallPanel({
   customerId,
   customerName,
   phone,
+  customer,
   skipped,
   timing,
   error,
@@ -21,6 +37,7 @@ export default function CallPanel({
   customerId: string;
   customerName: string;
   phone: string;
+  customer: CustomerDetails;
   skipped: string[];
   timing: CallTiming | null;
   error?: string;
@@ -95,6 +112,59 @@ export default function CallPanel({
                 Reset timer
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Editable lead details. These are part of THIS form, so saving the call (or
+            "Save details") persists them; the draft cookie keeps edits across Start/End. */}
+        <div className="rounded-md border border-slate-200 p-4 dark:border-slate-800">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Lead details — edit and they save with the call
+          </p>
+          <div className="space-y-3">
+            <label className="block text-sm font-medium">
+              Name
+              <input name="name" defaultValue={draft.name ?? customer.name} className={`${inputClass} mt-1`} />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm font-medium">
+                Company
+                <input
+                  name="company"
+                  defaultValue={draft.company ?? customer.company ?? ""}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="block text-sm font-medium">
+                City
+                <input
+                  name="city"
+                  defaultValue={draft.city ?? customer.city ?? ""}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+            </div>
+            <label className="block text-sm font-medium">
+              Email
+              <input
+                type="email"
+                name="email"
+                defaultValue={draft.email ?? customer.email ?? ""}
+                className={`${inputClass} mt-1`}
+              />
+            </label>
+            <label className="block text-sm font-medium">
+              Notes
+              <textarea
+                name="notes"
+                rows={2}
+                defaultValue={draft.notes ?? customer.notes ?? ""}
+                className={`${inputClass} mt-1`}
+              />
+            </label>
+            <button type="submit" formAction={saveCustomerDetails} formNoValidate className={secondaryButtonClass}>
+              Save details only
+            </button>
           </div>
         </div>
 

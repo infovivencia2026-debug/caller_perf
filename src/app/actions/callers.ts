@@ -7,7 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
-import { planEqualAssignments, type CallerQueue } from "@/lib/assign";
+import { planBalancedAssignments, type CallerQueue } from "@/lib/assign";
 import { CLOSED_STATUSES } from "@/lib/queue";
 
 /** A sane ceiling — a typo like 5000 would swallow the whole customer list. */
@@ -148,10 +148,15 @@ export async function autoAssign(formData: FormData) {
     data: { dailyTarget: target },
   });
 
+  // Balance by calls made in the last 7 days, so heavier callers get fewer new leads.
+  const since = new Date();
+  since.setDate(since.getDate() - 7);
+
   const queues: CallerQueue[] = await Promise.all(
     callers.map(async (caller) => ({
       ...caller,
       queued: await prisma.customer.count({ where: { assignedToId: caller.id, ...openWhere } }),
+      recentCalls: await prisma.call.count({ where: { callerId: caller.id, startedAt: { gte: since } } }),
     })),
   );
 
@@ -162,7 +167,7 @@ export async function autoAssign(formData: FormData) {
     select: { id: true },
   });
 
-  const plan = planEqualAssignments(
+  const plan = planBalancedAssignments(
     queues,
     pool.map((customer) => customer.id),
     target,

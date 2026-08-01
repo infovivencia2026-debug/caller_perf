@@ -87,23 +87,13 @@ export default async function CallersPage({
               <span className="font-mono">password123</span>. Share it so they can sign in.
             </span>
           </label>
-          <label className="block text-sm font-medium">
-            Daily target
-            <input
-              type="number"
-              name="dailyTarget"
-              min={0}
-              max={500}
-              step={1}
-              required
-              defaultValue={50}
-              className={`${inputClass} mt-1`}
-            />
-          </label>
           <div className="sm:col-span-2">
             <button type="submit" className={buttonClass}>
               Add telecaller
             </button>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              The daily target is set automatically when you run auto-assign.
+            </p>
           </div>
         </form>
       </Card>

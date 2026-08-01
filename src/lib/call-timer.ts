@@ -21,6 +21,12 @@ export type CallDraft = {
   comments?: string;
   followUpDate?: string;
   priority?: string;
+  // Editable customer details, so edits made during the call survive Start/End posts.
+  name?: string;
+  company?: string;
+  city?: string;
+  email?: string;
+  notes?: string;
 };
 
 export type CallTiming = {
@@ -41,6 +47,11 @@ export function draftFromForm(formData: FormData): CallDraft {
     comments: field("comments", 1000),
     followUpDate: field("followUpDate", 40),
     priority: field("priority", 10),
+    name: field("name", 120),
+    company: field("company", 120),
+    city: field("city", 80),
+    email: field("email", 160),
+    notes: field("notes", 1000),
   };
 }
 

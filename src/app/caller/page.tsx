@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
-import { Badge, Card, Stat, buttonClass, statusTone } from "@/components/ui";
+import { Badge, Card, Stat, buttonClass, secondaryButtonClass, statusTone } from "@/components/ui";
 import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metrics";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
+import { isPresentToday } from "@/lib/attendance";
+import { checkIn } from "@/app/actions/attendance";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,8 @@ export default async function CallerDashboard() {
   const today = startOfDay();
   const tomorrow = endOfDay();
 
-  const [me, todayStats, next, queueCount, pendingFollowUps, dueToday, recentCalls] = await Promise.all([
+  const [me, todayStats, next, queueCount, pendingFollowUps, dueToday, recentCalls, present] =
+    await Promise.all([
     prisma.user.findUnique({ where: { id: session.userId }, select: { dailyTarget: true } }),
     getStats({ callerId: session.userId, from: today, to: tomorrow }),
     getNextCustomer(session.userId),
@@ -32,6 +35,7 @@ export default async function CallerDashboard() {
       take: 8,
       include: { customer: { select: { name: true, phone: true } } },
     }),
+    isPresentToday(session.userId),
   ]);
 
   const target = me?.dailyTarget ?? 0;
@@ -41,9 +45,22 @@ export default async function CallerDashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Hello, {session.name}</h1>
-        <Link href="/caller/call" className={buttonClass}>
-          Start calling
-        </Link>
+        <div className="flex items-center gap-2">
+          {present ? (
+            <span className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+              Present today
+            </span>
+          ) : (
+            <form action={checkIn}>
+              <button type="submit" className={secondaryButtonClass}>
+                Mark present
+              </button>
+            </form>
+          )}
+          <Link href="/caller/call" className={buttonClass}>
+            Start calling
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

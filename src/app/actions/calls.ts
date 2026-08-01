@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { clearCallTiming, draftFromForm, readCallTiming, writeCallTiming } from "@/lib/call-timer";
+import { markPresent } from "@/lib/attendance";
 import { CALL_STATUSES, CALL_TO_CUSTOMER_STATUS } from "@/lib/labels";
 
 const saveSchema = z.object({
@@ -18,6 +19,13 @@ const saveSchema = z.object({
   // Blank means "the caller left the default alone": use MEDIUM for the follow-up but
   // do not rewrite the customer's own priority, which the queue orders by.
   priority: z.enum(["LOW", "MEDIUM", "HIGH", ""]),
+  // Editable customer details — saved together with the call so edits made on the
+  // call are never lost.
+  name: z.string().optional(),
+  company: z.string().optional(),
+  city: z.string().optional(),
+  email: z.union([z.string().email("Enter a valid email"), z.literal("")]).optional(),
+  notes: z.string().optional(),
 });
 
 /** Rebuilds the calling-screen URL, preserving the skip list and surfacing a message. */
@@ -92,6 +100,11 @@ export async function saveCall(formData: FormData) {
     comments: String(formData.get("comments") ?? "").trim(),
     followUpDate: String(formData.get("followUpDate") ?? ""),
     priority: String(formData.get("priority") ?? ""),
+    name: String(formData.get("name") ?? "").trim(),
+    company: String(formData.get("company") ?? "").trim(),
+    city: String(formData.get("city") ?? "").trim(),
+    email: String(formData.get("email") ?? "").trim(),
+    notes: String(formData.get("notes") ?? "").trim(),
   });
   if (!parsed.success) {
     redirect(queueHref(skipped, parsed.error.issues[0].message ?? "Please complete the call details"));
@@ -144,6 +157,12 @@ export async function saveCall(formData: FormData) {
         status: CALL_TO_CUSTOMER_STATUS[input.status as keyof typeof CALL_TO_CUSTOMER_STATUS],
         // Only when the caller actively chose a priority — see saveSchema.
         ...(input.priority ? { priority: input.priority as never } : {}),
+        // Persist any edits the caller made to the lead's details on the call.
+        name: input.name?.trim() ?? "",
+        company: input.company?.trim() || null,
+        city: input.city?.trim() || null,
+        email: input.email?.trim() || null,
+        notes: input.notes?.trim() || null,
       },
     });
 
@@ -168,6 +187,9 @@ export async function saveCall(formData: FormData) {
     entityId: customer.id,
     detail: `${customer.name} — ${input.status}`,
   });
+
+  // Logging a call implies the caller was present today.
+  await markPresent(session.userId);
 
   await clearCallTiming();
   revalidatePath("/caller");
