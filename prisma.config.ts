@@ -14,6 +14,9 @@ export default defineConfig({
     path: path.join("prisma", "migrations"),
   },
   datasource: {
-    url: process.env.DATABASE_URL,
+    // Migrations run over a direct connection when one is provided. Poolers such as
+    // Neon's or Supabase's do not support the statements Prisma Migrate issues, while
+    // the app itself is happy on the pooled DATABASE_URL.
+    url: process.env.DIRECT_URL || process.env.DATABASE_URL,
   },
 });

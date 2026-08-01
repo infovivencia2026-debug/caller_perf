@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { normalizePhone } from "@/lib/labels";
+import { parseTags, serializeTags } from "@/lib/tags";
 
 const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -56,10 +57,7 @@ function toData(input: z.infer<typeof customerSchema>) {
     notes: input.notes || null,
     status: input.status,
     priority: input.priority,
-    tags: (input.tags ?? "")
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean),
+    tags: serializeTags(parseTags(input.tags)),
     assignedToId: input.assignedToId || null,
   };
 }

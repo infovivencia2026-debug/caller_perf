@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, statusTone } from "@/components/ui";
 import { formatDuration, humanize } from "@/lib/labels";
+import { formatDateTime } from "@/lib/datetime";
 import CustomerForm from "../customer-form";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={statusTone(call.status)}>{humanize(call.status)}</Badge>
                     <span className="text-slate-500 dark:text-slate-400">
-                      {call.startedAt.toLocaleString()} · {formatDuration(call.duration)} · {call.caller.name}
+                      {formatDateTime(call.startedAt)} · {formatDuration(call.duration)} · {call.caller.name}
                     </span>
                   </div>
                   {call.response && <p className="mt-1">Response: {call.response}</p>}
@@ -74,7 +75,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               {customer.followUps.map((followUp) => (
                 <li key={followUp.id} className="flex flex-wrap items-center gap-2">
                   <Badge tone={statusTone(followUp.status)}>{humanize(followUp.status)}</Badge>
-                  <span>{followUp.dueAt.toLocaleString()}</span>
+                  <span>{formatDateTime(followUp.dueAt)}</span>
                   <span className="text-slate-500 dark:text-slate-400">
                     {humanize(followUp.priority)} · {followUp.caller.name}
                   </span>

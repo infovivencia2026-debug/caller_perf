@@ -76,7 +76,9 @@ model Customer {
   notes     String?
   status    CustomerStatus @default(NEW)
   priority  Priority       @default(MEDIUM)
-  tags      String[]       @default([])
+  // Tags are stored comma-separated rather than as a native array, so the same code
+  // works on any provider. Read and write them via src/lib/tags.ts.
+  tags      String         @default("")
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 

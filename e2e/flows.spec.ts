@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
 import path from "node:path";
 
-const ADMIN = { email: "admin@example.com", password: "password123" };
-const CALLER = { email: "lakshmi@example.com", password: "password123" };
+// Matches whatever the scratch database was seeded with; SEED_PASSWORD overrides the
+// demo default, so the suite has to read the same value rather than assume it.
+const PASSWORD = process.env.SEED_PASSWORD || "password123";
+const ADMIN = { email: "admin@example.com", password: PASSWORD };
+const CALLER = { email: "lakshmi@example.com", password: PASSWORD };
 
 async function signIn(page: import("@playwright/test").Page, user: { email: string; password: string }) {
   await page.goto("/login");

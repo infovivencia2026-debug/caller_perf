@@ -42,6 +42,15 @@ next-env.d.ts
 
 # prisma generated client
 /src/generated
+
+# dev server bookkeeping
+.dev-server.pid
+
+# local sqlite database — never commit; production uses a hosted database
+/prisma/*.db
+/prisma/*.db-journal
+/prisma/*.db-wal
+/prisma/*.db-shm
 /.scratch
 
 # playwright

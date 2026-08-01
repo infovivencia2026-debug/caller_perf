@@ -16,7 +16,13 @@ const CUSTOMERS = [
 ];
 
 async function main() {
-  const passwordHash = await bcrypt.hash("password123", 10);
+  // Never bootstrap a real deployment with the demo password. Set SEED_PASSWORD when
+  // seeding anything that is not a throwaway local database.
+  const password = process.env.SEED_PASSWORD || "password123";
+  if (password === "password123") {
+    console.warn("! Seeding with the default demo password. Set SEED_PASSWORD for a real deployment.");
+  }
+  const passwordHash = await bcrypt.hash(password, 10);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@example.com" },
@@ -50,7 +56,8 @@ async function main() {
   }
 
   console.log(
-    `Seeded: admin=${admin.email}, callers=${callers.map((c) => c.email).join(", ")}, ${CUSTOMERS.length} customers. Password for all: password123`,
+    `Seeded: admin=${admin.email}, callers=${callers.map((c) => c.email).join(", ")}, ${CUSTOMERS.length} customers.` +
+      (process.env.SEED_PASSWORD ? " Password: as set in SEED_PASSWORD." : " Password for all: password123"),
   );
 }
 

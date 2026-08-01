@@ -5,6 +5,7 @@ import { Badge, Card, Stat, buttonClass, statusTone } from "@/components/ui";
 import { formatDuration, humanize } from "@/lib/labels";
 import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metrics";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
+import { formatDateTime, formatShortTime } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -92,7 +93,7 @@ export default async function CallerDashboard() {
             {dueToday.map((followUp) => (
               <li key={followUp.id} className="flex flex-wrap items-center gap-2">
                 <Badge tone={isOverdue(followUp.dueAt) ? "red" : "amber"}>
-                  {followUp.dueAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {formatShortTime(followUp.dueAt)}
                 </Badge>
                 <span className="font-medium">{followUp.customer.name}</span>
                 <span className="tabular-nums text-slate-500 dark:text-slate-400">{followUp.customer.phone}</span>
@@ -113,7 +114,7 @@ export default async function CallerDashboard() {
                 <Badge tone={statusTone(call.status)}>{humanize(call.status)}</Badge>
                 <span className="font-medium">{call.customer.name}</span>
                 <span className="text-slate-500 dark:text-slate-400">
-                  {call.startedAt.toLocaleString()} · {formatDuration(call.duration)}
+                  {formatDateTime(call.startedAt)} · {formatDuration(call.duration)}
                 </span>
               </li>
             ))}

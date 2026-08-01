@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Badge, Card, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
 import { CUSTOMER_STATUSES, PRIORITIES, humanize, normalizePhone } from "@/lib/labels";
 import BulkAssignBar from "./bulk-assign-bar";
+import { parseTags } from "@/lib/tags";
 import type { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,8 @@ export default async function CustomersPage({
     ...(q
       ? {
           OR: [
+            // Postgres LIKE is case-sensitive, so `mode` is required here — without it
+            // searching "ramesh" would not find "Ramesh".
             { name: { contains: q, mode: "insensitive" } },
             { company: { contains: q, mode: "insensitive" } },
             { city: { contains: q, mode: "insensitive" } },
@@ -161,9 +164,9 @@ export default async function CustomersPage({
                     <Link href={`/admin/customers/${customer.id}`} className="hover:underline">
                       {customer.name}
                     </Link>
-                    {customer.tags.length > 0 && (
+                    {parseTags(customer.tags).length > 0 && (
                       <span className="ml-2 space-x-1">
-                        {customer.tags.map((tag) => (
+                        {parseTags(customer.tags).map((tag) => (
                           <Badge key={tag}>{tag}</Badge>
                         ))}
                       </span>

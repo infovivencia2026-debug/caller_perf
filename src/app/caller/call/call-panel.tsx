@@ -1,157 +1,174 @@
-"use client";
-
-import { useActionState, useEffect, useRef, useState } from "react";
-import { saveCall, skipCustomer, type SaveCallState } from "@/app/actions/calls";
+import { endCall, resetCall, saveCall, skipCustomer, startCall } from "@/app/actions/calls";
 import { Card, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
+import type { CallTiming } from "@/lib/call-timer";
+import { currentClock, elapsedSecondsSince, formatClock } from "@/lib/datetime";
 import { CALL_STATUSES, PRIORITIES, formatDuration, humanize } from "@/lib/labels";
 
 /**
- * Times the call locally: "Start call" stamps the start, "End call" stamps the end,
- * and the duration is derived from the two so the caller never types it.
+ * Plain-HTML calling panel: no client JavaScript at all. Every button is a submit
+ * button on one form, distinguished by `formAction`, so the server stamps the call
+ * clock and the typed values survive each post. The trade-off versus the old React
+ * timer is that elapsed time does not tick live — it appears once the call is ended.
  */
 export default function CallPanel({
   customerId,
   customerName,
   phone,
-  defaultPriority,
   skipped,
+  timing,
+  error,
 }: {
   customerId: string;
   customerName: string;
   phone: string;
-  defaultPriority: string;
   skipped: string[];
+  timing: CallTiming | null;
+  error?: string;
 }) {
-  const [startedAt, setStartedAt] = useState<Date | null>(null);
-  const [endedAt, setEndedAt] = useState<Date | null>(null);
-  const [elapsed, setElapsed] = useState(0);
-  const [state, formAction, pending] = useActionState<SaveCallState, FormData>(saveCall, {});
-  const tick = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (startedAt && !endedAt) {
-      tick.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000));
-      }, 1000);
-    }
-    return () => {
-      if (tick.current) clearInterval(tick.current);
-    };
-  }, [startedAt, endedAt]);
-
+  const skippedValue = skipped.join(",");
+  const startedAt = timing ? new Date(timing.startedAt) : null;
+  const endedAt = timing?.endedAt ? new Date(timing.endedAt) : null;
   const ended = Boolean(startedAt && endedAt);
+  const duration =
+    startedAt && endedAt ? Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)) : 0;
+  const draft = timing?.draft ?? {};
+  // Elapsed at render time. The inline script below keeps it ticking, but this
+  // value is what shows if scripts never run — so the panel is never blank.
+  const elapsed = ended ? duration : startedAt ? elapsedSecondsSince(startedAt) : 0;
 
   return (
     <Card title="Log this call">
-      <div className="space-y-4">
+      {/* One form, several submit buttons. Start/End/Reset/Skip set formNoValidate so
+          the required status field does not block them mid-call. */}
+      <form action={saveCall} className="space-y-4">
+        <input type="hidden" name="customerId" value={customerId} />
+        <input type="hidden" name="skipped" value={skippedValue} />
+
         <div className="rounded-md border border-slate-200 p-4 dark:border-slate-800">
           <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Dial on your phone, then track the call here
           </p>
           <p className="mt-2 text-3xl font-semibold tabular-nums">
-            {formatDuration(endedAt && startedAt ? Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000) : elapsed)}
+            {startedAt ? (
+              <span id="call-elapsed" data-started-at={ended ? undefined : timing?.startedAt}>
+                {formatDuration(elapsed)}
+              </span>
+            ) : (
+              "Not started"
+            )}
           </p>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {startedAt ? `Started ${startedAt.toLocaleTimeString()}` : "Not started"}
-            {endedAt && ` · Ended ${endedAt.toLocaleTimeString()}`}
+            {!startedAt && "Press Start call when the customer picks up"}
+            {/* While the call is live, show the wall clock ticking rather than when it began. */}
+            {startedAt && !ended && (
+              <>
+                Now <span id="call-now" className="tabular-nums">{currentClock()}</span>
+              </>
+            )}
+            {endedAt && `Ended ${formatClock(endedAt)}`}
           </p>
+
           <div className="mt-3 flex flex-wrap gap-2">
             <button
-              type="button"
+              type="submit"
+              formAction={startCall}
+              formNoValidate
               className={buttonClass}
               disabled={Boolean(startedAt)}
-              onClick={() => {
-                setStartedAt(new Date());
-                setEndedAt(null);
-                setElapsed(0);
-              }}
             >
               Start call
             </button>
             <button
-              type="button"
+              type="submit"
+              formAction={endCall}
+              formNoValidate
               className={secondaryButtonClass}
-              disabled={!startedAt || Boolean(endedAt)}
-              onClick={() => setEndedAt(new Date())}
+              disabled={!startedAt || ended}
             >
               End call
             </button>
             <a href={`tel:${phone}`} className={secondaryButtonClass}>
               Dial {phone}
             </a>
+            {startedAt && (
+              <button type="submit" formAction={resetCall} formNoValidate className={secondaryButtonClass}>
+                Reset timer
+              </button>
+            )}
           </div>
         </div>
 
-        <form action={formAction} className="space-y-4">
-          <input type="hidden" name="customerId" value={customerId} />
-          <input type="hidden" name="startedAt" value={startedAt?.toISOString() ?? ""} />
-          <input type="hidden" name="endedAt" value={endedAt?.toISOString() ?? ""} />
-
-          <label className="block text-sm font-medium">
-            Call status
-            <select name="status" required defaultValue="" className={`${inputClass} mt-1`}>
-              <option value="" disabled>
-                Select an outcome
+        <label className="block text-sm font-medium">
+          Call status
+          <select name="status" required defaultValue={draft.status ?? ""} className={`${inputClass} mt-1`}>
+            <option value="" disabled>
+              Select an outcome
+            </option>
+            {CALL_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {humanize(status)}
               </option>
-              {CALL_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {humanize(status)}
+            ))}
+          </select>
+        </label>
+
+        <label className="block text-sm font-medium">
+          Response type
+          <input
+            name="response"
+            defaultValue={draft.response ?? ""}
+            placeholder="e.g. Asked for a brochure"
+            className={`${inputClass} mt-1`}
+          />
+        </label>
+
+        <label className="block text-sm font-medium">
+          Comments
+          <textarea name="comments" rows={4} defaultValue={draft.comments ?? ""} className={`${inputClass} mt-1`} />
+        </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-medium">
+            Follow-up date (optional)
+            <input
+              type="datetime-local"
+              name="followUpDate"
+              defaultValue={draft.followUpDate ?? ""}
+              className={`${inputClass} mt-1`}
+            />
+          </label>
+          <label className="block text-sm font-medium">
+            Priority
+            {/* Starts at Medium rather than inheriting the customer's priority. The
+                blank-valued default is what keeps that from silently demoting a HIGH
+                customer: it behaves as Medium for the follow-up but leaves the customer
+                record alone. Picking any option below is treated as a deliberate change. */}
+            <select name="priority" defaultValue={draft.priority ?? ""} className={`${inputClass} mt-1`}>
+              <option value="">Medium — leave customer unchanged</option>
+              {PRIORITIES.map((priority) => (
+                <option key={priority} value={priority}>
+                  Set customer to {humanize(priority)}
                 </option>
               ))}
             </select>
           </label>
+        </div>
 
-          <label className="block text-sm font-medium">
-            Response type
-            <input
-              name="response"
-              placeholder="e.g. Asked for a brochure"
-              className={`${inputClass} mt-1`}
-            />
-          </label>
+        {!ended && (
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            Start and end the call to record its duration before saving.
+          </p>
+        )}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-          <label className="block text-sm font-medium">
-            Comments
-            <textarea name="comments" rows={4} className={`${inputClass} mt-1`} />
-          </label>
+        <button type="submit" disabled={!ended} className={`${buttonClass} w-full`}>
+          Save response &amp; next customer
+        </button>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-medium">
-              Follow-up date (optional)
-              <input type="datetime-local" name="followUpDate" className={`${inputClass} mt-1`} />
-            </label>
-            <label className="block text-sm font-medium">
-              Priority
-              <select name="priority" defaultValue={defaultPriority} className={`${inputClass} mt-1`}>
-                {PRIORITIES.map((priority) => (
-                  <option key={priority} value={priority}>
-                    {humanize(priority)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {!ended && (
-            <p className="text-sm text-amber-600 dark:text-amber-400">
-              Start and end the call to record its duration before saving.
-            </p>
-          )}
-          {state.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
-
-          <button type="submit" disabled={pending || !ended} className={`${buttonClass} w-full`}>
-            {pending ? "Saving…" : "Save response & next customer"}
-          </button>
-        </form>
-
-        <form action={skipCustomer}>
-          <input type="hidden" name="customerId" value={customerId} />
-          <input type="hidden" name="skipped" value={skipped.join(",")} />
-          <button type="submit" className={`${secondaryButtonClass} w-full`}>
-            Skip {customerName}
-          </button>
-        </form>
-      </div>
+        <button type="submit" formAction={skipCustomer} formNoValidate className={`${secondaryButtonClass} w-full`}>
+          Skip {customerName}
+        </button>
+      </form>
     </Card>
   );
 }

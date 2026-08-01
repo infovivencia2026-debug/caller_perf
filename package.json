@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:dev": "node ./scripts/start-dev.mjs",
+    "stop:dev": "node ./scripts/stop-dev.mjs",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
@@ -39,5 +41,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

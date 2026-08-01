@@ -1,84 +1,142 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Card, Stat } from "@/components/ui";
+import { Card, Stat, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
 import { formatDuration, humanize } from "@/lib/labels";
-import { endOfDay, getStats, percent, startOfDay, startOfMonth, startOfWeek } from "@/lib/metrics";
+import { getStats, percent } from "@/lib/metrics";
+import { RANGES, resolveFilters } from "@/lib/report-filters";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboard() {
-  const today = startOfDay();
-  const tomorrow = endOfDay();
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string; from?: string; to?: string; caller?: string }>;
+}) {
+  const filters = resolveFilters(await searchParams);
+  const callWindow = { from: filters.from, to: filters.to };
 
-  const [
-    totalCallers,
-    activeCallers,
-    monthStats,
-    todayCount,
-    weekCount,
-    pendingFollowUps,
-    interestedLeads,
-    closedLeads,
-    perCaller,
-  ] = await Promise.all([
-    prisma.user.count({ where: { role: "TELECALLER" } }),
-    prisma.user.count({ where: { role: "TELECALLER", active: true } }),
-    getStats({ from: startOfMonth() }),
-    prisma.call.count({ where: { startedAt: { gte: today, lt: tomorrow } } }),
-    prisma.call.count({ where: { startedAt: { gte: startOfWeek() } } }),
-    prisma.followUp.count({ where: { status: "PENDING" } }),
-    prisma.customer.count({ where: { status: "INTERESTED" } }),
-    prisma.customer.count({ where: { status: "CLOSED" } }),
-    prisma.user.findMany({
-      where: { role: "TELECALLER" },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, dailyTarget: true, active: true },
+  const callers = await prisma.user.findMany({
+    where: { role: "TELECALLER" },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, dailyTarget: true, active: true },
+  });
+
+  // A caller filter narrows the customer figures to the customers assigned to them.
+  const customerWhere = filters.callerId ? { assignedToId: filters.callerId } : {};
+
+  const [stats, pendingFollowUps, totalCustomers, statusBreakdown] = await Promise.all([
+    getStats({ ...callWindow, ...(filters.callerId ? { callerId: filters.callerId } : {}) }),
+    prisma.followUp.count({
+      where: { status: "PENDING", ...(filters.callerId ? { callerId: filters.callerId } : {}) },
+    }),
+    prisma.customer.count({ where: customerWhere }),
+    prisma.customer.groupBy({
+      by: ["status"],
+      where: customerWhere,
+      _count: { _all: true },
+      orderBy: { _count: { status: "desc" } },
     }),
   ]);
 
+  const visibleCallers = filters.callerId ? callers.filter((c) => c.id === filters.callerId) : callers;
   const callerRows = await Promise.all(
-    perCaller.map(async (caller) => ({
+    visibleCallers.map(async (caller) => ({
       ...caller,
-      today: await getStats({ callerId: caller.id, from: today, to: tomorrow }),
+      stats: await getStats({ callerId: caller.id, ...callWindow }),
     })),
   );
-  const maxToday = Math.max(1, ...callerRows.map((row) => row.today.totalCalls));
-
-  const statusBreakdown = await prisma.customer.groupBy({
-    by: ["status"],
-    _count: { _all: true },
-    orderBy: { _count: { status: "desc" } },
-  });
-  const totalCustomers = statusBreakdown.reduce((sum, row) => sum + row._count._all, 0);
+  const busiest = Math.max(1, ...callerRows.map((row) => row.stats.totalCalls));
+  const selectedCaller = callers.find((c) => c.id === filters.callerId);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold">Admin dashboard</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h1 className="text-lg font-semibold">Admin dashboard</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          {filters.label}
+          {selectedCaller ? ` · ${selectedCaller.name}` : " · all telecallers"}
+        </p>
+      </div>
+
+      {/* A GET form: filters end up in the URL, so the view is shareable and needs no JS. */}
+      <Card title="Filters">
+        <form method="get" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <label className="block text-sm font-medium">
+            Period
+            <select name="range" defaultValue={filters.range} className={`${inputClass} mt-1`}>
+              {RANGES.map((range) => (
+                <option key={range.key} value={range.key}>
+                  {range.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-medium">
+            From
+            <input type="date" name="from" defaultValue={filters.fromInput} className={`${inputClass} mt-1`} />
+          </label>
+          <label className="block text-sm font-medium">
+            To
+            <input type="date" name="to" defaultValue={filters.toInput} className={`${inputClass} mt-1`} />
+          </label>
+          <label className="block text-sm font-medium">
+            Telecaller
+            <select name="caller" defaultValue={filters.callerId} className={`${inputClass} mt-1`}>
+              <option value="">All telecallers</option>
+              {callers.map((caller) => (
+                <option key={caller.id} value={caller.id}>
+                  {caller.name}
+                  {caller.active ? "" : " (inactive)"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex items-end gap-2">
+            <button type="submit" className={buttonClass}>
+              Apply
+            </button>
+            {filters.isFiltered && (
+              <Link href="/admin" className={secondaryButtonClass}>
+                Reset
+              </Link>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 sm:col-span-2 lg:col-span-5 dark:text-slate-400">
+            From and To apply when Period is set to “Custom range”.
+          </p>
+        </form>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Total telecallers" value={totalCallers} hint={`${activeCallers} active`} />
-        <Stat label="Calls today" value={todayCount} />
-        <Stat label="Calls this week" value={weekCount} />
-        <Stat label="Calls this month" value={monthStats.totalCalls} />
-        <Stat label="Pending follow-ups" value={pendingFollowUps} />
-        <Stat label="Interested leads" value={interestedLeads} />
-        <Stat label="Closed leads" value={closedLeads} />
+        <Stat label="Calls" value={stats.totalCalls} hint={filters.label} />
         <Stat
-          label="Avg call duration"
-          value={formatDuration(monthStats.avgDuration)}
-          hint="This month"
+          label="Successful contacts"
+          value={stats.successfulCalls}
+          hint={`${percent(stats.successfulCalls, stats.totalCalls)}% of calls`}
+        />
+        <Stat label="Interested leads" value={stats.interestedLeads} />
+        <Stat label="Closed leads" value={stats.convertedLeads} />
+        <Stat label="Avg call duration" value={formatDuration(stats.avgDuration)} />
+        <Stat label="Talk time" value={formatDuration(stats.totalDuration)} />
+        <Stat label="Pending follow-ups" value={pendingFollowUps} hint="Current, not period-based" />
+        {/* Roster size is deliberately not narrowed by the filters — it describes the
+            team, not the selected period. */}
+        <Stat
+          label="Total telecallers"
+          value={callers.length}
+          hint={`${callers.filter((c) => c.active).length} active`}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Conversion (this month)">
+        <Card title={`Conversion (${filters.label.toLowerCase()})`}>
           <div className="space-y-3">
-            <p className="text-3xl font-semibold tabular-nums">{monthStats.conversionRate}%</p>
+            <p className="text-3xl font-semibold tabular-nums">{stats.conversionRate}%</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {monthStats.convertedLeads} closed of {monthStats.totalCalls} calls ·{" "}
-              {monthStats.successfulCalls} successful contacts
+              {stats.convertedLeads} closed of {stats.totalCalls} calls · {stats.successfulCalls} successful
+              contacts
             </p>
-            <Bar value={monthStats.conversionRate} />
+            <Bar value={stats.conversionRate} />
           </div>
         </Card>
 
@@ -110,24 +168,25 @@ export default async function AdminDashboard() {
         </Card>
       </div>
 
-      <Card title="Calls per caller (today)">
+      <Card title={`Calls per caller (${filters.label.toLowerCase()})`}>
         {callerRows.length === 0 ? (
           <Empty>No telecallers yet.</Empty>
         ) : (
           <ul className="space-y-3">
             {callerRows.map((row) => (
               <li key={row.id} className="text-sm">
-                <div className="flex justify-between">
+                <div className="flex flex-wrap justify-between gap-2">
                   <span>
                     {row.name}
                     {!row.active && <span className="ml-2 text-xs text-slate-400">inactive</span>}
                   </span>
                   <span className="tabular-nums text-slate-500 dark:text-slate-400">
-                    {row.today.totalCalls}/{row.dailyTarget} calls ·{" "}
-                    {percent(row.today.totalCalls, row.dailyTarget)}% of target
+                    {row.stats.totalCalls} calls · {row.stats.conversionRate}% conversion ·{" "}
+                    {formatDuration(row.stats.avgDuration)} avg
+                    {filters.range === "today" && ` · ${percent(row.stats.totalCalls, row.dailyTarget)}% of target`}
                   </span>
                 </div>
-                <Bar value={(row.today.totalCalls / maxToday) * 100} />
+                <Bar value={(row.stats.totalCalls / busiest) * 100} />
               </li>
             ))}
           </ul>

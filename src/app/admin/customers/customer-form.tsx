@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { createCustomer, updateCustomer, type CustomerFormState } from "@/app/actions/customers";
 import { buttonClass, inputClass } from "@/components/ui";
 import { CUSTOMER_STATUSES, PRIORITIES, humanize } from "@/lib/labels";
+import { parseTags } from "@/lib/tags";
 
 export type CustomerValues = {
   id?: string;
@@ -15,7 +16,7 @@ export type CustomerValues = {
   notes: string | null;
   status: string;
   priority: string;
-  tags: string[];
+  tags: string;
   assignedToId: string | null;
 };
 
@@ -38,7 +39,7 @@ export default function CustomerForm({
       <Field label="Company" name="company" defaultValue={customer?.company ?? ""} />
       <Field label="Email (optional)" name="email" type="email" defaultValue={customer?.email ?? ""} />
       <Field label="City" name="city" defaultValue={customer?.city ?? ""} />
-      <Field label="Tags (comma separated)" name="tags" defaultValue={customer?.tags.join(", ") ?? ""} />
+      <Field label="Tags (comma separated)" name="tags" defaultValue={parseTags(customer?.tags).join(", ")} />
 
       <label className="text-sm font-medium">
         Status

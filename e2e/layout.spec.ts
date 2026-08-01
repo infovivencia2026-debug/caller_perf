@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const CALLER = { email: "lakshmi@example.com", password: "password123" };
+// See flows.spec.ts: the seeded password can be overridden with SEED_PASSWORD.
+const CALLER = { email: "lakshmi@example.com", password: process.env.SEED_PASSWORD || "password123" };
 
 async function signIn(page: import("@playwright/test").Page) {
   await page.goto("/login");

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { normalizePhone } from "@/lib/labels";
+import { parseTags } from "@/lib/tags";
 import type { Prisma } from "@/generated/prisma/client";
 
 function csvCell(value: unknown) {
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
     ...(q
       ? {
           OR: [
+            // Case-insensitive to match the customer list; Postgres LIKE is not by default.
             { name: { contains: q, mode: "insensitive" } },
             { company: { contains: q, mode: "insensitive" } },
             { city: { contains: q, mode: "insensitive" } },
@@ -67,7 +69,7 @@ export async function GET(request: Request) {
         customer.city,
         customer.status,
         customer.priority,
-        customer.tags.join("; "),
+        parseTags(customer.tags).join("; "),
         customer.assignedTo?.name ?? "",
         customer._count.calls,
         customer.notes,
