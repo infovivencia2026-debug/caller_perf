@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
-import { CUSTOMER_STATUSES, PRIORITIES, customerLabel, humanize, normalizePhone } from "@/lib/labels";
+import { CUSTOMER_STATUSES, PRIORITIES, customerLabel, humanize } from "@/lib/labels";
 import ImportWizard from "./import/import-wizard";
+import { DeleteMatchingButton } from "./delete-matching-button";
 import { parseTags } from "@/lib/tags";
-import type { Prisma } from "@/generated/prisma/client";
+import { buildCustomerWhere, hasAnyFilter } from "@/lib/customer-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ type Search = {
   caller?: string;
   priority?: string;
   page?: string;
+  ok?: string;
 };
 
 export default async function CustomersPage({
@@ -27,27 +29,8 @@ export default async function CustomersPage({
   const page = Math.max(1, Number(params.page ?? 1) || 1);
   const q = params.q?.trim() ?? "";
 
-  const where: Prisma.CustomerWhereInput = {
-    ...(params.status ? { status: params.status as never } : {}),
-    ...(params.priority ? { priority: params.priority as never } : {}),
-    ...(params.caller
-      ? params.caller === "unassigned"
-        ? { assignedToId: null }
-        : { assignedToId: params.caller }
-      : {}),
-    ...(q
-      ? {
-          OR: [
-            // Postgres LIKE is case-sensitive, so `mode` is required here — without it
-            // searching "ramesh" would not find "Ramesh".
-            { name: { contains: q, mode: "insensitive" } },
-            { company: { contains: q, mode: "insensitive" } },
-            { city: { contains: q, mode: "insensitive" } },
-            { phone: { contains: normalizePhone(q) || q } },
-          ],
-        }
-      : {}),
-  };
+  const where = buildCustomerWhere(params);
+  const filtered = hasAnyFilter(params);
 
   const [customers, total, callers] = await Promise.all([
     prisma.customer.findMany({
@@ -72,6 +55,11 @@ export default async function CustomersPage({
 
   return (
     <div className="space-y-6">
+      {params.ok && (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+          {params.ok}
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Customers ({total})</h1>
         <div className="flex gap-2">
@@ -137,8 +125,26 @@ export default async function CustomersPage({
             <button type="submit" className={secondaryButtonClass}>
               Apply
             </button>
+            {filtered && (
+              <Link href="/admin/customers" className={secondaryButtonClass}>
+                Clear
+              </Link>
+            )}
           </div>
         </form>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {filtered
+              ? "Delete removes only the customers matching the filters above (with their calls and follow-ups)."
+              : "No filters set — Delete would remove every customer. Set a filter to narrow it."}
+          </p>
+          <DeleteMatchingButton
+            count={total}
+            filtered={filtered}
+            filters={{ q: params.q, status: params.status, caller: params.caller, priority: params.priority }}
+          />
+        </div>
       </Card>
 
       <Card title="Customers">

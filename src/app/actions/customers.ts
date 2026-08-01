@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { logActivity } from "@/lib/activity";
 import { normalizePhone } from "@/lib/labels";
 import { parseTags, serializeTags } from "@/lib/tags";
+import { buildCustomerWhere } from "@/lib/customer-filter";
 
 const customerSchema = z.object({
   // Phone is the only required field; name and the rest are optional.
@@ -117,4 +119,38 @@ export async function updateCustomer(
   revalidatePath("/admin/customers");
   revalidatePath(`/admin/customers/${id}`);
   return { success: "Saved" };
+}
+
+/**
+ * Deletes every customer matching the current filters (status, telecaller, priority,
+ * search). Destructive — their calls and follow-ups go with them (database cascade).
+ * The confirmation lives in the UI; this trusts an admin who has confirmed.
+ */
+export async function deleteMatchingCustomers(formData: FormData) {
+  const session = await requireAdmin();
+
+  const filter = {
+    q: String(formData.get("q") ?? ""),
+    status: String(formData.get("status") ?? ""),
+    caller: String(formData.get("caller") ?? ""),
+    priority: String(formData.get("priority") ?? ""),
+  };
+  const where = buildCustomerWhere(filter);
+
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(filter)) if (v) params.set(k, v);
+
+  const { count } = await prisma.customer.deleteMany({ where });
+
+  await logActivity({
+    userId: session.userId,
+    action: "CUSTOMERS_DELETED",
+    entity: "Customer",
+    detail: `${count} customer(s) deleted by filter (${params.toString() || "no filter — all"})`,
+  });
+
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin");
+  params.set("ok", `Deleted ${count} customer(s)`);
+  redirect(`/admin/customers?${params.toString()}`);
 }
