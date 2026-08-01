@@ -2,6 +2,7 @@ import { changeOwnPassword, resetCallerPassword } from "@/app/actions/account";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { Card, buttonClass, inputClass } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +43,7 @@ export default async function SettingsPage({
             </p>
             <label className="block text-sm font-medium">
               Current password
-              <input
-                type="password"
+              <PasswordInput
                 name="currentPassword"
                 required
                 autoComplete="current-password"
@@ -52,8 +52,7 @@ export default async function SettingsPage({
             </label>
             <label className="block text-sm font-medium">
               New password
-              <input
-                type="password"
+              <PasswordInput
                 name="newPassword"
                 required
                 minLength={8}
@@ -64,8 +63,7 @@ export default async function SettingsPage({
             </label>
             <label className="block text-sm font-medium">
               Confirm new password
-              <input
-                type="password"
+              <PasswordInput
                 name="confirmPassword"
                 required
                 minLength={8}
@@ -105,8 +103,7 @@ export default async function SettingsPage({
               </label>
               <label className="block text-sm font-medium">
                 New password
-                <input
-                  type="password"
+                <PasswordInput
                   name="newPassword"
                   required
                   minLength={8}

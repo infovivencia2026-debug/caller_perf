@@ -2,6 +2,7 @@ import { autoAssign, createCaller, updateDailyTarget } from "@/app/actions/calle
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { Badge, Card, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import { capacityOf } from "@/lib/assign";
 import { CLOSED_STATUSES } from "@/lib/queue";
 import { endOfDay, percent, startOfDay } from "@/lib/metrics";
@@ -78,8 +79,7 @@ export default async function CallersPage({
           </label>
           <label className="block text-sm font-medium">
             Password (optional)
-            <input
-              type="password"
+            <PasswordInput
               name="password"
               minLength={8}
               placeholder="Leave blank for default: password123"
