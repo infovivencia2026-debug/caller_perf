@@ -14,7 +14,7 @@ import { CLOSED_STATUSES } from "@/lib/queue";
 const MAX_DAILY_TARGET = 500;
 
 /** New telecallers get this password when the admin leaves the field blank. */
-const DEFAULT_CALLER_PASSWORD = "password123";
+const DEFAULT_CALLER_PASSWORD = "onrol@ai";
 
 const targetSchema = z.object({
   callerId: z.string().min(1),
