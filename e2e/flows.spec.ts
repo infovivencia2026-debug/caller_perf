@@ -36,9 +36,19 @@ test("telecaller logs a call with a follow-up and advances the queue", async ({ 
   // Saving is blocked until the call has been timed.
   await expect(page.getByRole("button", { name: /Save response/ })).toBeDisabled();
 
-  await page.getByRole("button", { name: "Start call" }).click();
-  await page.waitForTimeout(1500);
-  await page.getByRole("button", { name: "End call" }).click();
+  // Each of these is a server action that redirects; wait for the POST so the reloaded
+  // page has settled before the next step.
+  const action = async (name: string | RegExp) => {
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/caller/call")),
+      page.getByRole("button", { name }).click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+  };
+
+  await action("Start call");
+  await page.waitForTimeout(1200);
+  await action("End call");
   await expect(page.getByRole("button", { name: /Save response/ })).toBeEnabled();
 
   await page.selectOption('select[name="status"]', "INTERESTED");
@@ -46,7 +56,7 @@ test("telecaller logs a call with a follow-up and advances the queue", async ({ 
   await page.fill('textarea[name="comments"]', "Call back after Monday");
   await page.fill('input[name="followUpDate"]', "2026-08-05T10:30");
   await page.selectOption('select[name="priority"]', "HIGH");
-  await page.getByRole("button", { name: /Save response/ }).click();
+  await action(/Save response/);
 
   // Lands back on the calling screen with the next customer in the queue.
   await expect(page).toHaveURL(/\/caller\/call/);

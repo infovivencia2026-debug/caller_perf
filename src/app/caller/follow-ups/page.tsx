@@ -1,0 +1,92 @@
+import { prisma } from "@/lib/prisma";
+import { requireCaller } from "@/lib/auth";
+import { Badge, Card, statusTone } from "@/components/ui";
+import { customerLabel, humanize } from "@/lib/labels";
+import { formatDateTime } from "@/lib/datetime";
+import { endOfDay, startOfDay } from "@/lib/metrics";
+
+export const dynamic = "force-dynamic";
+
+export default async function FollowUpsPage() {
+  const session = await requireCaller();
+  const todayStart = startOfDay();
+  const todayEnd = endOfDay();
+
+  // Pending follow-ups due today or earlier, for this caller.
+  const followUps = await prisma.followUp.findMany({
+    where: {
+      callerId: session.userId,
+      status: "PENDING",
+      dueAt: { lt: todayEnd },
+    },
+    orderBy: { dueAt: "asc" },
+    include: {
+      customer: {
+        select: { id: true, name: true, phone: true, company: true, city: true, status: true, notes: true },
+      },
+    },
+  });
+
+  const overdue = followUps.filter((f) => f.dueAt < todayStart);
+  const dueToday = followUps.filter((f) => f.dueAt >= todayStart);
+
+  const Item = ({ fu }: { fu: (typeof followUps)[number] }) => (
+    <li className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-base font-semibold">{customerLabel(fu.customer)}</span>
+        <span className="text-sm text-slate-500 dark:text-slate-400">Due {formatDateTime(fu.dueAt)}</span>
+      </div>
+      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-300">
+        {/* Plain text — the caller dials on a separate phone, so this is just to read. */}
+        <span className="font-medium tabular-nums tracking-wide text-slate-900 dark:text-slate-100">
+          {fu.customer.phone}
+        </span>
+        {fu.customer.company && <span>{fu.customer.company}</span>}
+        {fu.customer.city && <span>{fu.customer.city}</span>}
+        <Badge tone={statusTone(fu.customer.status)}>{humanize(fu.customer.status)}</Badge>
+        <span className="text-slate-500 dark:text-slate-400">{humanize(fu.priority)} priority</span>
+      </div>
+      {fu.notes && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{fu.notes}</p>}
+    </li>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-lg font-semibold">Today&apos;s follow-ups</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
+          {overdue.length} overdue · {dueToday.length} due today
+        </p>
+      </div>
+
+      {followUps.length === 0 ? (
+        <Card title="All clear">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            No follow-ups due today. Scheduled callbacks appear here on their day.
+          </p>
+        </Card>
+      ) : (
+        <>
+          {overdue.length > 0 && (
+            <Card title={`Overdue (${overdue.length})`}>
+              <ul>
+                {overdue.map((fu) => (
+                  <Item key={fu.id} fu={fu} />
+                ))}
+              </ul>
+            </Card>
+          )}
+          {dueToday.length > 0 && (
+            <Card title={`Due today (${dueToday.length})`}>
+              <ul>
+                {dueToday.map((fu) => (
+                  <Item key={fu.id} fu={fu} />
+                ))}
+              </ul>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

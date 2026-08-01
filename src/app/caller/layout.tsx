@@ -5,6 +5,7 @@ import { requireCaller } from "@/lib/auth";
 const NAV = [
   { href: "/caller", label: "Dashboard" },
   { href: "/caller/call", label: "Calling screen" },
+  { href: "/caller/follow-ups", label: "Follow-ups" },
 ];
 
 export default async function CallerLayout({ children }: { children: ReactNode }) {

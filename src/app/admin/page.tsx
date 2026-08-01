@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card, Stat, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
+import { RankedBars, TimeBars } from "@/components/charts";
 import { formatDuration, humanize } from "@/lib/labels";
 import { getStats, percent } from "@/lib/metrics";
+import { istDayKey } from "@/lib/datetime";
 import { RANGES, resolveFilters } from "@/lib/report-filters";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +49,42 @@ export default async function AdminDashboard({
   );
   const busiest = Math.max(1, ...callerRows.map((row) => row.stats.totalCalls));
   const selectedCaller = callers.find((c) => c.id === filters.callerId);
+
+  // --- Chart data ---
+  const callerCallWhere = filters.callerId ? { callerId: filters.callerId } : {};
+
+  // Calls per day for the last 14 days (India time), regardless of the period filter.
+  const chartFrom = new Date();
+  chartFrom.setDate(chartFrom.getDate() - 13);
+  chartFrom.setHours(0, 0, 0, 0);
+  const recentCalls = await prisma.call.findMany({
+    where: { startedAt: { gte: chartFrom }, ...callerCallWhere },
+    select: { startedAt: true },
+  });
+  const counts = new Map<string, number>();
+  for (const call of recentCalls) {
+    const key = istDayKey(call.startedAt);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const perDay = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(chartFrom);
+    d.setDate(d.getDate() + i);
+    const key = istDayKey(d);
+    return { key, label: key.slice(8), value: counts.get(key) ?? 0 }; // label = day of month
+  });
+
+  // Call outcomes over the selected period.
+  const outcomeGroups = await prisma.call.groupBy({
+    by: ["status"],
+    where: {
+      ...callerCallWhere,
+      ...(callWindow.from || callWindow.to
+        ? { startedAt: { ...(callWindow.from ? { gte: callWindow.from } : {}), ...(callWindow.to ? { lt: callWindow.to } : {}) } }
+        : {}),
+    },
+    _count: { _all: true },
+  });
+  const outcomes = outcomeGroups.map((g) => ({ label: humanize(g.status), value: g._count._all }));
 
   return (
     <div className="space-y-6">
@@ -126,6 +164,15 @@ export default async function AdminDashboard({
           value={callers.length}
           hint={`${callers.filter((c) => c.active).length} active`}
         />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card title="Calls per day (last 14 days)">
+          <TimeBars data={perDay} />
+        </Card>
+        <Card title={`Call outcomes (${filters.label.toLowerCase()})`}>
+          <RankedBars data={outcomes} />
+        </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

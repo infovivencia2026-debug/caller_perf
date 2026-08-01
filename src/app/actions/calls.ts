@@ -166,6 +166,9 @@ export async function saveCall(formData: FormData) {
         status: CALL_TO_CUSTOMER_STATUS[input.status as keyof typeof CALL_TO_CUSTOMER_STATUS],
         // Only when the caller actively chose a priority — see saveSchema.
         ...(input.priority ? { priority: input.priority as never } : {}),
+        // A scheduled callback stays with the telecaller who took the call, so it never
+        // gets handed to someone else (auto-assign only touches unassigned leads anyway).
+        assignedToId: session.userId,
         // Persist any edits the caller made to the lead's details on the call.
         name: input.name?.trim() ?? "",
         company: input.company?.trim() || null,
