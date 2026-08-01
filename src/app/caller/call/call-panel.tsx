@@ -31,6 +31,7 @@ export default function CallPanel({
   phone,
   customer,
   skipped,
+  focus,
   timing,
   error,
 }: {
@@ -39,6 +40,7 @@ export default function CallPanel({
   phone: string;
   customer: CustomerDetails;
   skipped: string[];
+  focus?: string;
   timing: CallTiming | null;
   error?: string;
 }) {
@@ -60,6 +62,7 @@ export default function CallPanel({
       <form action={saveCall} className="space-y-4">
         <input type="hidden" name="customerId" value={customerId} />
         <input type="hidden" name="skipped" value={skippedValue} />
+        {focus && <input type="hidden" name="focus" value={focus} />}
 
         <div className="rounded-md border border-slate-200 p-4 dark:border-slate-800">
           <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">

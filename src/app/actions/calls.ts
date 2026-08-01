@@ -35,12 +35,17 @@ const saveSchema = z.object({
   notes: z.string().optional(),
 });
 
-/** Rebuilds the calling-screen URL, preserving the skip list and surfacing a message. */
-function queueHref(skipped: string, error?: string, saved?: boolean) {
+/**
+ * Rebuilds the calling-screen URL, preserving the skip list and (when set) the focused
+ * customer, and surfacing a message. `focus` pins a specific customer — it must survive
+ * Start/End/Reset so a follow-up call doesn't jump back to the queue mid-timing.
+ */
+function queueHref(skipped: string, opts: { error?: string; saved?: boolean; focus?: string } = {}) {
   const params = new URLSearchParams();
   if (skipped) params.set("skip", skipped);
-  if (error) params.set("error", error);
-  if (saved) params.set("saved", "1");
+  if (opts.error) params.set("error", opts.error);
+  if (opts.saved) params.set("saved", "1");
+  if (opts.focus) params.set("focus", opts.focus);
   const query = params.toString();
   return query ? `/caller/call?${query}` : "/caller/call";
 }
@@ -52,19 +57,24 @@ function skippedFrom(formData: FormData) {
     .join(",");
 }
 
+function focusFrom(formData: FormData) {
+  return String(formData.get("focus") ?? "") || undefined;
+}
+
 /** Stamps the start of the call server-side; the page re-renders showing the clock. */
 export async function startCall(formData: FormData) {
   await requireCaller();
   const customerId = String(formData.get("customerId") ?? "");
   const skipped = skippedFrom(formData);
-  if (!customerId) redirect(queueHref(skipped, "Missing customer"));
+  const focus = focusFrom(formData);
+  if (!customerId) redirect(queueHref(skipped, { error: "Missing customer", focus }));
 
   await writeCallTiming({
     customerId,
     startedAt: new Date().toISOString(),
     draft: draftFromForm(formData),
   });
-  redirect(queueHref(skipped));
+  redirect(queueHref(skipped, { focus }));
 }
 
 /** Stamps the end of the call. Start must have happened first. */
@@ -72,9 +82,10 @@ export async function endCall(formData: FormData) {
   await requireCaller();
   const customerId = String(formData.get("customerId") ?? "");
   const skipped = skippedFrom(formData);
+  const focus = focusFrom(formData);
 
   const timing = await readCallTiming(customerId);
-  if (!timing) redirect(queueHref(skipped, "Start the call before ending it"));
+  if (!timing) redirect(queueHref(skipped, { error: "Start the call before ending it", focus }));
   if (timing.endedAt) return; // already ended; a double click is harmless
 
   await writeCallTiming({
@@ -82,19 +93,20 @@ export async function endCall(formData: FormData) {
     endedAt: new Date().toISOString(),
     draft: draftFromForm(formData),
   });
-  redirect(queueHref(skipped));
+  redirect(queueHref(skipped, { focus }));
 }
 
 /** Throws away a mis-stamped timing so the caller can start over. */
 export async function resetCall(formData: FormData) {
   await requireCaller();
   await clearCallTiming();
-  redirect(queueHref(skippedFrom(formData)));
+  redirect(queueHref(skippedFrom(formData), { focus: focusFrom(formData) }));
 }
 
 export async function saveCall(formData: FormData) {
   const session = await requireCaller();
   const skipped = skippedFrom(formData);
+  const focus = focusFrom(formData);
 
   // Keep the typed values alive across any redirect back to the form.
   const existing = await readCallTiming();
@@ -114,7 +126,7 @@ export async function saveCall(formData: FormData) {
     notes: String(formData.get("notes") ?? "").trim(),
   });
   if (!parsed.success) {
-    redirect(queueHref(skipped, parsed.error.issues[0].message ?? "Please complete the call details"));
+    redirect(queueHref(skipped, { error: parsed.error.issues[0].message ?? "Please complete the call details", focus }));
   }
 
   const input = parsed.data;
@@ -123,25 +135,25 @@ export async function saveCall(formData: FormData) {
   // by editing hidden inputs.
   const timing = existing?.customerId === input.customerId ? existing : null;
   if (!timing?.endedAt) {
-    redirect(queueHref(skipped, "Start and end the call before saving"));
+    redirect(queueHref(skipped, { error: "Start and end the call before saving", focus }));
   }
   const startedAt = new Date(timing.startedAt);
   const endedAt = new Date(timing.endedAt);
   if (Number.isNaN(startedAt.getTime()) || Number.isNaN(endedAt.getTime())) {
-    redirect(queueHref(skipped, "Call timing was invalid — start the call again"));
+    redirect(queueHref(skipped, { error: "Call timing was invalid — start the call again", focus }));
   }
 
   const customer = await prisma.customer.findUnique({ where: { id: input.customerId } });
-  if (!customer) redirect(queueHref(skipped, "Customer not found"));
+  if (!customer) redirect(queueHref(skipped, { error: "Customer not found", focus }));
   if (customer.assignedToId !== session.userId) {
-    redirect(queueHref(skipped, "This customer is not assigned to you"));
+    redirect(queueHref(skipped, { error: "This customer is not assigned to you", focus }));
   }
 
   const duration = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
 
   const explicitDue = input.followUpDate ? new Date(input.followUpDate) : null;
   if (explicitDue && Number.isNaN(explicitDue.getTime())) {
-    redirect(queueHref(skipped, "Follow-up date is invalid"));
+    redirect(queueHref(skipped, { error: "Follow-up date is invalid", focus }));
   }
   // The caller's chosen date wins; otherwise a retry-type outcome schedules tomorrow.
   const followUpDue = explicitDue ?? (RETRY_STATUSES.has(input.status) ? endOfDay() : null);
@@ -249,6 +261,7 @@ const detailsSchema = z.object({
 export async function saveCustomerDetails(formData: FormData) {
   const session = await requireCaller();
   const skipped = skippedFrom(formData);
+  const focus = focusFrom(formData);
 
   const parsed = detailsSchema.safeParse({
     customerId: String(formData.get("customerId") ?? ""),
@@ -259,13 +272,13 @@ export async function saveCustomerDetails(formData: FormData) {
     notes: String(formData.get("notes") ?? "").trim(),
   });
   if (!parsed.success) {
-    redirect(queueHref(skipped, parsed.error.issues[0].message ?? "Could not save the details"));
+    redirect(queueHref(skipped, { error: parsed.error.issues[0].message ?? "Could not save the details", focus }));
   }
 
   const customer = await prisma.customer.findUnique({ where: { id: parsed.data.customerId } });
-  if (!customer) redirect(queueHref(skipped, "Customer not found"));
+  if (!customer) redirect(queueHref(skipped, { error: "Customer not found", focus }));
   if (customer.assignedToId !== session.userId) {
-    redirect(queueHref(skipped, "This customer is not assigned to you"));
+    redirect(queueHref(skipped, { error: "This customer is not assigned to you", focus }));
   }
 
   await prisma.customer.update({
@@ -291,5 +304,5 @@ export async function saveCustomerDetails(formData: FormData) {
   revalidatePath("/caller");
   revalidatePath("/admin/customers");
   revalidatePath(`/admin/customers/${customer.id}`);
-  redirect(queueHref(skipped, undefined, true));
+  redirect(queueHref(skipped, { saved: true, focus }));
 }

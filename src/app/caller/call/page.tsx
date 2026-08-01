@@ -300,6 +300,7 @@ export default async function CallingScreen({
             notes: customer.notes,
           }}
           skipped={skipIds}
+          focus={focused ? focus : undefined}
           timing={timing}
           error={error}
         />
