@@ -23,8 +23,6 @@ export type ImportResult = {
   duplicatesInFile: number;
   duplicatesInDb: number;
   invalid: { row: number; reason: string }[];
-  /** The customers actually created from this upload, so the admin can review them. */
-  importedList: { name: string; phone: string; company: string | null; city: string | null }[];
   error?: string;
 };
 
@@ -34,7 +32,7 @@ export async function importCustomers(
   assignedToId: string | null,
 ): Promise<ImportResult> {
   const session = await requireAdmin();
-  const empty: ImportResult = { imported: 0, duplicatesInFile: 0, duplicatesInDb: 0, invalid: [], importedList: [] };
+  const empty: ImportResult = { imported: 0, duplicatesInFile: 0, duplicatesInDb: 0, invalid: [] };
 
   if (!Array.isArray(rows)) return { ...empty, error: "No rows to import" };
   if (rows.length > 20000) return { ...empty, error: "File too large — split into batches of 20,000 rows" };
@@ -98,11 +96,5 @@ export async function importCustomers(
     duplicatesInFile,
     duplicatesInDb: existingPhones.size,
     invalid: invalid.slice(0, 50),
-    importedList: toCreate.map((row) => ({
-      name: row.name,
-      phone: row.phone,
-      company: row.company,
-      city: row.city,
-    })),
   };
 }

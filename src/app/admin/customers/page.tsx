@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Badge, Card, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
 import { CUSTOMER_STATUSES, PRIORITIES, customerLabel, humanize, normalizePhone } from "@/lib/labels";
 import BulkAssignBar from "./bulk-assign-bar";
+import ImportWizard from "./import/import-wizard";
 import { parseTags } from "@/lib/tags";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -81,11 +82,24 @@ export default async function CustomersPage({
           <Link href="/admin/customers/new" className={secondaryButtonClass}>
             Add customer
           </Link>
-          <Link href="/admin/customers/import" className={secondaryButtonClass}>
-            Import
-          </Link>
         </div>
       </div>
+
+      {/* Import lives at the top of the customers page; the list below refreshes after
+          an upload. Collapsible so it doesn't crowd the list. */}
+      <details className="rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          Import customers from CSV or Excel
+        </summary>
+        <div className="border-t border-slate-200 p-5 dark:border-slate-800">
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+            Only a <code>phone</code> column is required. <code>name</code>, <code>company</code>,{" "}
+            <code>email</code>, <code>city</code> and <code>notes</code> are optional and matched
+            case-insensitively. Rows whose phone already exists are skipped, never overwritten.
+          </p>
+          <ImportWizard callers={callers} />
+        </div>
+      </details>
 
       <Card title="Search & filters">
         <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

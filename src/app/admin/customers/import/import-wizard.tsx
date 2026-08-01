@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { importCustomers, type ImportResult, type ImportRow } from "@/app/actions/import";
@@ -32,6 +32,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
   const [dragging, setDragging] = useState(false);
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   function applyRecords(records: Record<string, unknown>[]) {
     const mapped = records.map(pickRow).filter((row) => row.phone);
@@ -83,6 +84,8 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
       const outcome = await importCustomers(rows, assignedToId || null);
       setResult(outcome);
       setRows(null);
+      // Refresh the customer list rendered below this wizard so it shows the new rows.
+      router.refresh();
     });
   }
 
@@ -216,37 +219,10 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
                 </ul>
               )}
 
-              {result.importedList.length > 0 && (
-                <div className="mt-4">
-                  <p className="mb-2 font-medium">Imported customers ({result.importedList.length})</p>
-                  <div className="max-h-[24rem] overflow-auto rounded-md border border-slate-200 dark:border-slate-800">
-                    <table className="w-full text-left text-sm">
-                      <thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                        <tr>
-                          <th className="px-3 py-2">#</th>
-                          <th className="px-3 py-2">Name</th>
-                          <th className="px-3 py-2">Phone</th>
-                          <th className="px-3 py-2">Company</th>
-                          <th className="px-3 py-2">City</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.importedList.map((customer, index) => (
-                          <tr key={customer.phone} className="border-t border-slate-100 dark:border-slate-800">
-                            <td className="px-3 py-2 tabular-nums text-slate-400">{index + 1}</td>
-                            <td className="px-3 py-2">{customer.name || "—"}</td>
-                            <td className="px-3 py-2 tabular-nums">{customer.phone}</td>
-                            <td className="px-3 py-2">{customer.company || "—"}</td>
-                            <td className="px-3 py-2">{customer.city || "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <Link href="/admin/customers" className="mt-2 inline-block text-blue-600 hover:underline dark:text-blue-400">
-                    View all customers →
-                  </Link>
-                </div>
+              {result.imported > 0 && (
+                <p className="mt-3 text-slate-600 dark:text-slate-300">
+                  The imported customers now appear in the list below.
+                </p>
               )}
             </>
           )}

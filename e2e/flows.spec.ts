@@ -77,7 +77,9 @@ test("admin imports a CSV, sees duplicates reported, then filters and edits", as
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText("Total telecallers")).toBeVisible();
 
-  await page.goto("/admin/customers/import");
+  // Import now lives at the top of the Customers page.
+  await page.goto("/admin/customers");
+  await page.getByText("Import customers from CSV or Excel").click();
   await page.setInputFiles('input[type="file"]', path.join(__dirname, "fixtures", "customers.csv"));
   await expect(page.getByText(/Preview — all 4 customer\(s\)/)).toBeVisible();
   await page.getByRole("button", { name: /Import 4 row/ }).click();
