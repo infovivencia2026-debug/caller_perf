@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, Row, statusTone } from "@/components/ui";
 import { customerLabel, formatDuration, humanize } from "@/lib/labels";
-import { getNextCustomer, getQueueCount } from "@/lib/queue";
+import { getAssignedCustomer, getNextCustomer, getQueueCount } from "@/lib/queue";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
 import { formatDateTime } from "@/lib/datetime";
@@ -15,14 +15,18 @@ export const dynamic = "force-dynamic";
 export default async function CallingScreen({
   searchParams,
 }: {
-  searchParams: Promise<{ skip?: string; error?: string; saved?: string }>;
+  searchParams: Promise<{ skip?: string; error?: string; saved?: string; focus?: string }>;
 }) {
   const session = await requireCaller();
-  const { skip, error, saved } = await searchParams;
+  const { skip, error, saved, focus } = await searchParams;
   const skipIds = (skip ?? "").split(",").filter(Boolean);
 
-  const [customer, queueCount, callsToday, me, lastCall] = await Promise.all([
-    getNextCustomer(session.userId, skipIds),
+  // "focus" (from a follow-up's Call button) pins a specific customer; otherwise the
+  // queue picks the next one.
+  const focused = focus ? await getAssignedCustomer(session.userId, focus) : null;
+
+  const [nextInQueue, queueCount, callsToday, me, lastCall] = await Promise.all([
+    focused ? Promise.resolve(null) : getNextCustomer(session.userId, skipIds),
     getQueueCount(session.userId),
     prisma.call.count({
       where: { callerId: session.userId, startedAt: { gte: startOfDay(), lt: endOfDay() } },
@@ -35,6 +39,8 @@ export default async function CallingScreen({
       include: { customer: true },
     }),
   ]);
+
+  const customer = focused ?? nextInQueue;
 
   // Customers set aside this session, so the caller can see who they passed over.
   const skippedCustomers =

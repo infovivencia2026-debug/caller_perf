@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
-import { Badge, Card, statusTone } from "@/components/ui";
+import { Badge, Card, buttonClass, statusTone } from "@/components/ui";
 import { customerLabel, humanize } from "@/lib/labels";
 import { formatDateTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
@@ -34,7 +35,13 @@ export default async function FollowUpsPage() {
     <li className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-base font-semibold">{customerLabel(fu.customer)}</span>
-        <span className="text-sm text-slate-500 dark:text-slate-400">Due {formatDateTime(fu.dueAt)}</span>
+        <span className="flex items-center gap-3">
+          <span className="text-sm text-slate-500 dark:text-slate-400">Due {formatDateTime(fu.dueAt)}</span>
+          {/* Opens the calling screen with this customer pinned as the current one. */}
+          <Link href={`/caller/call?focus=${fu.customer.id}`} className={buttonClass}>
+            Call
+          </Link>
+        </span>
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-300">
         {/* Plain text — the caller dials on a separate phone, so this is just to read. */}

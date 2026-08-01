@@ -67,6 +67,25 @@ export async function getQueueCount(callerId: string) {
   });
 }
 
+/**
+ * Fetches one specific customer to put on the calling screen — used when a caller
+ * clicks "Call" on a follow-up. Scoped to the caller's own open customers, and shaped
+ * exactly like getNextCustomer so the page can use either interchangeably.
+ */
+export async function getAssignedCustomer(callerId: string, customerId: string) {
+  return prisma.customer.findFirst({
+    where: {
+      id: customerId,
+      assignedToId: callerId,
+      status: { notIn: CLOSED_STATUSES as unknown as never },
+    },
+    include: {
+      calls: { orderBy: { startedAt: "desc" }, take: 3, include: { caller: { select: { name: true } } } },
+      followUps: { where: { status: "PENDING" }, orderBy: { dueAt: "asc" }, take: 1 },
+    },
+  });
+}
+
 function startOfToday(reference: Date) {
   const d = new Date(reference);
   d.setHours(0, 0, 0, 0);
