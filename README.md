@@ -81,4 +81,29 @@ npm run db:studio    # browse the database
 ```
 
 Note that `npm run test:e2e` writes to the database configured in `.env` — point it at
-a scratch database rather than real data.
+a scratch database rather than real data. It begins by truncating the call, follow-up
+and activity tables and deleting any non-seed users, so never aim it at production.
+
+## Deploying (Vercel)
+
+Set three environment variables on the project:
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | pooled connection string, used at runtime |
+| `DIRECT_URL` | direct (non-pooled) string, used by Prisma Migrate |
+| `SESSION_SECRET` | long random value; keep it stable or every session is invalidated |
+
+**Apply migrations before deploying, not during the build:**
+
+```bash
+npx prisma migrate deploy   # run from a machine that can reach the database
+git push                    # Vercel builds and deploys
+```
+
+The build deliberately does not touch the database. Every route is server-rendered on
+demand, so `next build` needs no connection — and running `prisma migrate deploy` inside
+the build makes deployments fail whenever the build sandbox cannot open a direct
+connection to the database, which is a slow and confusing way to discover a network
+problem. Keeping migrations a separate, deliberate step also means a schema change is
+never applied by an accidental redeploy.
