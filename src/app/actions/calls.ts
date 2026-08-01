@@ -8,7 +8,14 @@ import { requireCaller } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { clearCallTiming, draftFromForm, readCallTiming, writeCallTiming } from "@/lib/call-timer";
 import { markPresent } from "@/lib/attendance";
+import { endOfDay } from "@/lib/metrics";
 import { CALL_STATUSES, CALL_TO_CUSTOMER_STATUS } from "@/lib/labels";
+
+/**
+ * Outcomes that mean "try again" — if the caller doesn't pick a follow-up date, the
+ * lead is automatically scheduled for tomorrow so it comes back into the queue then.
+ */
+const RETRY_STATUSES = new Set(["NO_ANSWER", "BUSY", "SWITCHED_OFF", "CALLBACK_REQUESTED"]);
 
 const saveSchema = z.object({
   customerId: z.string().min(1),
@@ -132,10 +139,12 @@ export async function saveCall(formData: FormData) {
 
   const duration = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
 
-  const followUpDue = input.followUpDate ? new Date(input.followUpDate) : null;
-  if (followUpDue && Number.isNaN(followUpDue.getTime())) {
+  const explicitDue = input.followUpDate ? new Date(input.followUpDate) : null;
+  if (explicitDue && Number.isNaN(explicitDue.getTime())) {
     redirect(queueHref(skipped, "Follow-up date is invalid"));
   }
+  // The caller's chosen date wins; otherwise a retry-type outcome schedules tomorrow.
+  const followUpDue = explicitDue ?? (RETRY_STATUSES.has(input.status) ? endOfDay() : null);
 
   await prisma.$transaction(async (tx) => {
     const call = await tx.call.create({
@@ -166,6 +175,13 @@ export async function saveCall(formData: FormData) {
       },
     });
 
+    // This call actions any outstanding follow-up, so close them before scheduling a new
+    // one — otherwise an old future follow-up would keep the lead hidden.
+    await tx.followUp.updateMany({
+      where: { customerId: customer.id, status: "PENDING" },
+      data: { status: "COMPLETED", completedAt: new Date() },
+    });
+
     if (followUpDue) {
       await tx.followUp.create({
         data: {
@@ -194,6 +210,8 @@ export async function saveCall(formData: FormData) {
   await clearCallTiming();
   revalidatePath("/caller");
   revalidatePath("/caller/call");
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin/calendar");
   redirect(queueHref(skipped));
 }
 
@@ -267,5 +285,8 @@ export async function saveCustomerDetails(formData: FormData) {
   });
 
   revalidatePath("/caller/call");
+  revalidatePath("/caller");
+  revalidatePath("/admin/customers");
+  revalidatePath(`/admin/customers/${customer.id}`);
   redirect(queueHref(skipped, undefined, true));
 }

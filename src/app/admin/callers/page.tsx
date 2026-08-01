@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { Badge, Card, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
 import { PasswordInput } from "@/components/password-input";
+import { DeleteCallerButton } from "./delete-caller-button";
 import { CLOSED_STATUSES } from "@/lib/queue";
 import { endOfDay, percent, startOfDay } from "@/lib/metrics";
 
@@ -141,6 +142,7 @@ export default async function CallersPage({
                   <th className="px-3 py-2">Calls today</th>
                   <th className="px-3 py-2">In queue</th>
                   <th className="px-3 py-2">Daily target</th>
+                  <th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -181,6 +183,9 @@ export default async function CallersPage({
                           Save
                         </button>
                       </form>
+                    </td>
+                    <td className="px-3 py-2">
+                      <DeleteCallerButton callerId={row.id} name={row.name} />
                     </td>
                   </tr>
                 ))}

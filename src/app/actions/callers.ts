@@ -79,6 +79,37 @@ export async function createCaller(formData: FormData) {
   redirect(callersHref(`${created.name} can now sign in with ${created.email}`));
 }
 
+/**
+ * Deletes a telecaller. Their assigned customers become unassigned; their call
+ * history, follow-ups and attendance are removed with them (database cascade).
+ */
+export async function deleteCaller(formData: FormData) {
+  const session = await requireAdmin();
+  const callerId = String(formData.get("callerId") ?? "");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (!caller || caller.role !== "TELECALLER") {
+    redirect(callersHref(undefined, "Telecaller not found"));
+  }
+
+  // Free up their customers first so those leads stay in the pool for reassignment.
+  await prisma.customer.updateMany({ where: { assignedToId: caller.id }, data: { assignedToId: null } });
+  await prisma.user.delete({ where: { id: caller.id } });
+
+  await logActivity({
+    userId: session.userId,
+    action: "CALLER_DELETED",
+    entity: "User",
+    entityId: caller.id,
+    detail: `${caller.name} (${caller.email}) deleted; their customers were unassigned`,
+  });
+
+  revalidatePath("/admin/callers");
+  revalidatePath("/admin");
+  revalidatePath("/admin/customers");
+  redirect(callersHref(`${caller.name} was deleted and their customers unassigned`));
+}
+
 export async function updateDailyTarget(formData: FormData) {
   const session = await requireAdmin();
 
