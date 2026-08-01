@@ -1,33 +1,35 @@
 @import "tailwindcss";
 
+/* Class-based dark mode so we can commit the whole app to the dark aesthetic. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* The reference palette, mapped onto the slate steps the app already uses so the
+     existing dark: classes pick up the new surfaces with no per-page changes.
+       bg #0f1115 · surface #181b22 · hover #21252f · border #2a2e39
+       text #f0f2f5 · secondary #9aa0ae */
+  --color-slate-950: #0f1115;
+  --color-slate-900: #181b22;
+  --color-slate-800: #2a2e39;
+  --color-slate-700: #363b47;
+  --color-slate-400: #9aa0ae;
+  --color-slate-300: #b9bec9;
+  --color-slate-200: #d5d9e0;
+  --color-slate-100: #f0f2f5;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #0f1115;
+  color: #f0f2f5;
 }
 
-/* Hide the browser's built-in password reveal/clear controls (Edge, IE) so they don't
-   overlap or fight with our own show/hide eye button, which was making it flicker or
-   look like it disappeared on hover/focus. */
+/* Hide the browser's native password reveal so it doesn't fight the custom eye. */
 input::-ms-reveal,
 input::-ms-clear {
   display: none;

@@ -245,9 +245,9 @@ export default async function AdminDashboard({
 
 function Bar({ value }: { value: number }) {
   return (
-    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-800">
       <div
-        className="h-full rounded-full bg-slate-900 dark:bg-slate-200"
+        className="h-full rounded-full bg-indigo-500"
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>
