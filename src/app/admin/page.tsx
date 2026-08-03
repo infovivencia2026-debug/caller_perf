@@ -7,6 +7,7 @@ import { endOfDay, getStats, percent, startOfDay } from "@/lib/metrics";
 import { istDayKey, formatShortTime, minutesSince } from "@/lib/datetime";
 import { RANGES, resolveFilters } from "@/lib/report-filters";
 import { dayDate, syncPresentFromWorkforce } from "@/lib/attendance";
+import { IconActivity, IconBell, IconCheck, IconClock, IconPhone, IconStar, IconTrophy, IconUsers } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -246,23 +247,33 @@ export default async function AdminDashboard({
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Calls" value={stats.totalCalls} hint={filters.label} />
+        <Stat label="Calls" value={stats.totalCalls} hint={filters.label} accent="indigo" icon={<IconPhone />} />
         <Stat
           label="Successful contacts"
           value={stats.successfulCalls}
           hint={`${percent(stats.successfulCalls, stats.totalCalls)}% of calls`}
+          accent="sky"
+          icon={<IconCheck />}
         />
-        <Stat label="Interested leads" value={stats.interestedLeads} />
-        <Stat label="Closed leads" value={stats.convertedLeads} />
-        <Stat label="Avg call duration" value={formatDuration(stats.avgDuration)} />
-        <Stat label="Talk time" value={formatDuration(stats.totalDuration)} />
-        <Stat label="Pending follow-ups" value={pendingFollowUps} hint="Current, not period-based" />
+        <Stat label="Interested leads" value={stats.interestedLeads} accent="violet" icon={<IconStar />} />
+        <Stat label="Closed leads" value={stats.convertedLeads} accent="emerald" icon={<IconTrophy />} />
+        <Stat label="Avg call duration" value={formatDuration(stats.avgDuration)} accent="amber" icon={<IconClock />} />
+        <Stat label="Talk time" value={formatDuration(stats.totalDuration)} accent="sky" icon={<IconActivity />} />
+        <Stat
+          label="Pending follow-ups"
+          value={pendingFollowUps}
+          hint="Current, not period-based"
+          accent="rose"
+          icon={<IconBell />}
+        />
         {/* Roster size is deliberately not narrowed by the filters — it describes the
             team, not the selected period. */}
         <Stat
           label="Total telecallers"
           value={callers.length}
           hint={`${callers.filter((c) => c.active).length} active`}
+          accent="slate"
+          icon={<IconUsers />}
         />
       </div>
 

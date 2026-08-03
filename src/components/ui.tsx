@@ -22,20 +22,47 @@ export function Card({
   );
 }
 
+export type StatAccent = "indigo" | "emerald" | "amber" | "rose" | "sky" | "violet" | "slate";
+
+const STAT_ACCENTS: Record<StatAccent, { bar: string; chip: string }> = {
+  indigo: { bar: "bg-indigo-500", chip: "bg-indigo-50 text-indigo-600" },
+  emerald: { bar: "bg-emerald-500", chip: "bg-emerald-50 text-emerald-600" },
+  amber: { bar: "bg-amber-500", chip: "bg-amber-50 text-amber-600" },
+  rose: { bar: "bg-rose-500", chip: "bg-rose-50 text-rose-600" },
+  sky: { bar: "bg-sky-500", chip: "bg-sky-50 text-sky-600" },
+  violet: { bar: "bg-violet-500", chip: "bg-violet-50 text-violet-600" },
+  slate: { bar: "bg-slate-400", chip: "bg-slate-100 text-slate-600" },
+};
+
 export function Stat({
   label,
   value,
   hint,
+  accent = "indigo",
+  icon,
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
+  accent?: StatAccent;
+  icon?: ReactNode;
 }) {
+  const tone = STAT_ACCENTS[accent];
   return (
-    <div className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{value}</p>
-      {hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      <span className={`absolute inset-x-0 top-0 h-1 ${tone.bar}`} aria-hidden="true" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{value}</p>
+          {hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
+        </div>
+        {icon && (
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.chip}`}>
+            {icon}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

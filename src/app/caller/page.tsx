@@ -9,6 +9,7 @@ import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { syncPresentFromWorkforce } from "@/lib/attendance";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
+import { IconBell, IconCheck, IconPhone, IconTarget } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -63,12 +64,26 @@ export default async function CallerDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Today's target" value={target} hint={`${percent(todayStats.totalCalls, target)}% achieved`} />
-        <Stat label="Calls completed" value={todayStats.totalCalls} />
-        <Stat label="Calls remaining" value={remaining} hint={`${queueCount} customers in queue`} />
+        <Stat
+          label="Today's target"
+          value={target}
+          hint={`${percent(todayStats.totalCalls, target)}% achieved`}
+          accent="indigo"
+          icon={<IconTarget />}
+        />
+        <Stat label="Calls completed" value={todayStats.totalCalls} accent="emerald" icon={<IconCheck />} />
+        <Stat
+          label="Calls remaining"
+          value={remaining}
+          hint={`${queueCount} customers in queue`}
+          accent="amber"
+          icon={<IconPhone />}
+        />
         <Stat
           label="Pending follow-ups"
           value={pendingFollowUps}
+          accent="rose"
+          icon={<IconBell />}
           hint={
             pendingFollowUps === 0
               ? "None scheduled"
