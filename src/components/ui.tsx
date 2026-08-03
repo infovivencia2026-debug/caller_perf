@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
 
+/* Brutalist system: square corners, 2px black borders, hard offset shadows, JetBrains
+   Mono, black-on-white (inverted in dark). Accent colour is reserved for semantic badges;
+   everything structural is monochrome. */
+
+const CARD_SHADOW = "shadow-[4px_4px_0_0_#0a0a0a] dark:shadow-[4px_4px_0_0_#e5e5e5]";
+
 export function Card({
   title,
   children,
@@ -10,10 +16,12 @@ export function Card({
   action?: ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20">
+    <section className={`rounded-none border-2 border-black bg-white p-5 dark:border-white dark:bg-black ${CARD_SHADOW}`}>
       {(title || action) && (
-        <header className="mb-4 flex items-center justify-between gap-3">
-          {title && <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</h2>}
+        <header className="mb-4 flex items-center justify-between gap-3 border-b-2 border-black pb-3 dark:border-white">
+          {title && (
+            <h2 className="text-sm font-bold uppercase tracking-wide text-black dark:text-white">{title}</h2>
+          )}
           {action}
         </header>
       )}
@@ -24,23 +32,10 @@ export function Card({
 
 export type StatAccent = "indigo" | "emerald" | "amber" | "rose" | "sky" | "violet" | "slate";
 
-// Accent per stat: a tinted icon chip (translucent so it works on light and dark), a corner
-// glow and a fading underline.
-const STAT_ACCENTS: Record<StatAccent, { text: string; chip: string; bar: string; glow: string }> = {
-  indigo: { text: "text-indigo-600 dark:text-indigo-400", chip: "bg-indigo-500/10", bar: "from-indigo-500", glow: "bg-indigo-400/25" },
-  emerald: { text: "text-emerald-600 dark:text-emerald-400", chip: "bg-emerald-500/10", bar: "from-emerald-500", glow: "bg-emerald-400/25" },
-  amber: { text: "text-orange-600 dark:text-orange-400", chip: "bg-orange-500/10", bar: "from-orange-500", glow: "bg-orange-400/25" },
-  rose: { text: "text-rose-600 dark:text-rose-400", chip: "bg-rose-500/10", bar: "from-rose-500", glow: "bg-rose-400/25" },
-  sky: { text: "text-sky-600 dark:text-sky-400", chip: "bg-sky-500/10", bar: "from-sky-500", glow: "bg-sky-400/25" },
-  violet: { text: "text-violet-600 dark:text-violet-400", chip: "bg-violet-500/10", bar: "from-violet-500", glow: "bg-violet-400/25" },
-  slate: { text: "text-slate-600 dark:text-slate-300", chip: "bg-slate-500/10", bar: "from-slate-400", glow: "bg-slate-400/30" },
-};
-
 export function Stat({
   label,
   value,
   hint,
-  accent = "indigo",
   icon,
 }: {
   label: string;
@@ -49,25 +44,16 @@ export function Stat({
   accent?: StatAccent;
   icon?: ReactNode;
 }) {
-  const tone = STAT_ACCENTS[accent];
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20">
-      {/* Soft accent glow in the corner. */}
-      <span className={`pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full blur-2xl ${tone.glow}`} aria-hidden="true" />
-      <div className="relative flex items-center justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
-        {icon && (
-          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tone.chip} ${tone.text}`}>{icon}</span>
-        )}
+    <div
+      className={`group rounded-none border-2 border-black bg-white p-5 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 dark:border-white dark:bg-black ${CARD_SHADOW}`}
+    >
+      <div className="flex items-center justify-between border-b-2 border-black pb-2 dark:border-white">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-white">{label}</span>
+        {icon && <span className="text-black dark:text-white">{icon}</span>}
       </div>
-      <p className="relative mt-4 text-[2rem] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums dark:text-white">
-        {value}
-      </p>
-      {hint && <p className="relative mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{hint}</p>}
-      <span
-        className={`relative mt-5 block h-1 w-full rounded-full bg-linear-to-r ${tone.bar} to-transparent`}
-        aria-hidden="true"
-      />
+      <p className="mt-3 text-4xl font-extrabold tabular-nums leading-none text-black dark:text-white">{value}</p>
+      {hint && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-400">{hint}</p>}
     </div>
   );
 }
@@ -76,7 +62,7 @@ export function Stat({
 export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex gap-3">
-      <dt className="w-24 shrink-0 text-slate-500 dark:text-slate-400">{label}</dt>
+      <dt className="w-24 shrink-0 font-medium uppercase text-neutral-500 dark:text-neutral-400">{label}</dt>
       <dd className="min-w-0 flex-1">{children}</dd>
     </div>
   );
@@ -84,7 +70,9 @@ export function Row({ label, children }: { label: string; children: ReactNode })
 
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: Tone }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${TONES[tone]}`}>
+    <span
+      className={`inline-flex min-w-[104px] items-center justify-center rounded-none border-2 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${TONES[tone]}`}
+    >
       {children}
     </span>
   );
@@ -92,12 +80,13 @@ export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?
 
 type Tone = "slate" | "green" | "red" | "amber" | "blue";
 
+// Solid fills with a hard black (or white, in dark) border — bold and even-sized.
 const TONES: Record<Tone, string> = {
-  slate: "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700",
-  green: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30",
-  red: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200 dark:bg-red-500/15 dark:text-red-300 dark:ring-red-500/30",
-  amber: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30",
-  blue: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/30",
+  slate: "border-black bg-neutral-200 text-black dark:border-white dark:bg-neutral-700 dark:text-white",
+  green: "border-black bg-emerald-300 text-black dark:border-white dark:bg-emerald-600 dark:text-white",
+  red: "border-black bg-red-300 text-black dark:border-white dark:bg-red-600 dark:text-white",
+  amber: "border-black bg-amber-300 text-black dark:border-white dark:bg-amber-500 dark:text-black",
+  blue: "border-black bg-sky-300 text-black dark:border-white dark:bg-sky-600 dark:text-white",
 };
 
 export function statusTone(status: string): Tone {
@@ -109,10 +98,10 @@ export function statusTone(status: string): Tone {
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500";
+  "w-full rounded-none border-2 border-black bg-white px-3 py-2 text-sm text-black outline-none transition-shadow placeholder:text-neutral-500 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-black dark:border-white dark:bg-black dark:text-white dark:placeholder:text-neutral-400 dark:focus:outline-white";
 
 export const buttonClass =
-  "inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-emerald-500/25 disabled:opacity-50 disabled:pointer-events-none";
+  "inline-flex items-center justify-center rounded-none border-2 border-black bg-black px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-[3px_3px_0_0_#0a0a0a] transition-all hover:-translate-x-0 hover:translate-x-[2px] hover:translate-y-[2px] hover:bg-white hover:text-black hover:shadow-[1px_1px_0_0_#0a0a0a] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:opacity-50 disabled:pointer-events-none dark:border-white dark:bg-white dark:text-black dark:shadow-[3px_3px_0_0_#e5e5e5] dark:hover:bg-black dark:hover:text-white dark:hover:shadow-[1px_1px_0_0_#e5e5e5]";
 
 export const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800";
+  "inline-flex items-center justify-center rounded-none border-2 border-black bg-white px-4 py-2 text-sm font-bold uppercase tracking-wide text-black shadow-[3px_3px_0_0_#0a0a0a] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:bg-black hover:text-white hover:shadow-[1px_1px_0_0_#0a0a0a] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:opacity-50 disabled:pointer-events-none dark:border-white dark:bg-black dark:text-white dark:shadow-[3px_3px_0_0_#e5e5e5] dark:hover:bg-white dark:hover:text-black";

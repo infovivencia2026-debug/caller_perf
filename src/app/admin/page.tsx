@@ -168,9 +168,12 @@ export default async function AdminDashboard({
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="group/bar relative h-4 w-28 overflow-hidden rounded-none border-2 border-black bg-white dark:border-white dark:bg-black"
+                          title={`${percent(t.callsToday, t.dailyTarget)}%`}
+                        >
                           <div
-                            className="h-full rounded-full bg-emerald-500"
+                            className="h-full bg-black transition-[width] duration-500 ease-out group-hover/bar:bg-neutral-600 dark:bg-white dark:group-hover/bar:bg-neutral-300"
                             style={{ width: `${Math.min(100, percent(t.callsToday, t.dailyTarget))}%` }}
                           />
                         </div>
@@ -356,9 +359,12 @@ export default async function AdminDashboard({
 
 function Bar({ value }: { value: number }) {
   return (
-    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+    <div
+      className="group/bar relative mt-1 h-4 w-full overflow-hidden rounded-none border-2 border-black bg-white dark:border-white dark:bg-black"
+      title={`${Math.round(Math.min(100, Math.max(0, value)))}%`}
+    >
       <div
-        className="h-full rounded-full bg-emerald-500"
+        className="h-full bg-black transition-[width] duration-500 ease-out group-hover/bar:bg-neutral-600 dark:bg-white dark:group-hover/bar:bg-neutral-300"
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>

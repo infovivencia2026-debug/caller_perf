@@ -9,7 +9,7 @@ export default function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, {});
 
   return (
-    <form action={formAction} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/30">
+    <form action={formAction} className="space-y-4 rounded-none border-2 border-black bg-white p-6 shadow-[6px_6px_0_0_#0a0a0a] dark:border-white dark:bg-black dark:shadow-[6px_6px_0_0_#e5e5e5]">
       <div>
         <label htmlFor="email" className="mb-1 block text-sm font-medium">
           Email
