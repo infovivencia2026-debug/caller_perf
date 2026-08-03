@@ -1,32 +1,20 @@
 @import "tailwindcss";
 
-/* Class-based dark mode so we can commit the whole app to the dark aesthetic. */
+/* The app is light-theme only. Any lingering `dark:` utilities never activate because no
+   `.dark` class is applied, so they are harmless no-ops. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-
-  /* The reference palette, mapped onto the slate steps the app already uses so the
-     existing dark: classes pick up the new surfaces with no per-page changes.
-       bg #0f1115 · surface #181b22 · hover #21252f · border #2a2e39
-       text #f0f2f5 · secondary #9aa0ae */
-  --color-slate-950: #0f1115;
-  --color-slate-900: #181b22;
-  --color-slate-800: #2a2e39;
-  --color-slate-700: #363b47;
-  --color-slate-400: #9aa0ae;
-  --color-slate-300: #b9bec9;
-  --color-slate-200: #d5d9e0;
-  --color-slate-100: #f0f2f5;
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background: #0f1115;
-  color: #f0f2f5;
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 /* Hide the browser's native password reveal so it doesn't fight the custom eye. */

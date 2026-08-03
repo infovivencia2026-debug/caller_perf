@@ -77,8 +77,8 @@ export default function Sidebar({
                     onClick={() => setOpen(false)}
                     className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       active
-                        ? "bg-indigo-500 text-white"
-                        : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                        ? "bg-indigo-600 text-white"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
                     {item.label}

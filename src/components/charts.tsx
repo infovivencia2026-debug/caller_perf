@@ -5,8 +5,8 @@
  * track/axis stays recessive so the data reads first.
  */
 
-const BAR = "bg-indigo-500";
-const TRACK = "bg-slate-800";
+const BAR = "bg-indigo-600";
+const TRACK = "bg-slate-200";
 
 /** Vertical bars over time — e.g. calls per day. */
 export function TimeBars({ data }: { data: { key: string; label: string; value: number }[] }) {
