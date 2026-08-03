@@ -7,7 +7,7 @@ import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metric
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { isPresentToday } from "@/lib/attendance";
-import { togglePresent } from "@/app/actions/attendance";
+import { checkIn, checkOut } from "@/app/actions/attendance";
 
 export const dynamic = "force-dynamic";
 
@@ -46,18 +46,26 @@ export default async function CallerDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Hello, {session.name}</h1>
         <div className="flex items-center gap-2">
-          {/* One clickable toggle: click to mark present, click again to go absent. The
-              admin roster and auto-assign follow this state immediately. */}
-          <form action={togglePresent}>
-            {present ? (
-              <button
-                type="submit"
-                title="You are marked present today — click to mark yourself absent"
-                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500 bg-emerald-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600"
-              >
+          {/* Explicit actions rather than a single toggle, so the green "present" state
+              can't be un-marked by an accidental click. Admin roster + auto-assign follow
+              this immediately. */}
+          {present ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500 bg-emerald-500 px-3 py-2 text-sm font-medium text-white">
                 ✓ Present today
-              </button>
-            ) : (
+              </span>
+              <form action={checkOut}>
+                <button
+                  type="submit"
+                  title="Mark yourself absent for today"
+                  className="text-xs text-slate-400 hover:text-slate-200 hover:underline"
+                >
+                  Mark absent
+                </button>
+              </form>
+            </span>
+          ) : (
+            <form action={checkIn}>
               <button
                 type="submit"
                 title="Click to mark yourself present for today"
@@ -65,8 +73,8 @@ export default async function CallerDashboard() {
               >
                 Mark present today
               </button>
-            )}
-          </form>
+            </form>
+          )}
           <Link href="/caller/call" className={buttonClass}>
             Start calling
           </Link>

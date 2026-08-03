@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireCaller } from "@/lib/auth";
-import { isPresentToday, markAbsent, markPresent } from "@/lib/attendance";
+import { markAbsent, markPresent } from "@/lib/attendance";
 import { logActivity } from "@/lib/activity";
 
 /** Telecaller marks themselves present for today. */
@@ -19,24 +19,16 @@ export async function checkIn() {
   revalidatePath("/caller");
 }
 
-/**
- * Toggles the telecaller's present/absent state for today, so the one button both marks
- * present and lets them undo it. Admin's roster and auto-assign follow this immediately.
- */
-export async function togglePresent() {
+/** Telecaller marks themselves absent for today (undo of an accidental/earlier check-in). */
+export async function checkOut() {
   const session = await requireCaller();
-  const present = await isPresentToday(session.userId);
-  if (present) {
-    await markAbsent(session.userId);
-  } else {
-    await markPresent(session.userId);
-  }
+  await markAbsent(session.userId);
   await logActivity({
     userId: session.userId,
-    action: present ? "CHECKED_OUT" : "CHECKED_IN",
+    action: "CHECKED_OUT",
     entity: "User",
     entityId: session.userId,
-    detail: `${session.name} marked ${present ? "absent" : "present"}`,
+    detail: `${session.name} marked absent`,
   });
   revalidatePath("/caller");
 }
