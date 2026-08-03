@@ -1,25 +1,24 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
-import { Badge, Card, Stat, buttonClass, secondaryButtonClass, statusTone } from "@/components/ui";
+import { Badge, Card, Stat, buttonClass, statusTone } from "@/components/ui";
 import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metrics";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
-import { isPresentToday, syncPresentFromWorkforce } from "@/lib/attendance";
-import { checkIn, checkOut } from "@/app/actions/attendance";
+import { syncPresentFromWorkforce } from "@/lib/attendance";
 
 export const dynamic = "force-dynamic";
 
 export default async function CallerDashboard() {
   const session = await requireCaller();
-  // Pull today's workforce-os punch-ins into attendance first, so a telecaller who already
-  // clocked in there shows present here without pressing the button again.
+  // Presence is driven by workforce-os punch-ins, so there's no manual button here — just
+  // keep attendance in sync in the background.
   await syncPresentFromWorkforce();
   const today = startOfDay();
   const tomorrow = endOfDay();
 
-  const [me, todayStats, next, queueCount, pendingFollowUps, dueToday, recentCalls, present] =
+  const [me, todayStats, next, queueCount, pendingFollowUps, dueToday, recentCalls] =
     await Promise.all([
     prisma.user.findUnique({ where: { id: session.userId }, select: { dailyTarget: true } }),
     getStats({ callerId: session.userId, from: today, to: tomorrow }),
@@ -38,7 +37,6 @@ export default async function CallerDashboard() {
       take: 8,
       include: { customer: { select: { name: true, phone: true } } },
     }),
-    isPresentToday(session.userId),
   ]);
 
   const target = me?.dailyTarget ?? 0;
@@ -48,40 +46,10 @@ export default async function CallerDashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Hello, {session.name}</h1>
-        <div className="flex items-center gap-2">
-          {/* Explicit actions rather than a single toggle, so the green "present" state
-              can't be un-marked by an accidental click. Admin roster + auto-assign follow
-              this immediately. */}
-          {present ? (
-            <span className="inline-flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500 bg-emerald-500 px-3 py-2 text-sm font-medium text-white">
-                ✓ Present today
-              </span>
-              <form action={checkOut}>
-                <button
-                  type="submit"
-                  title="Mark yourself absent for today"
-                  className="text-xs text-slate-400 hover:text-slate-200 hover:underline"
-                >
-                  Mark absent
-                </button>
-              </form>
-            </span>
-          ) : (
-            <form action={checkIn}>
-              <button
-                type="submit"
-                title="Click to mark yourself present for today"
-                className={secondaryButtonClass}
-              >
-                Mark present today
-              </button>
-            </form>
-          )}
-          <Link href="/caller/call" className={buttonClass}>
-            Start calling
-          </Link>
-        </div>
+        {/* Attendance comes from workforce-os punch-ins — no manual present button here. */}
+        <Link href="/caller/call" className={buttonClass}>
+          Start calling
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
