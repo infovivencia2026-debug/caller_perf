@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import AppShell from "@/components/app-shell";
+import { AutoRefresh } from "@/components/auto-refresh";
 import { requireAdmin } from "@/lib/auth";
 
 const NAV = [
@@ -15,6 +16,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const session = await requireAdmin();
   return (
     <AppShell session={session} nav={NAV}>
+      <AutoRefresh />
       {children}
     </AppShell>
   );

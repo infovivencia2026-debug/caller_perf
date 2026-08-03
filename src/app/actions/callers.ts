@@ -114,7 +114,8 @@ export async function deleteCaller(formData: FormData) {
   revalidatePath("/admin/callers");
   revalidatePath("/admin");
   revalidatePath("/admin/customers");
-  redirect(callersHref(`${caller.name} was removed (login disabled, call history kept)`));
+  // No confirmation banner — the telecaller simply disappears from the roster.
+  redirect(callersHref());
 }
 
 export async function updateDailyTarget(formData: FormData) {

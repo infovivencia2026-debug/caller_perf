@@ -5,6 +5,7 @@ import { Badge, Card, buttonClass, statusTone } from "@/components/ui";
 import { customerLabel, humanize } from "@/lib/labels";
 import { formatDateTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
+import { AutoRefresh } from "@/components/auto-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,7 @@ export default async function FollowUpsPage() {
 
   return (
     <div className="space-y-6">
+      <AutoRefresh />
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold">Today&apos;s follow-ups</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
