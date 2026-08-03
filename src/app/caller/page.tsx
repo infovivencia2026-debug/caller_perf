@@ -6,13 +6,16 @@ import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metrics";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
-import { isPresentToday } from "@/lib/attendance";
+import { isPresentToday, syncPresentFromWorkforce } from "@/lib/attendance";
 import { checkIn, checkOut } from "@/app/actions/attendance";
 
 export const dynamic = "force-dynamic";
 
 export default async function CallerDashboard() {
   const session = await requireCaller();
+  // Pull today's workforce-os punch-ins into attendance first, so a telecaller who already
+  // clocked in there shows present here without pressing the button again.
+  await syncPresentFromWorkforce();
   const today = startOfDay();
   const tomorrow = endOfDay();
 

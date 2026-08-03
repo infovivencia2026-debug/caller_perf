@@ -8,6 +8,7 @@ import { SelectAll } from "./select-all";
 import { assignCountToCaller, assignSelected } from "@/app/actions/assign";
 import { parseTags } from "@/lib/tags";
 import { buildCustomerWhere, hasAnyFilter } from "@/lib/customer-filter";
+import { formatDateTime } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export default async function CustomersPage({
   const where = buildCustomerWhere(params);
   const filtered = hasAnyFilter(params);
 
-  const [customers, total, callers] = await Promise.all([
+  const [customers, total, callers, importLogs] = await Promise.all([
     prisma.customer.findMany({
       where,
       orderBy: [{ updatedAt: "desc" }],
@@ -48,6 +49,12 @@ export default async function CustomersPage({
       where: { role: "TELECALLER" },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
+    }),
+    prisma.activityLog.findMany({
+      where: { action: "CSV_IMPORT" },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { user: { select: { name: true } } },
     }),
   ]);
 
@@ -93,6 +100,30 @@ export default async function CustomersPage({
             case-insensitively. Rows whose phone already exists are skipped, never overwritten.
           </p>
           <ImportWizard callers={callers} />
+        </div>
+      </details>
+
+      {/* Import history — one line per CSV import: when, who ran it, and the outcome. */}
+      <details className="rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          Import history ({importLogs.length})
+        </summary>
+        <div className="border-t border-slate-200 p-5 dark:border-slate-800">
+          {importLogs.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">No CSV imports yet.</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {importLogs.map((log) => (
+                <li key={log.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="tabular-nums text-slate-500 dark:text-slate-400">
+                    {formatDateTime(log.createdAt)}
+                  </span>
+                  <span className="font-medium">{log.user?.name ?? "—"}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{log.detail}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </details>
 

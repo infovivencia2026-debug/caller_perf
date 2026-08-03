@@ -6,7 +6,7 @@ import { PasswordInput } from "@/components/password-input";
 import { DeleteCallerButton } from "./delete-caller-button";
 import { CLOSED_STATUSES } from "@/lib/queue";
 import { endOfDay, percent, startOfDay } from "@/lib/metrics";
-import { dayDate } from "@/lib/attendance";
+import { dayDate, syncPresentFromWorkforce } from "@/lib/attendance";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,9 @@ export default async function CallersPage({
 }) {
   await requireAdmin();
   const { ok, error } = await searchParams;
+
+  // Reflect workforce-os punch-ins before showing who's present.
+  await syncPresentFromWorkforce();
 
   const openWhere = { status: { notIn: CLOSED_STATUSES as unknown as never } };
   const today = startOfDay();

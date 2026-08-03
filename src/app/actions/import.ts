@@ -81,11 +81,17 @@ export async function importCustomers(
     });
   }
 
+  const assignee = assignedToId
+    ? await prisma.user.findUnique({ where: { id: assignedToId }, select: { name: true } })
+    : null;
+
   await logActivity({
     userId: session.userId,
     action: "CSV_IMPORT",
     entity: "Customer",
-    detail: `${toCreate.length} imported, ${existingPhones.size} existing, ${duplicatesInFile} duplicate rows, ${invalid.length} invalid`,
+    detail: `${toCreate.length} imported, ${existingPhones.size} existing, ${duplicatesInFile} duplicate rows, ${invalid.length} invalid${
+      assignee ? `, assigned to ${assignee.name}` : ", unassigned"
+    }`,
   });
 
   revalidatePath("/admin/customers");

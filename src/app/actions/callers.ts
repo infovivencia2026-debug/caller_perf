@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { planBalancedAssignments, type CallerQueue } from "@/lib/assign";
-import { dayDate } from "@/lib/attendance";
+import { dayDate, syncPresentFromWorkforce } from "@/lib/attendance";
 import { CLOSED_STATUSES } from "@/lib/queue";
 
 /** A sane ceiling — a typo like 5000 would swallow the whole customer list. */
@@ -180,7 +180,9 @@ export async function autoAssign(formData: FormData) {
     redirect(callersHref(undefined, "No active telecallers to assign to"));
   }
 
-  // Only telecallers marked present today receive new leads.
+  // Only telecallers marked present today receive new leads — pull in workforce-os
+  // punch-ins first so clocking in there counts as present here.
+  await syncPresentFromWorkforce();
   const presentRows = await prisma.attendance.findMany({
     where: { date: dayDate(), userId: { in: activeCallers.map((c) => c.id) } },
     select: { userId: true },
