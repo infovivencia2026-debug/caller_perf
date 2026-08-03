@@ -6,6 +6,7 @@ import { PasswordInput } from "@/components/password-input";
 import { DeleteCallerButton } from "./delete-caller-button";
 import { CLOSED_STATUSES } from "@/lib/queue";
 import { endOfDay, percent, startOfDay } from "@/lib/metrics";
+import { dayDate } from "@/lib/attendance";
 
 export const dynamic = "force-dynamic";
 
@@ -21,14 +22,16 @@ export default async function CallersPage({
   const today = startOfDay();
   const tomorrow = endOfDay();
 
-  const [callers, unassigned] = await Promise.all([
+  const [callers, unassigned, presentRows] = await Promise.all([
     prisma.user.findMany({
       where: { role: "TELECALLER" },
       orderBy: { name: "asc" },
       select: { id: true, name: true, email: true, dailyTarget: true, active: true },
     }),
     prisma.customer.count({ where: { assignedToId: null, ...openWhere } }),
+    prisma.attendance.findMany({ where: { date: dayDate() }, select: { userId: true } }),
   ]);
+  const presentIds = new Set(presentRows.map((r) => r.userId));
 
   const rows = await Promise.all(
     callers.map(async (caller) => {
@@ -38,11 +41,11 @@ export default async function CallersPage({
           where: { callerId: caller.id, startedAt: { gte: today, lt: tomorrow } },
         }),
       ]);
-      return { ...caller, queued, callsToday };
+      return { ...caller, queued, callsToday, present: presentIds.has(caller.id) };
     }),
   );
 
-  const activeCallers = rows.filter((row) => row.active).length;
+  const presentCount = rows.filter((row) => row.active && row.present).length;
 
   return (
     <div className="space-y-6">
@@ -102,13 +105,13 @@ export default async function CallersPage({
       <Card title="Auto-assign customers">
         <div className="space-y-3 text-sm">
           <p className="text-slate-600 dark:text-slate-300">
-            Set a target and split the unassigned customers equally among active telecallers, up to
-            that many each. The target becomes every telecaller&apos;s daily target. Highest priority
-            and longest waiting go out first; it is safe to run again to top everyone up.
+            Set a target and split the unassigned customers equally among telecallers marked
+            present today, up to that many each. The target becomes their daily target. Highest
+            priority and longest waiting go out first; it is safe to run again to top everyone up.
           </p>
           <form action={autoAssign} className="flex flex-wrap items-end gap-3">
             <span className="tabular-nums text-slate-600 dark:text-slate-300">
-              <strong>{unassigned}</strong> unassigned · <strong>{activeCallers}</strong> active telecallers
+              <strong>{unassigned}</strong> unassigned · <strong>{presentCount}</strong> present today
             </span>
             <label className="block text-sm font-medium">
               Target per telecaller
@@ -123,7 +126,7 @@ export default async function CallersPage({
                 className={`${inputClass} mt-1 w-28`}
               />
             </label>
-            <button type="submit" className={buttonClass} disabled={unassigned === 0 || activeCallers === 0}>
+            <button type="submit" className={buttonClass} disabled={unassigned === 0 || presentCount === 0}>
               Auto-assign equally
             </button>
           </form>
@@ -150,6 +153,11 @@ export default async function CallersPage({
                   <tr key={row.id}>
                     <td className="px-3 py-2">
                       <span className="font-medium">{row.name}</span>
+                      {row.active && row.present && (
+                        <span className="ml-2">
+                          <Badge tone="green">present</Badge>
+                        </span>
+                      )}
                       {!row.active && (
                         <span className="ml-2">
                           <Badge tone="slate">inactive</Badge>

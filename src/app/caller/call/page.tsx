@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
-import { Badge, Card, Row, statusTone } from "@/components/ui";
+import { Badge, Card, Row, secondaryButtonClass, statusTone } from "@/components/ui";
 import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { getAssignedCustomer, getNextCustomer, getQueueCount } from "@/lib/queue";
 import { readCallTiming } from "@/lib/call-timer";
@@ -72,29 +72,33 @@ export default async function CallingScreen({
     .filter((entry): entry is (typeof skippedCustomers)[number] => Boolean(entry));
 
   const skippedCard = skippedInOrder.length > 0 && (
-    // The whole box is one link: hovering highlights it, clicking opens the full
-    // details on their own page rather than cramming them into the calling screen.
-    <Link
-      href={`/caller/call/skipped?skip=${skipIds.join(",")}`}
-      className="block rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:border-slate-400 focus-visible:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-500 dark:hover:bg-slate-800 dark:focus-visible:border-slate-500 dark:focus-visible:bg-slate-800"
+    <Card
+      title={`Skipped this session (${skippedInOrder.length})`}
+      action={
+        <Link
+          href={`/caller/call/skipped?skip=${skipIds.join(",")}`}
+          className="text-sm text-indigo-400 hover:underline"
+        >
+          View details →
+        </Link>
+      }
     >
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Skipped this session ({skippedInOrder.length})
-        </h2>
-        <span className="text-sm text-blue-600 dark:text-blue-400">View details →</span>
-      </div>
-      <ul className="space-y-1 text-sm">
+      <ul className="space-y-2 text-sm">
         {skippedInOrder.map((entry) => (
-          <li key={entry.id} className="flex flex-wrap items-center gap-2">
-            <span className="font-medium">{customerLabel(entry)}</span>
-            <span className="tabular-nums text-slate-500 dark:text-slate-400">{entry.phone}</span>
-            <Badge tone={statusTone(entry.status)}>{humanize(entry.status)}</Badge>
-            <span className="text-slate-500 dark:text-slate-400">{humanize(entry.priority)}</span>
+          <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{customerLabel(entry)}</span>
+              <span className="tabular-nums text-slate-400">{entry.phone}</span>
+              <Badge tone={statusTone(entry.status)}>{humanize(entry.status)}</Badge>
+            </span>
+            {/* Re-pins this customer on the calling screen so they can be called again. */}
+            <Link href={`/caller/call?focus=${entry.id}&skip=${skipIds.join(",")}`} className={secondaryButtonClass}>
+              Call again
+            </Link>
           </li>
         ))}
       </ul>
-    </Link>
+    </Card>
   );
 
   if (!customer) {

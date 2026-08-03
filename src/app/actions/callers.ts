@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { planBalancedAssignments, type CallerQueue } from "@/lib/assign";
+import { dayDate } from "@/lib/attendance";
 import { CLOSED_STATUSES } from "@/lib/queue";
 
 /** A sane ceiling — a typo like 5000 would swallow the whole customer list. */
@@ -80,8 +81,10 @@ export async function createCaller(formData: FormData) {
 }
 
 /**
- * Deletes a telecaller. Their assigned customers become unassigned; their call
- * history, follow-ups and attendance are removed with them (database cascade).
+ * Removes a telecaller by DEACTIVATING them rather than hard-deleting: they can no
+ * longer sign in and drop out of auto-assign, and their customers are unassigned back
+ * into the pool — but their call history, follow-ups and attendance are kept so reports
+ * and the calendar stay accurate. (A hard delete would cascade and erase all of that.)
  */
 export async function deleteCaller(formData: FormData) {
   const session = await requireAdmin();
@@ -92,22 +95,26 @@ export async function deleteCaller(formData: FormData) {
     redirect(callersHref(undefined, "Telecaller not found"));
   }
 
-  // Free up their customers first so those leads stay in the pool for reassignment.
+  // Free up their customers so those leads return to the pool for reassignment.
   await prisma.customer.updateMany({ where: { assignedToId: caller.id }, data: { assignedToId: null } });
-  await prisma.user.delete({ where: { id: caller.id } });
+  // Deactivate + invalidate sessions; keep the row (and its calls) for history.
+  await prisma.user.update({
+    where: { id: caller.id },
+    data: { active: false, tokenVersion: { increment: 1 } },
+  });
 
   await logActivity({
     userId: session.userId,
-    action: "CALLER_DELETED",
+    action: "CALLER_DEACTIVATED",
     entity: "User",
     entityId: caller.id,
-    detail: `${caller.name} (${caller.email}) deleted; their customers were unassigned`,
+    detail: `${caller.name} (${caller.email}) removed; customers unassigned, call history kept`,
   });
 
   revalidatePath("/admin/callers");
   revalidatePath("/admin");
   revalidatePath("/admin/customers");
-  redirect(callersHref(`${caller.name} was deleted and their customers unassigned`));
+  redirect(callersHref(`${caller.name} was removed (login disabled, call history kept)`));
 }
 
 export async function updateDailyTarget(formData: FormData) {
@@ -164,18 +171,29 @@ export async function autoAssign(formData: FormData) {
 
   const openWhere = { status: { notIn: CLOSED_STATUSES as unknown as never } };
 
-  const callers = await prisma.user.findMany({
+  const activeCallers = await prisma.user.findMany({
     where: { role: "TELECALLER", active: true },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
-  if (callers.length === 0) {
+  if (activeCallers.length === 0) {
     redirect(callersHref(undefined, "No active telecallers to assign to"));
   }
 
-  // The chosen target becomes everyone's daily target.
+  // Only telecallers marked present today receive new leads.
+  const presentRows = await prisma.attendance.findMany({
+    where: { date: dayDate(), userId: { in: activeCallers.map((c) => c.id) } },
+    select: { userId: true },
+  });
+  const presentIds = new Set(presentRows.map((r) => r.userId));
+  const callers = activeCallers.filter((c) => presentIds.has(c.id));
+  if (callers.length === 0) {
+    redirect(callersHref(undefined, "No telecallers are marked present today — they must click “Mark present” first"));
+  }
+
+  // The chosen target becomes the daily target for the present telecallers.
   await prisma.user.updateMany({
-    where: { role: "TELECALLER", active: true },
+    where: { id: { in: callers.map((c) => c.id) } },
     data: { dailyTarget: target },
   });
 
