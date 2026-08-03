@@ -3,8 +3,9 @@
 import { deleteCaller } from "@/app/actions/callers";
 
 /**
- * Deleting a telecaller is destructive (removes their call history), so this confirms
- * first. The confirm is the only client JavaScript; the delete itself is a plain form
+ * Deleting a telecaller removes them from the roster and disables their login, but keeps
+ * their call history in the database (still visible in the Call log and reports). This
+ * confirms first; the confirm is the only client JavaScript — the delete is a plain form
  * post, so it still works without it.
  */
 export function DeleteCallerButton({ callerId, name }: { callerId: string; name: string }) {
@@ -14,7 +15,7 @@ export function DeleteCallerButton({ callerId, name }: { callerId: string; name:
       onSubmit={(event) => {
         if (
           !confirm(
-            `Delete ${name}? Their assigned customers become unassigned and their call history is removed. This cannot be undone.`,
+            `Delete ${name}? They are removed from the list and can no longer sign in, and their customers go back to the unassigned pool. Their call history is kept and stays visible in the Call log.`,
           )
         ) {
           event.preventDefault();

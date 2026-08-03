@@ -26,8 +26,10 @@ export default async function CallersPage({
   const tomorrow = endOfDay();
 
   const [callers, unassigned, presentRows] = await Promise.all([
+    // Deleted telecallers are soft-removed (active=false) so their calls survive; hide them
+    // from the roster here — their history stays visible in the Call log and reports.
     prisma.user.findMany({
-      where: { role: "TELECALLER" },
+      where: { role: "TELECALLER", active: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true, email: true, dailyTarget: true, active: true },
     }),
