@@ -138,7 +138,7 @@ export default async function AdminDashboard({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2 font-medium">Telecaller</th>
                   <th className="px-3 py-2 font-medium">Status</th>
@@ -147,7 +147,7 @@ export default async function AdminDashboard({
                   <th className="px-3 py-2 font-medium">Last call</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {team.map((t) => (
                   <tr key={t.id}>
                     <td className="px-3 py-2 font-medium">{t.name}</td>
@@ -168,9 +168,9 @@ export default async function AdminDashboard({
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200">
+                        <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                           <div
-                            className="h-full rounded-full bg-indigo-600"
+                            className="h-full rounded-full bg-emerald-500"
                             style={{ width: `${Math.min(100, percent(t.callsToday, t.dailyTarget))}%` }}
                           />
                         </div>
@@ -356,9 +356,9 @@ export default async function AdminDashboard({
 
 function Bar({ value }: { value: number }) {
   return (
-    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
       <div
-        className="h-full rounded-full bg-indigo-600"
+        className="h-full rounded-full bg-emerald-500"
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>

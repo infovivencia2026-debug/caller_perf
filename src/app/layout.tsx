@@ -20,7 +20,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${roboto.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
+      <head>
+        {/* Apply the saved appearance before first paint (default dark) so there's no flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme')||'dark';if(t!=='light')document.documentElement.classList.add('dark');}catch(e){document.documentElement.classList.add('dark');}`,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col">
         {children}
         {/*
           Ticks the live call timer on the calling screen. It lives here, in the initial
