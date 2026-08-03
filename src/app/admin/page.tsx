@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Card, Stat, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
+import { Badge, Card, Stat, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
 import { RankedBars, TimeBars } from "@/components/charts";
 import { formatDuration, humanize } from "@/lib/labels";
-import { getStats, percent } from "@/lib/metrics";
-import { istDayKey } from "@/lib/datetime";
+import { endOfDay, getStats, percent, startOfDay } from "@/lib/metrics";
+import { istDayKey, formatShortTime, minutesSince } from "@/lib/datetime";
 import { RANGES, resolveFilters } from "@/lib/report-filters";
+import { dayDate, syncPresentFromWorkforce } from "@/lib/attendance";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,38 @@ export default async function AdminDashboard({
 }) {
   const filters = resolveFilters(await searchParams);
   const callWindow = { from: filters.from, to: filters.to };
+
+  // --- Live team board (always "today", independent of the period filter) ---
+  await syncPresentFromWorkforce();
+  const liveCallers = await prisma.user.findMany({
+    where: { role: "TELECALLER", active: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, dailyTarget: true },
+  });
+  const presentToday = await prisma.attendance.findMany({ where: { date: dayDate() }, select: { userId: true } });
+  const presentSet = new Set(presentToday.map((r) => r.userId));
+  const dayStart = startOfDay();
+  const dayEnd = endOfDay();
+  const team = await Promise.all(
+    liveCallers.map(async (c) => {
+      const [callsToday, last] = await Promise.all([
+        prisma.call.count({ where: { callerId: c.id, startedAt: { gte: dayStart, lt: dayEnd } } }),
+        prisma.call.findFirst({ where: { callerId: c.id }, orderBy: { startedAt: "desc" }, select: { startedAt: true } }),
+      ]);
+      const present = presentSet.has(c.id);
+      const idleMins = last ? minutesSince(last.startedAt) : null;
+      return {
+        ...c,
+        present,
+        callsToday,
+        lastAt: last?.startedAt ?? null,
+        idleMins,
+        // Present but no call in 20+ minutes (or none yet) — worth a glance.
+        idle: present && (idleMins === null || idleMins >= 20),
+      };
+    }),
+  );
+  const presentCount = team.filter((t) => t.present).length;
 
   const callers = await prisma.user.findMany({
     where: { role: "TELECALLER" },
@@ -95,6 +128,73 @@ export default async function AdminDashboard({
           {selectedCaller ? ` · ${selectedCaller.name}` : " · all telecallers"}
         </p>
       </div>
+
+      {/* Live team board — refreshes with the page's auto-refresh, so it reads like a
+          real-time floor view of who's in and who's working. */}
+      <Card title={`Team — live (${presentCount} present)`}>
+        {team.length === 0 ? (
+          <p className="text-sm text-slate-500">No active telecallers.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Telecaller</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium">Calls today</th>
+                  <th className="px-3 py-2 font-medium">Progress</th>
+                  <th className="px-3 py-2 font-medium">Last call</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {team.map((t) => (
+                  <tr key={t.id}>
+                    <td className="px-3 py-2 font-medium">{t.name}</td>
+                    <td className="px-3 py-2">
+                      {t.present ? (
+                        t.idle ? (
+                          <Badge tone="amber">idle{t.idleMins !== null ? ` ${t.idleMins}m` : ""}</Badge>
+                        ) : (
+                          <Badge tone="green">on the floor</Badge>
+                        )
+                      ) : (
+                        <Badge tone="slate">absent</Badge>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 tabular-nums">
+                      {t.callsToday}
+                      <span className="text-slate-400"> / {t.dailyTarget}</span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-full rounded-full bg-indigo-600"
+                            style={{ width: `${Math.min(100, percent(t.callsToday, t.dailyTarget))}%` }}
+                          />
+                        </div>
+                        <span className="tabular-nums text-xs text-slate-500">
+                          {percent(t.callsToday, t.dailyTarget)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-slate-500">
+                      {t.lastAt ? (
+                        <>
+                          {formatShortTime(t.lastAt)}
+                          {t.idleMins !== null && <span className="text-slate-400"> · {t.idleMins}m ago</span>}
+                        </>
+                      ) : (
+                        "no calls yet"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       {/* A GET form: filters end up in the URL, so the view is shareable and needs no JS. */}
       <Card title="Filters">

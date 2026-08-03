@@ -8,6 +8,7 @@ import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { syncPresentFromWorkforce } from "@/lib/attendance";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { FollowUpAlerts } from "@/components/follow-up-alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,13 @@ export default async function CallerDashboard() {
   return (
     <div className="space-y-6">
       <AutoRefresh />
+      <FollowUpAlerts
+        items={dueToday.map((f) => ({
+          id: f.id,
+          name: customerLabel(f.customer),
+          dueAt: f.dueAt.toISOString(),
+        }))}
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Hello, {session.name}</h1>
         {/* Attendance comes from workforce-os punch-ins — no manual present button here. */}

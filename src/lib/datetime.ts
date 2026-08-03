@@ -78,3 +78,8 @@ export function elapsedSecondsSince(start: Date) {
 export function currentClock() {
   return formatClock(new Date());
 }
+
+/** Whole minutes elapsed since a moment — for "12m ago" style live status. */
+export function minutesSince(date: Date) {
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
+}
