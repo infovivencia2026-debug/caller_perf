@@ -22,6 +22,14 @@ export default function Sidebar({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  const initials = userName
+    .split(/\s+/)
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   // Only the most specific match is active, so a section root like /caller does not
   // stay highlighted while a child route like /caller/call is open.
   const activeHref = items
@@ -31,7 +39,7 @@ export default function Sidebar({
   return (
     <>
       {/* Mobile top bar */}
-      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden dark:border-slate-800 dark:bg-slate-900">
+      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
@@ -56,13 +64,18 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-          <p className="text-base font-semibold leading-tight">Telecaller</p>
-          <p className="text-base font-semibold leading-tight">Performance</p>
+        <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white shadow-sm">
+            TP
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-tight text-slate-900">Telecaller</p>
+            <p className="text-xs leading-tight text-slate-500">Performance</p>
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3">
@@ -75,9 +88,9 @@ export default function Sidebar({
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     onClick={() => setOpen(false)}
-                    className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    className={`block rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
                       active
-                        ? "bg-indigo-600 text-white"
+                        ? "bg-indigo-600 text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
@@ -89,9 +102,16 @@ export default function Sidebar({
           </ul>
         </nav>
 
-        <div className="border-t border-slate-200 p-4 dark:border-slate-800">
-          <p className="truncate text-sm font-medium">{userName}</p>
-          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{roleLabel}</p>
+        <div className="border-t border-slate-200 p-4">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+              {initials || "?"}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-slate-900">{userName}</p>
+              <p className="text-xs text-slate-500">{roleLabel}</p>
+            </div>
+          </div>
           {signOut}
         </div>
       </aside>

@@ -7,10 +7,17 @@ export default async function LoginPage() {
   if (session) redirect(session.role === "ADMIN" ? "/admin" : "/caller");
 
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <h1 className="text-xl font-semibold">Telecaller Performance</h1>
-        <p className="mt-1 mb-6 text-sm text-slate-500 dark:text-slate-400">Sign in to continue</p>
+    <main className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
+      {/* Soft brand glow behind the card. */}
+      <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-indigo-200/40 blur-3xl" />
+      <div className="relative w-full max-w-sm">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold text-white shadow-md shadow-indigo-600/20">
+            TP
+          </div>
+          <h1 className="text-xl font-semibold text-slate-900">Telecaller Performance</h1>
+          <p className="mt-1 text-sm text-slate-500">Sign in to continue</p>
+        </div>
         <LoginForm />
       </div>
     </main>

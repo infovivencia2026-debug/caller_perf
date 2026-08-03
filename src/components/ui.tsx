@@ -10,10 +10,10 @@ export function Card({
   action?: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
       {(title || action) && (
         <header className="mb-4 flex items-center justify-between gap-3">
-          {title && <h2 className="text-sm font-semibold text-slate-700">{title}</h2>}
+          {title && <h2 className="text-sm font-semibold text-slate-800">{title}</h2>}
           {action}
         </header>
       )}
@@ -32,10 +32,10 @@ export function Stat({
   hint?: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+    <div className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{value}</p>
+      {hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
     </div>
   );
 }
@@ -61,11 +61,11 @@ export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?
 type Tone = "slate" | "green" | "red" | "amber" | "blue";
 
 const TONES: Record<Tone, string> = {
-  slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  green: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  red: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
-  amber: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  blue: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+  slate: "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200",
+  green: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+  red: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200",
+  amber: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+  blue: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
 };
 
 export function statusTone(status: string): Tone {
@@ -77,10 +77,10 @@ export function statusTone(status: string): Tone {
 }
 
 export const inputClass =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25";
+  "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15";
 
 export const buttonClass =
-  "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-700 hover:shadow active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-indigo-500/25 disabled:opacity-50 disabled:pointer-events-none";
 
 export const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none";
