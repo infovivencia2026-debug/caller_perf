@@ -10,7 +10,7 @@ export function Card({
   action?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
       {(title || action) && (
         <header className="mb-4 flex items-center justify-between gap-3">
           {title && <h2 className="text-sm font-semibold text-slate-800">{title}</h2>}
@@ -24,15 +24,15 @@ export function Card({
 
 export type StatAccent = "indigo" | "emerald" | "amber" | "rose" | "sky" | "violet" | "slate";
 
-// Bright accents that read well on the dark stat panels; `bar` is the fading underline.
-const STAT_ACCENTS: Record<StatAccent, { text: string; bar: string; glow: string }> = {
-  indigo: { text: "text-indigo-400", bar: "from-indigo-400", glow: "bg-indigo-500/20" },
-  emerald: { text: "text-emerald-400", bar: "from-emerald-400", glow: "bg-emerald-500/20" },
-  amber: { text: "text-orange-400", bar: "from-orange-400", glow: "bg-orange-500/20" },
-  rose: { text: "text-rose-400", bar: "from-rose-400", glow: "bg-rose-500/20" },
-  sky: { text: "text-sky-400", bar: "from-sky-400", glow: "bg-sky-500/20" },
-  violet: { text: "text-violet-400", bar: "from-violet-400", glow: "bg-violet-500/20" },
-  slate: { text: "text-slate-300", bar: "from-slate-400", glow: "bg-slate-500/20" },
+// Accent per stat on the light cards: a tinted icon chip, a corner glow and a fading underline.
+const STAT_ACCENTS: Record<StatAccent, { text: string; chip: string; bar: string; glow: string }> = {
+  indigo: { text: "text-indigo-600", chip: "bg-indigo-50", bar: "from-indigo-500", glow: "bg-indigo-300/30" },
+  emerald: { text: "text-emerald-600", chip: "bg-emerald-50", bar: "from-emerald-500", glow: "bg-emerald-300/30" },
+  amber: { text: "text-orange-600", chip: "bg-orange-50", bar: "from-orange-500", glow: "bg-orange-300/30" },
+  rose: { text: "text-rose-600", chip: "bg-rose-50", bar: "from-rose-500", glow: "bg-rose-300/30" },
+  sky: { text: "text-sky-600", chip: "bg-sky-50", bar: "from-sky-500", glow: "bg-sky-300/30" },
+  violet: { text: "text-violet-600", chip: "bg-violet-50", bar: "from-violet-500", glow: "bg-violet-300/30" },
+  slate: { text: "text-slate-600", chip: "bg-slate-100", bar: "from-slate-400", glow: "bg-slate-300/40" },
 };
 
 export function Stat({
@@ -50,17 +50,19 @@ export function Stat({
 }) {
   const tone = STAT_ACCENTS[accent];
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-white/5 bg-linear-to-br from-[#161a23] to-[#0c0e13] p-6 shadow-lg shadow-slate-900/20">
+    <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
       {/* Soft accent glow in the corner. */}
       <span className={`pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full blur-2xl ${tone.glow}`} aria-hidden="true" />
       <div className="relative flex items-center justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
-        {icon && <span className={tone.text}>{icon}</span>}
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</span>
+        {icon && (
+          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tone.chip} ${tone.text}`}>{icon}</span>
+        )}
       </div>
-      <p className="relative mt-4 text-[2rem] font-extrabold leading-none tracking-tight text-white tabular-nums">
+      <p className="relative mt-4 text-[2rem] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
         {value}
       </p>
-      {hint && <p className="relative mt-2 text-xs font-medium text-slate-400">{hint}</p>}
+      {hint && <p className="relative mt-2 text-xs font-medium text-slate-500">{hint}</p>}
       <span
         className={`relative mt-5 block h-1 w-full rounded-full bg-linear-to-r ${tone.bar} to-transparent`}
         aria-hidden="true"
