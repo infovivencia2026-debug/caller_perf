@@ -16,6 +16,12 @@ export async function markPresent(userId: string, when = new Date()) {
   });
 }
 
+/** Removes today's present mark for the telecaller (idempotent). */
+export async function markAbsent(userId: string, when = new Date()) {
+  const date = dayDate(when);
+  await prisma.attendance.deleteMany({ where: { userId, date } });
+}
+
 /** Whether the telecaller is already marked present today. */
 export async function isPresentToday(userId: string) {
   const row = await prisma.attendance.findUnique({

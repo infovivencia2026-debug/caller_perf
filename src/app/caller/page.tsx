@@ -7,7 +7,7 @@ import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metric
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { isPresentToday } from "@/lib/attendance";
-import { checkIn } from "@/app/actions/attendance";
+import { togglePresent } from "@/app/actions/attendance";
 
 export const dynamic = "force-dynamic";
 
@@ -46,17 +46,27 @@ export default async function CallerDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Hello, {session.name}</h1>
         <div className="flex items-center gap-2">
-          {present ? (
-            <span className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
-              Present today
-            </span>
-          ) : (
-            <form action={checkIn}>
-              <button type="submit" className={secondaryButtonClass}>
-                Mark present
+          {/* One clickable toggle: click to mark present, click again to go absent. The
+              admin roster and auto-assign follow this state immediately. */}
+          <form action={togglePresent}>
+            {present ? (
+              <button
+                type="submit"
+                title="You are marked present today — click to mark yourself absent"
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500 bg-emerald-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600"
+              >
+                ✓ Present today
               </button>
-            </form>
-          )}
+            ) : (
+              <button
+                type="submit"
+                title="Click to mark yourself present for today"
+                className={secondaryButtonClass}
+              >
+                Mark present today
+              </button>
+            )}
+          </form>
           <Link href="/caller/call" className={buttonClass}>
             Start calling
           </Link>
