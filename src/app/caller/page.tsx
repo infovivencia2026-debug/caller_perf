@@ -67,7 +67,15 @@ export default async function CallerDashboard() {
         <Stat label="Today's target" value={target} hint={`${percent(todayStats.totalCalls, target)}% achieved`} />
         <Stat label="Calls completed" value={todayStats.totalCalls} />
         <Stat label="Calls remaining" value={remaining} hint={`${queueCount} customers in queue`} />
-        <Stat label="Pending follow-ups" value={pendingFollowUps} />
+        <Stat
+          label="Pending follow-ups"
+          value={pendingFollowUps}
+          hint={
+            pendingFollowUps === 0
+              ? "None scheduled"
+              : `${dueToday.length} due today · ${Math.max(0, pendingFollowUps - dueToday.length)} upcoming`
+          }
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
