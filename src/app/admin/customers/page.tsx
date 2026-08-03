@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Badge, Card, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
+import { Badge, Card, buttonClass, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
 import { CUSTOMER_STATUSES, PRIORITIES, customerLabel, humanize } from "@/lib/labels";
 import ImportWizard from "./import/import-wizard";
 import { DeleteMatchingButton } from "./delete-matching-button";
+import { SelectAll } from "./select-all";
+import { assignCountToCaller, assignSelected } from "@/app/actions/assign";
 import { parseTags } from "@/lib/tags";
 import { buildCustomerWhere, hasAnyFilter } from "@/lib/customer-filter";
 
@@ -18,6 +20,7 @@ type Search = {
   priority?: string;
   page?: string;
   ok?: string;
+  error?: string;
 };
 
 export default async function CustomersPage({
@@ -58,6 +61,11 @@ export default async function CustomersPage({
       {params.ok && (
         <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
           {params.ok}
+        </p>
+      )}
+      {params.error && (
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          {params.error}
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -147,11 +155,67 @@ export default async function CustomersPage({
         </div>
       </Card>
 
+      <Card title="Quick assign to a telecaller">
+        <form action={assignCountToCaller} className="flex flex-wrap items-end gap-3">
+          <label className="block text-sm font-medium">
+            Telecaller
+            <select name="callerId" defaultValue="" className={`${inputClass} mt-1`} required>
+              <option value="" disabled>
+                Choose…
+              </option>
+              {callers.map((caller) => (
+                <option key={caller.id} value={caller.id}>
+                  {caller.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-medium">
+            How many
+            <input
+              type="number"
+              name="count"
+              min={1}
+              max={500}
+              defaultValue={50}
+              className={`${inputClass} mt-1 w-28`}
+            />
+          </label>
+          <button type="submit" className={buttonClass}>
+            Assign
+          </button>
+          <p className="w-full text-xs text-slate-500 dark:text-slate-400">
+            Hands that many currently-unassigned leads (highest priority, longest-waiting first) to the
+            telecaller and sets it as their daily target. They appear in that telecaller&apos;s calling queue
+            immediately.
+          </p>
+        </form>
+      </Card>
+
       <Card title="Customers">
-        <div className="overflow-x-auto">
+        {/* Hand-pick rows with the checkboxes, choose a telecaller, and assign the lot. */}
+        <form action={assignSelected}>
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-950">
+            <span className="text-sm font-medium">Assign ticked customers to</span>
+            <select name="callerId" defaultValue="" className={inputClass}>
+              <option value="">Unassigned (return to pool)</option>
+              {callers.map((caller) => (
+                <option key={caller.id} value={caller.id}>
+                  {caller.name}
+                </option>
+              ))}
+            </select>
+            <button type="submit" className={buttonClass}>
+              Assign selected
+            </button>
+          </div>
+          <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <tr>
+                <th className="px-3 py-2">
+                  <SelectAll />
+                </th>
                 <th className="px-3 py-2">Name</th>
                 <th className="px-3 py-2">Phone</th>
                 <th className="px-3 py-2">Company</th>
@@ -165,7 +229,7 @@ export default async function CustomersPage({
             <tbody>
               {customers.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={9} className="px-3 py-6 text-center text-slate-500 dark:text-slate-400">
                     No customers match these filters.
                   </td>
                 </tr>
@@ -175,6 +239,15 @@ export default async function CustomersPage({
                   key={customer.id}
                   className="border-b border-slate-100 last:border-0 dark:border-slate-800"
                 >
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      name="customerIds"
+                      value={customer.id}
+                      aria-label={`Select ${customerLabel(customer)}`}
+                      className="h-4 w-4 cursor-pointer accent-indigo-500"
+                    />
+                  </td>
                   <td className="px-3 py-2 font-medium">
                     <Link href={`/admin/customers/${customer.id}`} className="hover:underline">
                       {customerLabel(customer)}
@@ -200,7 +273,8 @@ export default async function CustomersPage({
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </form>
       </Card>
 
       {pages > 1 && (
