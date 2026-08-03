@@ -10,7 +10,7 @@ export default async function LoginPage() {
     <main className="relative flex flex-1 items-center justify-center p-6">
       <div className="relative w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-none border-2 border-black bg-black text-lg font-bold text-white shadow-[4px_4px_0_0_#0a0a0a] dark:border-white dark:bg-white dark:text-black dark:shadow-[4px_4px_0_0_#e5e5e5]">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-none border border-black bg-black text-lg font-bold text-white dark:border-white dark:bg-white dark:text-black">
             TP
           </div>
           <h1 className="text-xl font-bold uppercase tracking-wide text-black dark:text-white">Telecaller Performance</h1>

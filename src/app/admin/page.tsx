@@ -169,7 +169,7 @@ export default async function AdminDashboard({
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <div
-                          className="group/bar relative h-4 w-28 overflow-hidden rounded-none border-2 border-black bg-white dark:border-white dark:bg-black"
+                          className="group/bar relative h-4 w-28 overflow-hidden rounded-none border border-black bg-white dark:border-white dark:bg-black"
                           title={`${percent(t.callsToday, t.dailyTarget)}%`}
                         >
                           <div
@@ -360,7 +360,7 @@ export default async function AdminDashboard({
 function Bar({ value }: { value: number }) {
   return (
     <div
-      className="group/bar relative mt-1 h-4 w-full overflow-hidden rounded-none border-2 border-black bg-white dark:border-white dark:bg-black"
+      className="group/bar relative mt-1 h-4 w-full overflow-hidden rounded-none border border-black bg-white dark:border-white dark:bg-black"
       title={`${Math.round(Math.min(100, Math.max(0, value)))}%`}
     >
       <div

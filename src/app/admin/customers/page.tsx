@@ -89,7 +89,7 @@ export default async function CustomersPage({
 
       {/* Import lives at the top of the customers page; the list below refreshes after
           an upload. Collapsible so it doesn't crowd the list. */}
-      <details className="rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <details className="rounded-none border border-black bg-white dark:border-white dark:bg-black">
         <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
           Import customers from CSV or Excel
         </summary>
@@ -104,7 +104,7 @@ export default async function CustomersPage({
       </details>
 
       {/* Import history — one line per CSV import: when, who ran it, and the outcome. */}
-      <details className="rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <details className="rounded-none border border-black bg-white dark:border-white dark:bg-black">
         <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
           Import history ({importLogs.length})
         </summary>

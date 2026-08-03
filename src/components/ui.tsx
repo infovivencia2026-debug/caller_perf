@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
 
-/* Brutalist system: square corners, 2px black borders, hard offset shadows, JetBrains
-   Mono, black-on-white (inverted in dark). Accent colour is reserved for semantic badges;
+/* Brutalist system: square corners, thin 1px black borders, no shadows, JetBrains Mono,
+   black-on-white (inverted in dark). Accent colour is reserved for semantic badges;
    everything structural is monochrome. */
-
-const CARD_SHADOW = "shadow-[4px_4px_0_0_#0a0a0a] dark:shadow-[4px_4px_0_0_#e5e5e5]";
 
 export function Card({
   title,
@@ -16,9 +14,9 @@ export function Card({
   action?: ReactNode;
 }) {
   return (
-    <section className={`rounded-none border-2 border-black bg-white p-5 dark:border-white dark:bg-black ${CARD_SHADOW}`}>
+    <section className="rounded-none border border-black bg-white p-5 dark:border-white dark:bg-black">
       {(title || action) && (
-        <header className="mb-4 flex items-center justify-between gap-3 border-b-2 border-black pb-3 dark:border-white">
+        <header className="mb-4 flex items-center justify-between gap-3 border-b border-black pb-3 dark:border-white">
           {title && (
             <h2 className="text-sm font-bold uppercase tracking-wide text-black dark:text-white">{title}</h2>
           )}
@@ -45,10 +43,8 @@ export function Stat({
   icon?: ReactNode;
 }) {
   return (
-    <div
-      className={`group rounded-none border-2 border-black bg-white p-5 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 dark:border-white dark:bg-black ${CARD_SHADOW}`}
-    >
-      <div className="flex items-center justify-between border-b-2 border-black pb-2 dark:border-white">
+    <div className="rounded-none border border-black bg-white p-5 dark:border-white dark:bg-black">
+      <div className="flex items-center justify-between border-b border-black pb-2 dark:border-white">
         <span className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-white">{label}</span>
         {icon && <span className="text-black dark:text-white">{icon}</span>}
       </div>
@@ -71,7 +67,7 @@ export function Row({ label, children }: { label: string; children: ReactNode })
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: Tone }) {
   return (
     <span
-      className={`inline-flex min-w-[104px] items-center justify-center rounded-none border-2 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${TONES[tone]}`}
+      className={`inline-flex min-w-[104px] items-center justify-center rounded-none border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${TONES[tone]}`}
     >
       {children}
     </span>
@@ -98,10 +94,10 @@ export function statusTone(status: string): Tone {
 }
 
 export const inputClass =
-  "w-full rounded-none border-2 border-black bg-white px-3 py-2 text-sm text-black outline-none transition-shadow placeholder:text-neutral-500 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-black dark:border-white dark:bg-black dark:text-white dark:placeholder:text-neutral-400 dark:focus:outline-white";
+  "w-full rounded-none border border-black bg-white px-3 py-2 text-sm text-black outline-none transition-colors placeholder:text-neutral-500 focus:outline focus:outline-1 focus:outline-offset-2 focus:outline-black dark:border-white dark:bg-black dark:text-white dark:placeholder:text-neutral-400 dark:focus:outline-white";
 
 export const buttonClass =
-  "inline-flex items-center justify-center rounded-none border-2 border-black bg-black px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-[3px_3px_0_0_#0a0a0a] transition-all hover:-translate-x-0 hover:translate-x-[2px] hover:translate-y-[2px] hover:bg-white hover:text-black hover:shadow-[1px_1px_0_0_#0a0a0a] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:opacity-50 disabled:pointer-events-none dark:border-white dark:bg-white dark:text-black dark:shadow-[3px_3px_0_0_#e5e5e5] dark:hover:bg-black dark:hover:text-white dark:hover:shadow-[1px_1px_0_0_#e5e5e5]";
+  "inline-flex items-center justify-center rounded-none border border-black bg-black px-4 py-2 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:opacity-50 disabled:pointer-events-none dark:border-white dark:bg-white dark:text-black dark:hover:bg-black dark:hover:text-white";
 
 export const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-none border-2 border-black bg-white px-4 py-2 text-sm font-bold uppercase tracking-wide text-black shadow-[3px_3px_0_0_#0a0a0a] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:bg-black hover:text-white hover:shadow-[1px_1px_0_0_#0a0a0a] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:opacity-50 disabled:pointer-events-none dark:border-white dark:bg-black dark:text-white dark:shadow-[3px_3px_0_0_#e5e5e5] dark:hover:bg-white dark:hover:text-black";
+  "inline-flex items-center justify-center rounded-none border border-black bg-white px-4 py-2 text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white disabled:opacity-50 disabled:pointer-events-none dark:border-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black";

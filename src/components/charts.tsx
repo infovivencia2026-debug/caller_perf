@@ -6,7 +6,7 @@
  */
 
 const BAR = "bg-black dark:bg-white";
-const TRACK = "border-2 border-black bg-white dark:border-white dark:bg-black";
+const TRACK = "border border-black bg-white dark:border-white dark:bg-black";
 
 /** Vertical bars over time — e.g. calls per day. */
 export function TimeBars({ data }: { data: { key: string; label: string; value: number }[] }) {
@@ -24,7 +24,7 @@ export function TimeBars({ data }: { data: { key: string; label: string; value: 
             <div className="flex flex-1 items-end">
               <div
                 className={`w-full rounded-none transition-[height] duration-500 ease-out hover:opacity-80 ${
-                  d.value > 0 ? `border-2 border-black dark:border-white ${BAR}` : "bg-neutral-300 dark:bg-neutral-700"
+                  d.value > 0 ? `border border-black dark:border-white ${BAR}` : "bg-neutral-300 dark:bg-neutral-700"
                 }`}
                 style={{ height: d.value > 0 ? `${(d.value / max) * 100}%` : "2px" }}
               />

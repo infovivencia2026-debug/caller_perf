@@ -113,7 +113,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
           const file = event.dataTransfer.files?.[0];
           if (file) onFile(file);
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center text-sm transition-colors ${
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-none border border-dashed px-4 py-8 text-center text-sm transition-colors ${
           dragging
             ? "border-slate-500 bg-slate-100 dark:border-slate-400 dark:bg-slate-800"
             : "border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-900"
