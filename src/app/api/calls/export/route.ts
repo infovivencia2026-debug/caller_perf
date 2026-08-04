@@ -47,6 +47,8 @@ export async function GET(request: Request) {
       comments: true,
       caller: { select: { name: true } },
       customer: { select: { name: true, phone: true, company: true, city: true } },
+      // The callback/follow-up scheduled off this call, so its due time exports too.
+      followUp: { select: { dueAt: true } },
     },
   });
 
@@ -60,6 +62,7 @@ export async function GET(request: Request) {
     "company",
     "city",
     "outcome",
+    "follow_up_scheduled_for",
     "response",
     "comments",
   ];
@@ -77,6 +80,7 @@ export async function GET(request: Request) {
         c.customer.company,
         c.customer.city,
         humanize(c.status),
+        c.followUp ? formatDateTime(c.followUp.dueAt) : "",
         c.response,
         c.comments,
       ]
