@@ -63,7 +63,8 @@ export async function GET(request: Request) {
     ...customers.map((customer) =>
       [
         customer.name,
-        customer.phone,
+        // ="…" keeps Excel from reading the phone as a number and rounding it.
+        `="${customer.phone}"`,
         customer.company,
         customer.email,
         customer.city,

@@ -76,7 +76,8 @@ export async function GET(request: Request) {
         c.duration,
         c.caller.name,
         c.customer.name,
-        c.customer.phone,
+        // ="…" keeps Excel from reading the phone as a number and rounding it.
+        `="${c.customer.phone}"`,
         c.customer.company,
         c.customer.city,
         humanize(c.status),
