@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, Row, secondaryButtonClass, statusTone } from "@/components/ui";
@@ -8,6 +9,7 @@ import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
 import { formatDateTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
+import { clearSkips } from "@/app/actions/calls";
 import CallPanel from "./call-panel";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +21,12 @@ export default async function CallingScreen({
 }) {
   const session = await requireCaller();
   const { skip, error, saved, focus } = await searchParams;
-  const skipIds = (skip ?? "").split(",").filter(Boolean);
+  // The skip list lives in a cookie (so it survives navigating away and back) and is also
+  // carried in the URL during the calling flow — merge both so nothing is lost.
+  const cookieStore = await cookies();
+  const cookieSkip = (cookieStore.get("cp_skip")?.value ?? "").split(",").filter(Boolean);
+  const urlSkip = (skip ?? "").split(",").filter(Boolean);
+  const skipIds = [...new Set([...urlSkip, ...cookieSkip])];
 
   // "focus" (from a follow-up's Call button) pins a specific customer; otherwise the
   // queue picks the next one.
@@ -42,29 +49,11 @@ export default async function CallingScreen({
 
   const customer = focused ?? nextInQueue;
 
-  // Customers set aside this session, so the caller can see who they passed over.
+  // Which set-aside customers still exist — only the count is shown here; full details
+  // live on the "View details" page.
   const skippedCustomers =
     skipIds.length > 0
-      ? await prisma.customer.findMany({
-          where: { id: { in: skipIds } },
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            company: true,
-            city: true,
-            email: true,
-            notes: true,
-            tags: true,
-            status: true,
-            priority: true,
-            calls: {
-              orderBy: { startedAt: "desc" },
-              take: 1,
-              select: { startedAt: true, status: true, duration: true },
-            },
-          },
-        })
+      ? await prisma.customer.findMany({ where: { id: { in: skipIds } }, select: { id: true } })
       : [];
   // Keep the order they were skipped in rather than whatever the database returns.
   const skippedInOrder = skipIds
@@ -83,21 +72,11 @@ export default async function CallingScreen({
         </Link>
       }
     >
-      <ul className="space-y-2 text-sm">
-        {skippedInOrder.map((entry) => (
-          <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2">
-            <span className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">{customerLabel(entry)}</span>
-              <span className="tabular-nums text-slate-400">{entry.phone}</span>
-              <Badge tone={statusTone(entry.status)}>{humanize(entry.status)}</Badge>
-            </span>
-            {/* Re-pins this customer on the calling screen so they can be called again. */}
-            <Link href={`/caller/call?focus=${entry.id}&skip=${skipIds.join(",")}`} className={secondaryButtonClass}>
-              Call again
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {/* Just a summary here — the full customer list lives behind "View details". */}
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        {skippedInOrder.length} customer{skippedInOrder.length === 1 ? "" : "s"} set aside this session. Open details to
+        see them and call again.
+      </p>
     </Card>
   );
 
@@ -118,12 +97,11 @@ export default async function CallingScreen({
                 : "No customers are assigned to you right now. Ask your admin to assign some."}
           </p>
           {skipIds.length > 0 && (
-            <Link
-              href="/caller/call"
-              className="mt-3 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Start over
-            </Link>
+            <form action={clearSkips} className="mt-3">
+              <button type="submit" className={secondaryButtonClass}>
+                Start over
+              </button>
+            </form>
           )}
         </Card>
         {skippedCard}

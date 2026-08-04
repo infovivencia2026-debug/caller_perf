@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, Row, buttonClass, secondaryButtonClass, statusTone } from "@/components/ui";
 import { customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { formatDateTime } from "@/lib/datetime";
 import { parseTags } from "@/lib/tags";
+import { clearSkips } from "@/app/actions/calls";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,9 @@ export default async function SkippedPage({
 }) {
   const session = await requireCaller();
   const { skip } = await searchParams;
-  const skipIds = (skip ?? "").split(",").filter(Boolean);
+  const cookieStore = await cookies();
+  const cookieSkip = (cookieStore.get("cp_skip")?.value ?? "").split(",").filter(Boolean);
+  const skipIds = [...new Set([...(skip ?? "").split(",").filter(Boolean), ...cookieSkip])];
 
   const customers =
     skipIds.length > 0
@@ -62,11 +66,11 @@ export default async function SkippedPage({
           </Link>
           <h1 className="text-lg font-semibold">Skipped this session ({ordered.length})</h1>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/caller/call" className={buttonClass}>
+        <form action={clearSkips}>
+          <button type="submit" className={buttonClass}>
             Bring them all back
-          </Link>
-        </div>
+          </button>
+        </form>
       </div>
 
       {ordered.length === 0 ? (

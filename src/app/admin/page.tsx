@@ -278,6 +278,13 @@ export default async function AdminDashboard({
           accent="slate"
           icon={<IconUsers />}
         />
+        <Stat
+          label="Total customers"
+          value={totalCustomers}
+          hint={selectedCaller ? `assigned to ${selectedCaller.name}` : "in the system"}
+          accent="indigo"
+          icon={<IconUsers />}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
@@ -48,6 +49,23 @@ function queueHref(skipped: string, opts: { error?: string; saved?: boolean; foc
   if (opts.focus) params.set("focus", opts.focus);
   const query = params.toString();
   return query ? `/caller/call?${query}` : "/caller/call";
+}
+
+/** Session cookie mirroring the skip list, so it survives navigating away and back. */
+const SKIP_COOKIE = "cp_skip";
+
+async function persistSkips(skipped: string) {
+  const store = await cookies();
+  if (skipped) store.set(SKIP_COOKIE, skipped, { path: "/", sameSite: "lax", httpOnly: true });
+  else store.delete(SKIP_COOKIE);
+}
+
+/** "Start over" / "Bring them all back" — empty the skip list and return to the queue. */
+export async function clearSkips() {
+  await requireCaller();
+  const store = await cookies();
+  store.delete(SKIP_COOKIE);
+  redirect("/caller/call");
 }
 
 function skippedFrom(formData: FormData) {
@@ -239,6 +257,8 @@ export async function skipCustomer(formData: FormData) {
     .filter(Boolean);
   const next = [...new Set([...skipped, customerId])].filter(Boolean);
 
+  // Remember the skip list in a cookie so it survives navigating away and back.
+  await persistSkips(next.join(","));
   // Drop any half-stamped timing so it cannot leak onto the next customer.
   await clearCallTiming();
   redirect(queueHref(next.join(",")));
