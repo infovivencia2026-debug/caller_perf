@@ -53,40 +53,41 @@ export async function GET(request: Request) {
     },
   });
 
+  // Phone is the unique key per customer, so it leads.
   const header = [
+    "phone",
+    "customer",
+    "telecaller",
     "started_at",
     "ended_at",
     "duration_seconds",
-    "telecaller",
-    "customer",
-    "phone",
-    "company",
-    "city",
     "outcome",
     "course",
     "follow_up_scheduled_for",
     "customer_response",
     "caller_comments",
+    "company",
+    "city",
   ];
 
   const lines = [
     header.join(","),
     ...calls.map((c) =>
       [
+        // ="…" keeps Excel from reading the phone as a number and rounding it.
+        `="${c.customer.phone}"`,
+        c.customer.name,
+        c.caller.name,
         formatDateTime(c.startedAt),
         formatDateTime(c.endedAt),
         c.duration,
-        c.caller.name,
-        c.customer.name,
-        // ="…" keeps Excel from reading the phone as a number and rounding it.
-        `="${c.customer.phone}"`,
-        c.customer.company,
-        c.customer.city,
         humanize(c.status),
         c.course,
         c.followUp ? formatDateTime(c.followUp.dueAt) : "",
         c.response,
         c.comments,
+        c.customer.company,
+        c.customer.city,
       ]
         .map(csvCell)
         .join(","),

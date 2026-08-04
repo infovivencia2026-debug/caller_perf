@@ -45,9 +45,10 @@ export async function GET(request: Request) {
     include: { assignedTo: { select: { name: true } }, _count: { select: { calls: true } } },
   });
 
+  // Phone is the unique key per customer, so it leads.
   const header = [
-    "name",
     "phone",
+    "name",
     "company",
     "email",
     "city",
@@ -62,9 +63,9 @@ export async function GET(request: Request) {
     header.join(","),
     ...customers.map((customer) =>
       [
-        customer.name,
         // ="…" keeps Excel from reading the phone as a number and rounding it.
         `="${customer.phone}"`,
+        customer.name,
         customer.company,
         customer.email,
         customer.city,
