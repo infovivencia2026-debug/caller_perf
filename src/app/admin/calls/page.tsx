@@ -73,7 +73,7 @@ export default async function AdminCallLog({
           </p>
           {/* Exports every call matching the current filters (not just the shown page). */}
           <a href={`/api/calls/export${exportQuery ? `?${exportQuery}` : ""}`} className={secondaryButtonClass}>
-            Export CSV
+            Export call log (responses)
           </a>
         </div>
       </div>

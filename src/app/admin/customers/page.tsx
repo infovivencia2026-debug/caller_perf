@@ -79,7 +79,7 @@ export default async function CustomersPage({
         <h1 className="text-lg font-semibold">Customers ({total})</h1>
         <div className="flex gap-2">
           <Link href={`/api/customers/export?${exportQuery}`} className={secondaryButtonClass}>
-            Export CSV
+            Export customers
           </Link>
           <Link href="/admin/customers/new" className={secondaryButtonClass}>
             Add customer
