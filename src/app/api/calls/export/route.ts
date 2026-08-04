@@ -63,8 +63,8 @@ export async function GET(request: Request) {
     "city",
     "outcome",
     "follow_up_scheduled_for",
-    "response",
-    "comments",
+    "customer_response",
+    "caller_comments",
   ];
 
   const lines = [
