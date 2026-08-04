@@ -7,6 +7,8 @@ import { DeleteCallerButton } from "./delete-caller-button";
 import { CLOSED_STATUSES } from "@/lib/queue";
 import { endOfDay, percent, startOfDay } from "@/lib/metrics";
 import { dayDate, syncPresentFromWorkforce } from "@/lib/attendance";
+import { formatDateTime } from "@/lib/datetime";
+import { humanize } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,7 @@ export default async function CallersPage({
   const today = startOfDay();
   const tomorrow = endOfDay();
 
-  const [callers, unassigned, presentRows] = await Promise.all([
+  const [callers, unassigned, presentRows, assignLogs] = await Promise.all([
     // Deleted telecallers are soft-removed (active=false) so their calls survive; hide them
     // from the roster here — their history stays visible in the Call log and reports.
     prisma.user.findMany({
@@ -35,6 +37,13 @@ export default async function CallersPage({
     }),
     prisma.customer.count({ where: { assignedToId: null, ...openWhere } }),
     prisma.attendance.findMany({ where: { date: dayDate() }, select: { userId: true } }),
+    // Stored assignment history — who assigned what, when.
+    prisma.activityLog.findMany({
+      where: { action: { in: ["CUSTOMERS_ASSIGNED", "AUTO_ASSIGNED", "AUTO_ASSIGN_SCHEDULED"] } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { user: { select: { name: true } } },
+    }),
   ]);
   const presentIds = new Set(presentRows.map((r) => r.userId));
 
@@ -205,6 +214,26 @@ export default async function CallersPage({
               </tbody>
             </table>
           </div>
+        )}
+      </Card>
+
+      {/* Stored assignment history — every manual / quick / auto / scheduled assignment. */}
+      <Card title={`Assignment history (${assignLogs.length})`}>
+        {assignLogs.length === 0 ? (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">No assignments recorded yet.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {assignLogs.map((log) => (
+              <li key={log.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="tabular-nums text-neutral-500 dark:text-neutral-400">
+                  {formatDateTime(log.createdAt)}
+                </span>
+                <Badge tone="blue">{humanize(log.action)}</Badge>
+                <span className="font-bold">{log.user?.name ?? "system"}</span>
+                <span className="text-neutral-600 dark:text-neutral-300">{log.detail}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
     </div>
