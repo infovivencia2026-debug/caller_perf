@@ -57,6 +57,14 @@ export default function CallPanel({
 
   return (
     <Card title="Log this call">
+      {/* Name + big tappable phone up top, so on a phone everything needed to make the
+          call and log it is in one place without scrolling. */}
+      <div className="mb-4 border-b border-black pb-3 dark:border-white">
+        <p className="text-base font-bold">{customerName}</p>
+        <a href={`tel:${phone}`} className="text-3xl font-extrabold tabular-nums tracking-tight underline underline-offset-4">
+          {phone}
+        </a>
+      </div>
       {/* One form, several submit buttons. Start/End/Reset/Skip set formNoValidate so
           the required status field does not block them mid-call. */}
       <form action={saveCall} className="space-y-4">

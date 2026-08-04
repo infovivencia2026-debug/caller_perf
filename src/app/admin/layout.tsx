@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 
 const NAV = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/summary", label: "Daily summary" },
   { href: "/admin/calls", label: "Call log" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/callers", label: "Telecallers" },

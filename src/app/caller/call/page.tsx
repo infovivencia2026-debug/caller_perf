@@ -122,7 +122,9 @@ export default async function CallingScreen({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <div className="space-y-6">
+        {/* On a phone the call panel comes first (order-1); the read-only info sits below.
+            On large screens the info returns to the left column. */}
+        <div className="order-2 space-y-6 lg:order-1">
           <Card title="Current customer">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
               <a
@@ -270,22 +272,24 @@ export default async function CallingScreen({
           </Card>
         </div>
 
-        <CallPanel
-          customerId={customer.id}
-          customerName={customerLabel(customer)}
-          phone={customer.phone}
-          customer={{
-            name: customer.name,
-            company: customer.company,
-            city: customer.city,
-            email: customer.email,
-            notes: customer.notes,
-          }}
-          skipped={skipIds}
-          focus={focused ? focus : undefined}
-          timing={timing}
-          error={error}
-        />
+        <div className="order-1 lg:order-2">
+          <CallPanel
+            customerId={customer.id}
+            customerName={customerLabel(customer)}
+            phone={customer.phone}
+            customer={{
+              name: customer.name,
+              company: customer.company,
+              city: customer.city,
+              email: customer.email,
+              notes: customer.notes,
+            }}
+            skipped={skipIds}
+            focus={focused ? focus : undefined}
+            timing={timing}
+            error={error}
+          />
+        </div>
       </div>
     </div>
   );
