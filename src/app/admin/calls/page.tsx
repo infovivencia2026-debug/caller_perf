@@ -20,7 +20,11 @@ export default async function AdminCallLog({
 }: {
   searchParams: Promise<{ range?: string; from?: string; to?: string; caller?: string }>;
 }) {
-  const filters = resolveFilters(await searchParams);
+  const params = await searchParams;
+  const filters = resolveFilters(params);
+  const exportQuery = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => Boolean(value)) as [string, string][],
+  ).toString();
 
   const callers = await prisma.user.findMany({
     where: { role: "TELECALLER" },
@@ -61,11 +65,17 @@ export default async function AdminCallLog({
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-lg font-semibold">Call log</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          {filters.label}
-          {selectedCaller ? ` · ${selectedCaller.name}` : " · all telecallers"} · {total} call
-          {total === 1 ? "" : "s"}
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {filters.label}
+            {selectedCaller ? ` · ${selectedCaller.name}` : " · all telecallers"} · {total} call
+            {total === 1 ? "" : "s"}
+          </p>
+          {/* Exports every call matching the current filters (not just the shown page). */}
+          <a href={`/api/calls/export${exportQuery ? `?${exportQuery}` : ""}`} className={secondaryButtonClass}>
+            Export CSV
+          </a>
+        </div>
       </div>
 
       <Card title="Filters">
