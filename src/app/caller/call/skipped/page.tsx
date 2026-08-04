@@ -56,11 +56,13 @@ export default async function SkippedPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold">Skipped this session ({ordered.length})</h1>
-        <div className="flex flex-wrap gap-2">
-          <Link href={backHref} className={secondaryButtonClass}>
-            Back to calling
+        <div className="flex items-center gap-3">
+          <Link href={backHref} className={secondaryButtonClass} aria-label="Back to calling screen">
+            ← Back
           </Link>
+          <h1 className="text-lg font-semibold">Skipped this session ({ordered.length})</h1>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <Link href="/caller/call" className={buttonClass}>
             Bring them all back
           </Link>

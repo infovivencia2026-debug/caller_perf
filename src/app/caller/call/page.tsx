@@ -77,7 +77,7 @@ export default async function CallingScreen({
       action={
         <Link
           href={`/caller/call/skipped?skip=${skipIds.join(",")}`}
-          className="text-sm text-indigo-400 hover:underline"
+          className="text-sm font-bold uppercase tracking-wide text-black underline underline-offset-2 dark:text-white"
         >
           View details →
         </Link>
