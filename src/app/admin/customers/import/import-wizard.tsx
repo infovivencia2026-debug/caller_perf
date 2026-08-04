@@ -9,16 +9,36 @@ import { buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
 
 const FIELDS = ["name", "phone", "company", "email", "city", "notes"] as const;
 
+/** Header aliases we accept for each field (normalized: lower-case, spaces → "_"). */
+const ALIASES: Record<(typeof FIELDS)[number], string[]> = {
+  phone: ["phone", "phone_number", "phone_no", "phoneno", "mobile", "mobile_number", "mobile_no", "mobileno", "contact", "contact_number", "contact_no", "number", "whatsapp", "ph"],
+  name: ["name", "full_name", "fullname", "customer_name", "customer", "lead_name", "student_name", "contact_name"],
+  company: ["company", "organisation", "organization", "org", "firm"],
+  email: ["email", "email_id", "e_mail", "mail"],
+  city: ["city", "location", "place", "town"],
+  notes: ["notes", "note", "remarks", "remark", "comment", "comments"],
+};
+
+function norm(key: string) {
+  return key.trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+/** Any header on a row that looks like one of ours — used to find the real header row. */
+function looksLikeHeader(cells: unknown[]) {
+  const keys = cells.map((c) => norm(String(c ?? "")));
+  return keys.includes("phone") || ALIASES.phone.some((a) => keys.includes(a));
+}
+
 /** Maps a header row to our field names, case- and space-insensitively. Values are
  *  coerced to strings so spreadsheet number cells (e.g. a phone) come through intact. */
 function pickRow(raw: Record<string, unknown>): ImportRow {
   const normalized: Record<string, string> = {};
   for (const [key, value] of Object.entries(raw)) {
-    normalized[key.trim().toLowerCase().replace(/\s+/g, "_")] = String(value ?? "").trim();
+    normalized[norm(key)] = String(value ?? "").trim();
   }
   const row = {} as Record<string, string>;
   for (const field of FIELDS) {
-    row[field] = normalized[field] ?? normalized[field === "phone" ? "phone_number" : field] ?? "";
+    row[field] = ALIASES[field].map((a) => normalized[a]).find((v) => v) ?? "";
   }
   return row as ImportRow;
 }
@@ -37,11 +57,31 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
   function applyRecords(records: Record<string, unknown>[]) {
     const mapped = records.map(pickRow).filter((row) => row.phone);
     if (mapped.length === 0) {
-      setParseError("No usable rows found. Check that the file has a header row with a phone column.");
+      const found = records[0] ? Object.keys(records[0]).join(", ") : "none";
+      setParseError(
+        `No usable rows found — no phone column detected. Columns in your file: ${found}. ` +
+          `Make sure one column is named phone (or mobile / contact / number).`,
+      );
       setRows(null);
       return;
     }
     setRows(mapped);
+  }
+
+  /** Turn a sheet's array-of-arrays into objects keyed by the real header row, which may
+   *  not be the first row (title rows, a leading serial/ID column, frozen panes…). */
+  function recordsFromSheet(sheet: XLSX.WorkSheet): Record<string, unknown>[] {
+    const aoa = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", blankrows: false });
+    let headerIdx = aoa.findIndex((r) => Array.isArray(r) && looksLikeHeader(r));
+    if (headerIdx < 0) headerIdx = 0; // fall back to the first row
+    const headers = (aoa[headerIdx] ?? []).map((h) => String(h ?? ""));
+    return aoa.slice(headerIdx + 1).map((r) => {
+      const obj: Record<string, unknown> = {};
+      headers.forEach((h, i) => {
+        if (h) obj[h] = (r as unknown[])[i];
+      });
+      return obj;
+    });
   }
 
   function onFile(file: File) {
@@ -57,8 +97,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
         try {
           const wb = XLSX.read(reader.result, { type: "array" });
           const sheet = wb.Sheets[wb.SheetNames[0]];
-          const records = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-          applyRecords(records);
+          applyRecords(recordsFromSheet(sheet));
         } catch {
           setParseError("Could not read that spreadsheet. Save it as .xlsx or .csv and try again.");
           setRows(null);
