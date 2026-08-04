@@ -226,8 +226,10 @@ export default async function CustomersPage({
       <Card title="Customers">
         {/* Hand-pick rows with the checkboxes, choose a telecaller, and assign the lot. */}
         <form action={assignSelected}>
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-950">
-            <span className="text-sm font-medium">Assign ticked customers to</span>
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-none border border-black bg-neutral-100 px-3 py-2 dark:border-white dark:bg-neutral-900">
+            <span className="text-xs font-bold uppercase tracking-wide">
+              Bulk assign — tick rows below, then hand them to:
+            </span>
             <select name="callerId" defaultValue="" className={inputClass}>
               <option value="">Unassigned (return to pool)</option>
               {callers.map((caller) => (
