@@ -23,6 +23,8 @@ const saveSchema = z.object({
   status: z.enum(CALL_STATUSES as [string, ...string[]]),
   response: z.string().optional(),
   comments: z.string().optional(),
+  // Only meaningful for "Interested"; stored on the call for reporting/export.
+  course: z.string().optional(),
   followUpDate: z.string().optional(),
   // Blank means "the caller left the default alone": use MEDIUM for the follow-up but
   // do not rewrite the customer's own priority, which the queue orders by.
@@ -135,6 +137,7 @@ export async function saveCall(formData: FormData) {
     status: String(formData.get("status") ?? ""),
     response: String(formData.get("response") ?? "").trim(),
     comments: String(formData.get("comments") ?? "").trim(),
+    course: String(formData.get("course") ?? "").trim(),
     followUpDate: String(formData.get("followUpDate") ?? ""),
     priority: String(formData.get("priority") ?? ""),
     name: String(formData.get("name") ?? "").trim(),
@@ -184,6 +187,8 @@ export async function saveCall(formData: FormData) {
         status: input.status as never,
         response: input.response || null,
         comments: input.comments || null,
+        // Course only applies to an interested lead.
+        course: input.status === "INTERESTED" ? input.course || null : null,
         startedAt,
         endedAt,
         duration,

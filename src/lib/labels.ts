@@ -27,6 +27,15 @@ export const CUSTOMER_STATUSES: CustomerStatus[] = [
 
 export const PRIORITIES: Priority[] = ["LOW", "MEDIUM", "HIGH"];
 
+/** The courses a caller can tag an interested lead with. */
+export const COURSES = [
+  "AI Career Accelerator",
+  "AI Generalist",
+  "AI Architect",
+  "Cyber Security",
+  "SOC Analyst",
+] as const;
+
 /** Call outcomes that count as a successful contact for conversion metrics. */
 export const SUCCESS_STATUSES: CallStatus[] = [
   "INTERESTED",

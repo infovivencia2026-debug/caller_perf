@@ -120,6 +120,7 @@ model Call {
   status     CallStatus
   response   String?
   comments   String?
+  course     String? // course the interested lead was tagged with
   startedAt  DateTime
   endedAt    DateTime
   duration   Int // seconds

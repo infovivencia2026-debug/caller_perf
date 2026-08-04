@@ -48,6 +48,15 @@ table {
   border: 1px solid var(--line);
 }
 
+/* Reveal the course picker on the call form only when the outcome is "Interested".
+   Pure CSS (:has + :checked) so the no-JS calling panel keeps working. */
+.course-field {
+  display: none;
+}
+.status-block:has(select[name="status"] option[value="INTERESTED"]:checked) .course-field {
+  display: block;
+}
+
 /* Hide the browser's native password reveal so it doesn't fight the custom eye. */
 input::-ms-reveal,
 input::-ms-clear {

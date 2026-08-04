@@ -9,7 +9,7 @@ import {
 import { Card, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
 import type { CallTiming } from "@/lib/call-timer";
 import { currentClock, elapsedSecondsSince, formatClock } from "@/lib/datetime";
-import { CALL_STATUSES, PRIORITIES, formatDuration, humanize } from "@/lib/labels";
+import { CALL_STATUSES, COURSES, PRIORITIES, formatDuration, humanize } from "@/lib/labels";
 
 type CustomerDetails = {
   name: string;
@@ -179,19 +179,35 @@ export default function CallPanel({
           </div>
         </div>
 
-        <label className="block text-sm font-medium">
-          Call status
-          <select name="status" required defaultValue={draft.status ?? ""} className={`${inputClass} mt-1`}>
-            <option value="" disabled>
-              Select an outcome
-            </option>
-            {CALL_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {humanize(status)}
+        {/* status-block groups the outcome with the course picker so a pure-CSS :has()
+            rule (in globals.css) can reveal the course only when "Interested" is chosen. */}
+        <div className="status-block space-y-3">
+          <label className="block text-sm font-medium">
+            Call status
+            <select name="status" required defaultValue={draft.status ?? ""} className={`${inputClass} mt-1`}>
+              <option value="" disabled>
+                Select an outcome
               </option>
-            ))}
-          </select>
-        </label>
+              {CALL_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {humanize(status)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="course-field text-sm font-medium">
+            Course interested in
+            <select name="course" defaultValue={draft.course ?? ""} className={`${inputClass} mt-1`}>
+              <option value="">— Select course —</option>
+              {COURSES.map((course) => (
+                <option key={course} value={course}>
+                  {course}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         <label className="block text-sm font-medium">
           Response type

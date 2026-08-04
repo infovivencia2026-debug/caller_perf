@@ -19,6 +19,7 @@ export type CallDraft = {
   status?: string;
   response?: string;
   comments?: string;
+  course?: string;
   followUpDate?: string;
   priority?: string;
   // Editable customer details, so edits made during the call survive Start/End posts.
@@ -45,6 +46,7 @@ export function draftFromForm(formData: FormData): CallDraft {
     status: field("status", 40),
     response: field("response", 200),
     comments: field("comments", 1000),
+    course: field("course", 80),
     followUpDate: field("followUpDate", 40),
     priority: field("priority", 10),
     name: field("name", 120),
