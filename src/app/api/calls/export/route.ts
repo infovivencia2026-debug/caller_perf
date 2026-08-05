@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { humanize } from "@/lib/labels";
+import { callLead, humanize } from "@/lib/labels";
 import { formatDateTime } from "@/lib/datetime";
 import { resolveFilters } from "@/lib/report-filters";
 import type { Prisma } from "@/generated/prisma/client";
