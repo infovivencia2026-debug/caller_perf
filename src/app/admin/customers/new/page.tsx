@@ -12,7 +12,7 @@ export default async function NewCustomerPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <h1 className="text-lg font-semibold">Add customer</h1>
       <Card>
         <CustomerForm callers={callers} />

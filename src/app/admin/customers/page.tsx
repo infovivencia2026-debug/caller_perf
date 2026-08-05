@@ -64,7 +64,7 @@ export default async function CustomersPage({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {params.ok && (
         <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
           {params.ok}

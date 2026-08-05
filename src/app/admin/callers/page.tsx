@@ -62,7 +62,7 @@ export default async function CallersPage({
   const presentCount = rows.filter((row) => row.active && row.present).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <h1 className="text-lg font-semibold">Counsellors</h1>
 
       {ok && (
@@ -77,7 +77,7 @@ export default async function CallersPage({
       )}
 
       <Card title="Add a counsellor">
-        <form action={createCaller} className="grid gap-4 sm:grid-cols-2">
+        <form action={createCaller} className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-medium">
             Name
             <input name="name" required maxLength={80} placeholder="Full name" className={`${inputClass} mt-1`} />

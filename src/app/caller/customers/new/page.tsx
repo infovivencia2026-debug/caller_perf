@@ -19,7 +19,7 @@ export default async function AddCustomer({
   const { error } = await searchParams;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <h1 className="text-lg font-semibold">Add customer</h1>
 
       {error && (

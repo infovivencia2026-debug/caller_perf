@@ -64,7 +64,7 @@ export default async function AdminCallLog({
   const selectedCaller = callers.find((c) => c.id === filters.callerId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-lg font-semibold">Call log</h1>
         <div className="flex flex-wrap items-center gap-3">
@@ -81,7 +81,7 @@ export default async function AdminCallLog({
       </div>
 
       <Card title="Filters">
-        <form method="get" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="block text-sm font-medium">
             Period
             <select name="range" defaultValue={filters.range} className={`${inputClass} mt-1`}>

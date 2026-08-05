@@ -31,7 +31,7 @@ export default function CustomerForm({
   const [state, formAction, pending] = useActionState<CustomerFormState, FormData>(action, {});
 
   return (
-    <form action={formAction} className="grid gap-4 sm:grid-cols-2">
+    <form action={formAction} className="grid gap-3 sm:grid-cols-2">
       {customer?.id && <input type="hidden" name="id" value={customer.id} />}
 
       <Field label="Name (optional)" name="name" defaultValue={customer?.name} />

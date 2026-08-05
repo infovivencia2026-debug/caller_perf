@@ -21,7 +21,7 @@ export default async function SettingsPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <h1 className="text-lg font-semibold">Settings</h1>
 
       {ok && (
@@ -35,9 +35,9 @@ export default async function SettingsPage({
         </p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card title="Change your password">
-          <form action={changeOwnPassword} className="space-y-4">
+          <form action={changeOwnPassword} className="space-y-3">
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Signed in as <span className="font-medium text-slate-700 dark:text-slate-200">{session.name}</span>.
             </p>
@@ -83,7 +83,7 @@ export default async function SettingsPage({
               No counsellors yet. Add one from the Counsellors page.
             </p>
           ) : (
-            <form action={resetCallerPassword} className="space-y-4">
+            <form action={resetCallerPassword} className="space-y-3">
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Sets a new password immediately. The counsellor is not notified — share it with them
                 yourself.

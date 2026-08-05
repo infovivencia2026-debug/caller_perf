@@ -58,7 +58,7 @@ export default async function SkippedPage({
   const backHref = skipIds.length > 0 ? `/caller/call?skip=${skipIds.join(",")}` : "/caller/call";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href={backHref} className={secondaryButtonClass} aria-label="Back to calling screen">
@@ -87,7 +87,7 @@ export default async function SkippedPage({
             return to the queue when you start over.
           </p>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-3 lg:grid-cols-2">
             {ordered.map((entry, index) => (
               <Card
                 key={entry.id}

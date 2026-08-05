@@ -67,7 +67,7 @@ export default function CallPanel({
       </div>
       {/* One form, several submit buttons. Start/End/Reset/Skip set formNoValidate so
           the required status field does not block them mid-call. */}
-      <form action={saveCall} className="space-y-4">
+      <form action={saveCall} className="space-y-3">
         <input type="hidden" name="customerId" value={customerId} />
         <input type="hidden" name="skipped" value={skippedValue} />
         {focus && <input type="hidden" name="focus" value={focus} />}
@@ -224,7 +224,7 @@ export default function CallPanel({
           <textarea name="comments" rows={4} defaultValue={draft.comments ?? ""} className={`${inputClass} mt-1`} />
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-medium">
             Follow-up date (optional)
             <input

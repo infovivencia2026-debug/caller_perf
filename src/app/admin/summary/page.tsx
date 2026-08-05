@@ -59,7 +59,7 @@ export default async function DailySummary({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-lg font-semibold">Daily summary</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -84,7 +84,7 @@ export default async function DailySummary({
         </form>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Stat label="Calls" value={team.totalCalls} accent="indigo" icon={<IconPhone />} />
         <Stat
           label="Successful contacts"

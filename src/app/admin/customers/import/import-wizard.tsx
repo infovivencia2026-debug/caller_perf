@@ -192,7 +192,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Click to browse, or drag a file onto the zone. */}
       <div
         role="button"

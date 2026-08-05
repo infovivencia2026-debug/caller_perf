@@ -54,7 +54,7 @@ export default async function CallerDashboard() {
   const remaining = Math.max(0, target - todayStats.totalCalls);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <AutoRefresh />
       <FollowUpAlerts
         items={dueToday.map((f) => ({
@@ -71,7 +71,7 @@ export default async function CallerDashboard() {
         </Link>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           label="Today's target"
           value={target}
@@ -100,7 +100,7 @@ export default async function CallerDashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card title="Next customer">
           {next ? (
             <div className="space-y-2 text-sm">

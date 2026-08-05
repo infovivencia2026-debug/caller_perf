@@ -28,7 +28,7 @@ export default function AppShell({
         }
       />
       {/* Offset by the sidebar width from lg up; full width below that. */}
-      <main className="flex min-w-0 flex-1 flex-col p-4 sm:p-6 lg:ml-64">{children}</main>
+      <main className="flex min-w-0 flex-1 flex-col p-3 sm:p-4 lg:ml-64">{children}</main>
     </div>
   );
 }

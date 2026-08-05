@@ -157,7 +157,7 @@ export default async function CallingScreen({
 
   if (!customer) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-3">
         {searchCard}
         <Card title="Calling screen">
           <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -188,7 +188,7 @@ export default async function CallingScreen({
   const timing = await readCallTiming(customer.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Calling screen</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
@@ -199,10 +199,10 @@ export default async function CallingScreen({
 
       {searchCard}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         {/* On a phone the call panel comes first (order-1); the read-only info sits below.
             On large screens the info returns to the left column. */}
-        <div className="order-2 space-y-6 lg:order-1">
+        <div className="order-2 space-y-3 lg:order-1">
           <Card title="Current customer">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
               <a

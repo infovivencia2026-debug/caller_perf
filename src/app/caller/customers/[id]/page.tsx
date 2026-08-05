@@ -51,7 +51,7 @@ export default async function CustomerThread({ params }: { params: Promise<{ id:
   const looseFollowUps = customer.followUps.filter((f) => !callIdsWithFollowUp.has(f.id));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold">{customerLabel(customer)}</h1>

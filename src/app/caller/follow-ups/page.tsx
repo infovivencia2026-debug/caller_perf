@@ -59,7 +59,7 @@ export default async function FollowUpsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <AutoRefresh />
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold">Today&apos;s follow-ups</h1>

@@ -17,9 +17,9 @@ export function Card({
   glow?: Glow;
 }) {
   return (
-    <section data-glow={glow} className="bento p-5">
+    <section data-glow={glow} className="bento p-4">
       {(title || action) && (
-        <header className="mb-4 flex items-center justify-between gap-3">
+        <header className="mb-2.5 flex items-center justify-between gap-3">
           {title && (
             <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
               {title}
@@ -59,9 +59,9 @@ export function BentoTile({
   className?: string;
 }) {
   return (
-    <section data-glow={glow} className={`bento bento-span-${span} ${flush ? "" : "p-5"} ${className}`}>
+    <section data-glow={glow} className={`bento bento-span-${span} ${flush ? "" : "p-4"} ${className}`}>
       {(title || action) && (
-        <header className="mb-4 flex items-center justify-between gap-3">
+        <header className="mb-2.5 flex items-center justify-between gap-3">
           {title && (
             <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
               {title}
@@ -90,10 +90,10 @@ export function BentoStat({
   span?: 3 | 4 | 5 | 7 | 8 | 12;
 }) {
   return (
-    <div data-glow={glow} className={`bento bento-span-${span} p-5`}>
+    <div data-glow={glow} className={`bento bento-span-${span} p-4`}>
       <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">{label}</p>
-      <p className="mt-2 text-3xl font-extrabold tabular-nums leading-none">{value}</p>
-      {hint && <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
+      <p className="mt-1.5 text-3xl font-extrabold tabular-nums leading-none">{value}</p>
+      {hint && <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
     </div>
   );
 }
@@ -136,15 +136,15 @@ export function Stat({
   // its colour coding without being touched.
   const glow = ACCENT_GLOW[accent] ?? "indigo";
   return (
-    <div data-glow={glow} className="bento p-5">
+    <div data-glow={glow} className="bento p-4">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
           {label}
         </span>
         {icon && <span className="text-neutral-400 dark:text-neutral-500">{icon}</span>}
       </div>
-      <p className="mt-3 text-4xl font-extrabold tabular-nums leading-none">{value}</p>
-      {hint && <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
+      <p className="mt-1.5 text-3xl font-extrabold tabular-nums leading-none">{value}</p>
+      {hint && <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
     </div>
   );
 }

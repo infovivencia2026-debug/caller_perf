@@ -108,7 +108,7 @@ export default async function MyCalls({
   const isToday = fromInput === today && toInput === today;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-lg font-semibold">My calls</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -191,14 +191,14 @@ export default async function MyCalls({
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-white/90 text-[11px] uppercase tracking-widest text-neutral-500 backdrop-blur dark:bg-black/80 dark:text-neutral-400">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Started</th>
-                    <th className="px-4 py-3 font-semibold">Ended</th>
-                    <th className="px-4 py-3 font-semibold">Duration</th>
-                    <th className="px-4 py-3 font-semibold">Customer</th>
-                    <th className="px-4 py-3 font-semibold">Outcome</th>
-                    <th className="px-4 py-3 font-semibold">Follow-up</th>
-                    <th className="px-4 py-3 font-semibold">Response / notes</th>
-                    <th className="px-4 py-3 font-semibold">Edit</th>
+                    <th className="px-3 py-2 font-semibold">Started</th>
+                    <th className="px-3 py-2 font-semibold">Ended</th>
+                    <th className="px-3 py-2 font-semibold">Duration</th>
+                    <th className="px-3 py-2 font-semibold">Customer</th>
+                    <th className="px-3 py-2 font-semibold">Outcome</th>
+                    <th className="px-3 py-2 font-semibold">Follow-up</th>
+                    <th className="px-3 py-2 font-semibold">Response / notes</th>
+                    <th className="px-3 py-2 font-semibold">Edit</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -206,12 +206,12 @@ export default async function MyCalls({
                     const lead = callLead(call);
                     return (
                     <tr key={call.id} className="align-top transition-colors hover:bg-indigo-500/5">
-                      <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDateTime(call.startedAt)}</td>
-                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-neutral-500 dark:text-neutral-400">
+                      <td className="whitespace-nowrap px-3 py-2 tabular-nums">{formatDateTime(call.startedAt)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 tabular-nums text-neutral-500 dark:text-neutral-400">
                         {formatShortTime(call.endedAt)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDuration(call.duration)}</td>
-                      <td className="px-4 py-3">
+                      <td className="whitespace-nowrap px-3 py-2 tabular-nums">{formatDuration(call.duration)}</td>
+                      <td className="px-3 py-2">
                         {call.customer ? (
                           <Link
                             href={`/caller/customers/${call.customer.id}`}
@@ -228,7 +228,7 @@ export default async function MyCalls({
                           {lead.deleted ? " · lead deleted" : ""}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <Badge tone={statusTone(call.status)}>{humanize(call.status)}</Badge>
                         {call.course && (
                           <span className="mt-1 block text-xs text-neutral-500 dark:text-neutral-400">
@@ -241,7 +241,7 @@ export default async function MyCalls({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         {call.followUp ? (
                           <>
                             <Badge tone={statusTone(call.followUp.status)}>{humanize(call.followUp.status)}</Badge>
@@ -253,7 +253,7 @@ export default async function MyCalls({
                           <span className="text-neutral-400 dark:text-neutral-500">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-neutral-600 dark:text-neutral-300">
+                      <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300">
                         {call.response || call.comments ? (
                           <span className="block max-w-[22rem] whitespace-pre-wrap">
                             {[call.response, call.comments].filter(Boolean).join(" — ")}
@@ -262,7 +262,7 @@ export default async function MyCalls({
                           <span className="text-neutral-400 dark:text-neutral-500">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         {/* Native HTML popover: the edit form opens with no client JavaScript,
                             matching the rest of the calling flow. */}
                         <button
