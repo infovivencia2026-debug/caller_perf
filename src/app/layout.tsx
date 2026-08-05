@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+/* Kept for tabular figures only — phone numbers, durations and the call clock stay
+   monospaced so columns of digits line up. Applied via the `.nums` helper and
+   Tailwind's `font-mono`, never to body text. */
 const jetbrains = JetBrains_Mono({
   variable: "--font-jetbrains",
   subsets: ["latin"],
@@ -18,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${jetbrains.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${jetbrains.variable} h-full antialiased`}>
       <head>
         {/* Apply the saved appearance before first paint (default light) so there's no flash. */}
         <script

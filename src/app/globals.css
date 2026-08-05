@@ -4,10 +4,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  /* Neutral grayscale (no blue tint) for a clean brutalist black-on-white system. */
+  /* Neutral grayscale (no blue tint); the bento tiles supply what colour there is. */
   --color-slate-950: #0a0a0a;
   --color-slate-900: #141414;
   --color-slate-800: #262626;
@@ -42,6 +42,13 @@ body {
   color: #0a0a0a;
   font-family: var(--font-sans);
   min-height: 100vh;
+}
+
+/* Inter's default digits are proportional, which makes a column of durations or
+   phone numbers ripple. Every figure in this app is data, so lock them to equal
+   width globally rather than sprinkling `tabular-nums` around. */
+:where(body) {
+  font-variant-numeric: tabular-nums;
 }
 .dark body {
   background:
@@ -194,6 +201,33 @@ table {
   border-color: color-mix(in srgb, var(--line) 12%, transparent);
   border-left: 0;
   border-right: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Popovers sit in the centre of the viewport.
+
+   The UA centres a [popover] with `position: fixed; inset: 0; margin: auto`, but
+   `.bento` sets `position: relative` for its glow layers — same specificity, so
+   whichever loses the cascade wins the layout, and the panels ended up in a
+   corner. These rules come after `.bento` and restate the centring, with
+   `.bento[popover]` (two selectors) to beat the class outright.
+   --------------------------------------------------------------------------- */
+[popover],
+.bento[popover] {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  /* A tall panel scrolls inside itself rather than off the screen. */
+  max-height: min(85dvh, 44rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* Same dimmed, blurred backdrop for every popover, so none of them has to
+   restate it at the call site. */
+[popover]::backdrop {
+  background: rgb(10 10 15 / 0.45);
+  backdrop-filter: blur(2px);
 }
 
 /* Hide the browser's native password reveal so it doesn't fight the custom eye. */

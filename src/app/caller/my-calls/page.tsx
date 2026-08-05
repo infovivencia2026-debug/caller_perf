@@ -233,7 +233,7 @@ export default async function MyCalls({
                           id={`edit-call-${call.id}`}
                           popover="auto"
                           data-glow="violet"
-                          className="bento w-[min(32rem,92vw)] p-5 text-sm text-black backdrop:bg-black/50 backdrop:backdrop-blur-sm dark:text-white"
+                          className="bento w-[min(32rem,92vw)] p-5 text-sm text-black dark:text-white"
                         >
                           <div className="mb-4 flex items-center justify-between gap-3">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
