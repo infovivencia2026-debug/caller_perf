@@ -65,12 +65,12 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-neutral-200/70 bg-white/70 backdrop-blur-xl transition-transform duration-200 dark:border-neutral-800 dark:bg-black/50 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-neutral-200/70 bg-white/75 shadow-[4px_0_24px_-12px_rgb(15_15_30/0.35)] backdrop-blur-xl transition-transform duration-200 dark:border-neutral-800 dark:bg-black/60 dark:shadow-[4px_0_28px_-12px_rgb(0_0_0/0.8)] ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
         <div className="flex items-center gap-3 border-b border-neutral-200/70 px-5 py-4 dark:border-neutral-800">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-500/40 bg-indigo-500/15 text-sm font-bold text-indigo-700 dark:border-indigo-400/40 dark:text-indigo-200">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-500/40 bg-gradient-to-b from-indigo-500 to-indigo-600 text-sm font-bold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.3),0_6px_14px_-6px_rgb(99_102_241/0.8)]">
             TP
           </div>
           <div className="min-w-0">
@@ -91,7 +91,7 @@ export default function Sidebar({
                     onClick={() => setOpen(false)}
                     className={`block rounded-xl border px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors ${
                       active
-                        ? "border-indigo-500/40 bg-indigo-500/15 text-indigo-700 dark:border-indigo-400/40 dark:text-indigo-200"
+                        ? "border-indigo-500/40 bg-gradient-to-b from-indigo-500/20 to-indigo-500/10 text-indigo-700 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.6),0_4px_12px_-6px_rgb(99_102_241/0.7)] dark:border-indigo-400/40 dark:text-indigo-200 dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.08),0_4px_14px_-6px_rgb(99_102_241/0.6)]"
                         : "border-transparent text-neutral-600 hover:border-neutral-300 hover:bg-black/5 hover:text-black dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-white/5 dark:hover:text-white"
                     }`}
                   >

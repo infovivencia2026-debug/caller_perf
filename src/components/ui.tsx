@@ -98,16 +98,24 @@ export function BentoStat({
   );
 }
 
-/** Softer, rounded button that sits with the bento surfaces. */
+/**
+ * Primary action. Raised rather than tinted-flat: a gradient face, a lit top lip
+ * (the inset white line), a contact shadow and a coloured ambient one. It presses
+ * in on :active, which is what makes it feel like a physical button.
+ */
 export const bentoButtonClass =
-  "inline-flex items-center justify-center rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-bold uppercase tracking-wide text-indigo-700 transition-colors hover:bg-indigo-500/20 disabled:opacity-50 disabled:pointer-events-none dark:border-indigo-400/40 dark:text-indigo-200";
+  "inline-flex items-center justify-center rounded-xl border border-indigo-500/50 bg-gradient-to-b from-indigo-500 to-indigo-600 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_1px_2px_0_rgb(15_15_30/0.2),0_8px_16px_-8px_rgb(99_102_241/0.8)] transition-all hover:-translate-y-px hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.3),0_2px_4px_0_rgb(15_15_30/0.22),0_12px_22px_-8px_rgb(99_102_241/0.9)] active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.3)] disabled:opacity-50 disabled:pointer-events-none";
 
+/** Secondary action: a raised neutral surface, same lighting, no colour. */
 export const bentoGhostButtonClass =
-  "inline-flex items-center justify-center rounded-xl border border-neutral-300 bg-transparent px-4 py-2 text-sm font-bold uppercase tracking-wide text-neutral-700 transition-colors hover:border-neutral-500 hover:text-black dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-400 dark:hover:text-white";
+  "inline-flex items-center justify-center rounded-xl border border-neutral-300 bg-gradient-to-b from-white to-neutral-100 px-4 py-2 text-sm font-bold uppercase tracking-wide text-neutral-700 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.9),0_1px_2px_0_rgb(15_15_30/0.1),0_6px_14px_-8px_rgb(15_15_30/0.25)] transition-all hover:-translate-y-px hover:text-black hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.9),0_2px_4px_0_rgb(15_15_30/0.12),0_10px_20px_-8px_rgb(15_15_30/0.3)] active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.18)] disabled:opacity-50 disabled:pointer-events-none dark:border-neutral-700 dark:from-neutral-800 dark:to-neutral-900 dark:text-neutral-200 dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.07),0_1px_2px_0_rgb(0_0_0/0.5),0_8px_18px_-10px_rgb(0_0_0/0.8)] dark:hover:text-white";
 
-/** Rounded input to match the bento tiles. */
+/**
+ * Inputs read as recessed — the opposite lighting to the buttons: a soft inner
+ * shadow at the top edge, as though the field were pressed into the tile.
+ */
 export const bentoInputClass =
-  "w-full rounded-xl border border-neutral-300 bg-white/60 px-3 py-2 text-sm text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 dark:border-neutral-700 dark:bg-white/5 dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-indigo-400";
+  "w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-black shadow-[inset_0_2px_4px_-2px_rgb(15_15_30/0.15)] outline-none transition-shadow placeholder:text-neutral-400 focus:border-indigo-400 focus:shadow-[inset_0_2px_4px_-2px_rgb(15_15_30/0.12),0_0_0_3px_rgb(99_102_241/0.18)] dark:border-neutral-700 dark:bg-black/40 dark:text-white dark:shadow-[inset_0_2px_4px_-2px_rgb(0_0_0/0.6)] dark:placeholder:text-neutral-500 dark:focus:border-indigo-400";
 
 export type StatAccent ="indigo" | "emerald" | "amber" | "rose" | "sky" | "violet" | "slate";
 
@@ -164,7 +172,7 @@ export function Row({ label, children }: { label: string; children: ReactNode })
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: Tone }) {
   return (
     <span
-      className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${TONES[tone]}`}
+      className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide shadow-[inset_0_1px_0_0_rgb(255_255_255/0.5)] dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.08)] ${TONES[tone]}`}
     >
       {children}
     </span>
