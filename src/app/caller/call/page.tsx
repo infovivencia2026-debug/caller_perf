@@ -15,9 +15,10 @@ import {
 } from "@/components/ui";
 import { callLead, customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { getAssignedCustomer, getNextCustomer, getQueueCount, searchAssignedCustomers } from "@/lib/queue";
+import { getShouldCallList } from "@/lib/should-call";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
 import { clearSkips } from "@/app/actions/calls";
 import CallPanel from "./call-panel";
@@ -107,7 +108,7 @@ export default async function CallingScreen({
     </BentoTile>
   );
 
-  const [nextInQueue, queueCount, callsToday, me, lastCall] = await Promise.all([
+  const [nextInQueue, queueCount, callsToday, me, lastCall, shouldCall] = await Promise.all([
     focused ? Promise.resolve(null) : getNextCustomer(session.userId, skipIds),
     getQueueCount(session.userId),
     prisma.call.count({
@@ -120,7 +121,50 @@ export default async function CallingScreen({
       orderBy: { startedAt: "desc" },
       include: { customer: true },
     }),
+    // Tried today but never reached — callable again without waiting for tomorrow.
+    getShouldCallList(session.userId),
   ]);
+
+  const shouldCallCard = shouldCall.length > 0 && (
+    <BentoTile
+      title={`Should call again (${shouldCall.length})`}
+      glow="amber"
+      action={
+        <Link
+          href="/caller/should-call"
+          className="text-sm font-bold uppercase tracking-wide underline underline-offset-2"
+        >
+          See all →
+        </Link>
+      }
+    >
+      {/* No answer / busy / switched off from earlier today. "Call" pins the lead on
+          this same screen, so the flow is identical to a queued call. */}
+      <ul className="space-y-2">
+        {shouldCall.slice(0, 5).map((entry) => (
+          <li
+            key={entry.customerId}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
+          >
+            <span className="min-w-0">
+              <span className="font-semibold">{customerLabel(entry)}</span>
+              <span className="ml-2 tabular-nums text-neutral-500 dark:text-neutral-400">{entry.phone}</span>
+              <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+                {humanize(entry.lastStatus)} at {formatShortTime(entry.lastTriedAt)}
+                {entry.attemptsToday > 1 ? ` · ${entry.attemptsToday} attempts` : ""}
+              </span>
+            </span>
+            <Link
+              href={`/caller/call?focus=${entry.customerId}${skipIds.length > 0 ? `&skip=${skipIds.join(",")}` : ""}`}
+              className={bentoGhostButtonClass}
+            >
+              Call
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </BentoTile>
+  );
 
   const customer = focused ?? nextInQueue;
 
@@ -159,6 +203,7 @@ export default async function CallingScreen({
     return (
       <div className="space-y-3">
         {searchCard}
+        {shouldCallCard}
         <Card title="Calling screen">
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {skipIds.length > 0
@@ -198,6 +243,7 @@ export default async function CallingScreen({
       </div>
 
       {searchCard}
+      {shouldCallCard}
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         {/* On a phone the call panel comes first (order-1); the read-only info sits below.
