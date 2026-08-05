@@ -37,6 +37,8 @@ const saveSchema = z.object({
   // Blank means "the caller left the default alone": use MEDIUM for the follow-up but
   // do not rewrite the customer's own priority, which the queue orders by.
   priority: z.enum(["LOW", "MEDIUM", "HIGH", ""]),
+  // Escape hatch for a call made without pressing Call first — see below.
+  manualMinutes: z.string().optional(),
   // Editable customer details — saved together with the call so edits made on the
   // call are never lost.
   name: z.string().optional(),
@@ -51,11 +53,17 @@ const saveSchema = z.object({
  * customer, and surfacing a message. `focus` pins a specific customer — it must survive
  * Start/End/Reset so a follow-up call doesn't jump back to the queue mid-timing.
  */
-function queueHref(skipped: string, opts: { error?: string; saved?: boolean; focus?: string } = {}) {
+function queueHref(
+  skipped: string,
+  opts: { error?: string; saved?: boolean; focus?: string; savedCallId?: string } = {},
+) {
   const params = new URLSearchParams();
   if (skipped) params.set("skip", skipped);
   if (opts.error) params.set("error", opts.error);
   if (opts.saved) params.set("saved", "1");
+  // Lets the next screen offer "just saved — fix it", instead of the counsellor
+  // having to hunt the call down in My calls.
+  if (opts.savedCallId) params.set("last", opts.savedCallId);
   if (opts.focus) params.set("focus", opts.focus);
   const query = params.toString();
   return query ? `/caller/call?${query}` : "/caller/call";
@@ -148,6 +156,7 @@ export async function saveCall(formData: FormData) {
     course: String(formData.get("course") ?? "").trim(),
     followUpDate: String(formData.get("followUpDate") ?? ""),
     priority: String(formData.get("priority") ?? ""),
+    manualMinutes: String(formData.get("manualMinutes") ?? "").trim(),
     name: String(formData.get("name") ?? "").trim(),
     company: String(formData.get("company") ?? "").trim(),
     city: String(formData.get("city") ?? "").trim(),
@@ -160,14 +169,31 @@ export async function saveCall(formData: FormData) {
 
   const input = parsed.data;
 
-  // Timings come from the cookie, never from the form, so they cannot be forged
-  // by editing hidden inputs.
+  // Timings come from the cookie, never from the form, so they cannot be forged by
+  // editing hidden inputs.
   const timing = existing?.customerId === input.customerId ? existing : null;
-  if (!timing?.endedAt) {
-    redirect(queueHref(skipped, { error: "Start and end the call before saving", focus }));
+
+  // A counsellor who dialled without pressing Call used to be unable to log the
+  // conversation at all — the save was refused and the call was simply lost. They can
+  // now state the length instead. Only used when there is no stamped timing, so a
+  // real timing can never be overridden by a typed number.
+  const manualMinutes = input.manualMinutes ? Number(input.manualMinutes) : NaN;
+  const manualEntry = !timing?.endedAt && Number.isFinite(manualMinutes) && manualMinutes >= 0;
+
+  if (!timing?.endedAt && !manualEntry) {
+    redirect(
+      queueHref(skipped, {
+        error: "Tap Call to start the timer, or use “Called without the timer?” to enter the length",
+        focus,
+      }),
+    );
   }
-  const startedAt = new Date(timing.startedAt);
-  const endedAt = new Date(timing.endedAt);
+
+  const now = new Date();
+  const startedAt = manualEntry
+    ? new Date(now.getTime() - Math.min(manualMinutes, 120) * 60 * 1000)
+    : new Date(timing!.startedAt);
+  const endedAt = manualEntry ? now : new Date(timing!.endedAt!);
   if (Number.isNaN(startedAt.getTime()) || Number.isNaN(endedAt.getTime())) {
     redirect(queueHref(skipped, { error: "Call timing was invalid — start the call again", focus }));
   }
@@ -179,6 +205,17 @@ export async function saveCall(formData: FormData) {
   }
 
   const duration = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
+  // The timing cookie lives for four hours, so a forgotten End produces a "call" of
+  // hours that quietly poisons talk time and averages. Anything past 45 minutes is
+  // almost certainly that, so it is sent back rather than saved.
+  if (duration > 45 * 60) {
+    redirect(
+      queueHref(skipped, {
+        error: "That call is over 45 minutes — reset the timer and log it with the manual length",
+        focus,
+      }),
+    );
+  }
 
   const explicitDue = input.followUpDate ? new Date(input.followUpDate) : null;
   if (explicitDue && Number.isNaN(explicitDue.getTime())) {
@@ -187,6 +224,7 @@ export async function saveCall(formData: FormData) {
   // The caller's chosen date wins; otherwise a retry-type outcome schedules tomorrow.
   const followUpDue = explicitDue ?? (RETRY_STATUSES.has(input.status) ? endOfDay() : null);
 
+  let savedCallId: string | null = null;
   await prisma.$transaction(async (tx) => {
     const call = await tx.call.create({
       data: {
@@ -232,6 +270,8 @@ export async function saveCall(formData: FormData) {
       data: { status: "COMPLETED", completedAt: new Date() },
     });
 
+    savedCallId = call.id;
+
     if (followUpDue) {
       await tx.followUp.create({
         data: {
@@ -268,9 +308,10 @@ export async function saveCall(formData: FormData) {
   await clearCallTiming();
   revalidatePath("/caller");
   revalidatePath("/caller/call");
+  revalidatePath("/caller/my-calls");
   revalidatePath("/admin/customers");
   revalidatePath("/admin/calendar");
-  redirect(queueHref(skipped));
+  redirect(queueHref(skipped, { savedCallId: savedCallId ?? undefined }));
 }
 
 /** Skipping records nothing; it just moves the caller past this customer for now. */

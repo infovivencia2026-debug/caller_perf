@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -18,6 +18,26 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Counsellor Performance",
   description: "Counsellor call logging and performance tracking",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Counsellor", statusBarStyle: "black-translucent" },
+  icons: {
+    icon: [{ url: "/favicon-32.png", sizes: "32x32", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
+  },
+};
+
+/**
+ * viewportFit: "cover" plus the safe-area padding in globals.css keeps the sticky save
+ * bar clear of the home indicator when the app is installed to a home screen.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#eef0f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#08080a" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

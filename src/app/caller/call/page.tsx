@@ -28,10 +28,10 @@ export const dynamic = "force-dynamic";
 export default async function CallingScreen({
   searchParams,
 }: {
-  searchParams: Promise<{ skip?: string; error?: string; saved?: string; focus?: string; q?: string }>;
+  searchParams: Promise<{ skip?: string; error?: string; saved?: string; focus?: string; q?: string; last?: string }>;
 }) {
   const session = await requireCaller();
-  const { skip, error, saved, focus, q } = await searchParams;
+  const { skip, error, saved, focus, q, last } = await searchParams;
   // The skip list lives in a cookie (so it survives navigating away and back) and is also
   // carried in the URL during the calling flow — merge both so nothing is lost.
   const cookieStore = await cookies();
@@ -232,6 +232,15 @@ export default async function CallingScreen({
 
   const timing = await readCallTiming(customer.id);
 
+  const savedBanner = last && (
+    <p className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-300">
+      <span>Call saved.</span>
+      <Link href="/caller/my-calls" className="font-bold underline underline-offset-2">
+        Wrong outcome? Fix it →
+      </Link>
+    </p>
+  );
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -242,8 +251,7 @@ export default async function CallingScreen({
         </p>
       </div>
 
-      {searchCard}
-      {shouldCallCard}
+      {savedBanner}
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         {/* On a phone the call panel comes first (order-1); the read-only info sits below.
@@ -410,6 +418,8 @@ export default async function CallingScreen({
           </Card>
         </div>
 
+        {/* order-1 on a phone: the panel is the first thing under the header, with
+            the search and retry lists below it rather than pushing it off screen. */}
         <div className="order-1 lg:order-2">
           <CallPanel
             customerId={customer.id}
@@ -426,9 +436,14 @@ export default async function CallingScreen({
             focus={focused ? focusId : undefined}
             timing={timing}
             error={error}
+            callsToday={callsToday}
+            dailyTarget={me?.dailyTarget ?? 0}
           />
         </div>
       </div>
+
+      {searchCard}
+      {shouldCallCard}
     </div>
   );
 }

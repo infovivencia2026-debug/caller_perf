@@ -93,6 +93,28 @@ export function customerLabel(customer: { name?: string | null; phone: string })
   return name && name.length > 0 ? name : customer.phone;
 }
 
+/**
+ * Compact outcome labels for tight spots — the outcome chips on the calling panel,
+ * where two columns on a narrow phone leave no room for "Callback Requested".
+ */
+const SHORT_STATUS: Record<string, string> = {
+  NO_ANSWER: "No answer",
+  BUSY: "Busy",
+  SWITCHED_OFF: "Switched off",
+  NOT_INTERESTED: "Not interested",
+  INTERESTED: "Interested",
+  WRONG_NUMBER: "Wrong number",
+  CALLBACK_REQUESTED: "Callback",
+  MEETING_SCHEDULED: "Meeting",
+  EXISTING_CUSTOMER: "Existing",
+  SALE_CLOSED: "Closed sale",
+  INVALID_NUMBER: "Invalid",
+};
+
+export function shortStatus(value: string) {
+  return SHORT_STATUS[value] ?? humanize(value);
+}
+
 export function humanize(value: string) {
   return value
     .toLowerCase()

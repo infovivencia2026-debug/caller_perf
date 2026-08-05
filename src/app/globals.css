@@ -76,7 +76,8 @@ table {
 .course-field {
   display: none;
 }
-.status-block:has(select[name="status"] option[value="INTERESTED"]:checked) .course-field {
+.status-block:has(select[name="status"] option[value="INTERESTED"]:checked) .course-field,
+.status-block:has(input[name="status"][value="INTERESTED"]:checked) .course-field {
   display: block;
 }
 
@@ -228,6 +229,39 @@ table {
 [popover]::backdrop {
   background: rgb(10 10 15 / 0.45);
   backdrop-filter: blur(2px);
+}
+
+/* ---------------------------------------------------------------------------
+   Phone ergonomics.
+   --------------------------------------------------------------------------- */
+
+/* Installed to a home screen the app runs edge to edge, so the sticky save bar
+   would sit under the home indicator without this. */
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* iOS zooms the page when a font smaller than 16px gets focus. Every input in the
+   app is 14px, which made tapping any field jolt the layout. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Kill the grey flash on tap and stop long-press selecting button labels — both
+   read as "this app is a website" on a phone. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+[role="button"],
+summary {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
 }
 
 /* Hide the browser's native password reveal so it doesn't fight the custom eye. */

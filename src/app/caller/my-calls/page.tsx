@@ -52,7 +52,7 @@ function parseDate(value?: string) {
 export default async function MyCalls({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string; saved?: string; error?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; saved?: string; error?: string; outcome?: string; q?: string }>;
 }) {
   const session = await requireCaller();
   const params = await searchParams;
@@ -63,8 +63,25 @@ export default async function MyCalls({
   const fromDate = parseDate(fromInput);
   const toDate = parseDate(toInput);
 
+  // Free-text search runs over the customer's name/phone and the counsellor's own
+  // words, since "the guy who wanted the brochure" is as likely to be in the notes.
+  const search = (params.q ?? "").trim();
+  const digits = search.replace(/\D/g, "");
+  const outcome = params.outcome ?? "";
+
   const where = {
     callerId: session.userId,
+    ...(outcome ? { status: outcome as never } : {}),
+    ...(search
+      ? {
+          OR: [
+            { customer: { name: { contains: search, mode: "insensitive" as const } } },
+            ...(digits ? [{ customerPhone: { contains: digits } }] : []),
+            { response: { contains: search, mode: "insensitive" as const } },
+            { comments: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
     ...(fromDate || toDate
       ? {
           startedAt: {
@@ -104,8 +121,10 @@ export default async function MyCalls({
   const talkTime = calls.reduce((sum, call) => sum + call.duration, 0);
   const connected = calls.filter((call) => SUCCESS_STATUSES.includes(call.status)).length;
   // Editing posts back here, so the caller returns to the same range they were viewing.
-  const back = `/caller/my-calls?from=${encodeURIComponent(fromInput)}&to=${encodeURIComponent(toInput)}`;
-  const isToday = fromInput === today && toInput === today;
+  const back = `/caller/my-calls?from=${encodeURIComponent(fromInput)}&to=${encodeURIComponent(toInput)}${
+    outcome ? `&outcome=${encodeURIComponent(outcome)}` : ""
+  }${search ? `&q=${encodeURIComponent(search)}` : ""}`;
+  const isToday = fromInput === today && toInput === today && !outcome && !search;
 
   return (
     <div className="space-y-3">
@@ -155,12 +174,33 @@ export default async function MyCalls({
               To
               <input type="date" name="to" defaultValue={toInput} className={`${bentoInputClass} mt-1`} />
             </label>
+            <label className="text-sm font-medium">
+              Outcome
+              <select name="outcome" defaultValue={outcome} className={`${bentoInputClass} mt-1`}>
+                <option value="">Any outcome</option>
+                {CALL_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {humanize(status)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="min-w-[12rem] flex-1 text-sm font-medium">
+              Search
+              <input
+                type="search"
+                name="q"
+                defaultValue={search}
+                placeholder="Name, number, or your notes"
+                className={`${bentoInputClass} mt-1`}
+              />
+            </label>
             <button type="submit" className={bentoButtonClass}>
               Apply
             </button>
             {!isToday && (
               <Link href="/caller/my-calls" className={bentoGhostButtonClass}>
-                Back to today
+                Reset
               </Link>
             )}
             <p className="w-full text-xs text-neutral-500 dark:text-neutral-400">
