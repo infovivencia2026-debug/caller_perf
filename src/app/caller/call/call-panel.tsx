@@ -106,25 +106,63 @@ export default function CallPanel({
         <input type="hidden" name="skipped" value={skippedValue} />
         {focus && <input type="hidden" name="focus" value={focus} />}
 
-        <div className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
-          <p className="text-3xl font-semibold tabular-nums">
+        {/* The timer is the point of this screen: the call happens on a separate
+            handset, so the only thing the app records is when it started and stopped.
+            Big, live, and with both stamps spelled out underneath. */}
+        <div
+          className={`rounded-lg border p-4 text-center ${
+            startedAt && !ended
+              ? "border-emerald-500/50 bg-emerald-500/5"
+              : "border-neutral-200 dark:border-neutral-800"
+          }`}
+        >
+          <p className="text-5xl font-extrabold tabular-nums leading-none sm:text-6xl">
             {startedAt ? (
               <span id="call-elapsed" data-started-at={ended ? undefined : timing?.startedAt}>
                 {formatDuration(elapsed)}
               </span>
             ) : (
-              <span className="text-neutral-400 dark:text-neutral-600">Not started</span>
+              <span className="text-neutral-300 dark:text-neutral-700">0m 00s</span>
             )}
           </p>
-          <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
-            {!startedAt && "Dial on your phone, then press Start call"}
-            {startedAt && !ended && (
-              <>
-                Now <span id="call-now" className="tabular-nums">{currentClock()}</span>
-              </>
-            )}
-            {endedAt && `Ended ${formatClock(endedAt)}`}
-          </p>
+
+          {startedAt && !ended && (
+            <p className="mt-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+              Call running
+            </p>
+          )}
+          {!startedAt && (
+            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+              Dial on your phone, then press Start call
+            </p>
+          )}
+
+          {/* Both stamps, always visible once they exist — this is the record. */}
+          <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-neutral-200 pt-3 text-left dark:border-neutral-800">
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+                Started
+              </dt>
+              <dd className="tabular-nums text-sm font-semibold">
+                {startedAt ? formatClock(startedAt) : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+                Ended
+              </dt>
+              <dd className="tabular-nums text-sm font-semibold">
+                {endedAt ? formatClock(endedAt) : "—"}
+              </dd>
+            </div>
+          </dl>
+
+          {startedAt && !ended && (
+            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+              Now <span id="call-now" className="tabular-nums">{currentClock()}</span>
+            </p>
+          )}
 
           <div className="mt-3 space-y-2">
             {!startedAt && (
