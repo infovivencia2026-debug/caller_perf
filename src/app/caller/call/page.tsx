@@ -55,7 +55,7 @@ export default async function CallingScreen({
       <form method="get" className="flex flex-wrap items-end gap-3">
         {/* Keeps the session's skip list alive across a search. */}
         {skipIds.length > 0 && <input type="hidden" name="skip" value={skipIds.join(",")} />}
-        <label className="min-w-[16rem] flex-1 text-sm font-medium">
+        <label className="w-full text-sm font-medium sm:min-w-[16rem] sm:flex-1">
           Search by name or number
           <input
             type="search"
@@ -259,12 +259,7 @@ export default async function CallingScreen({
         <div className="order-2 space-y-3 lg:order-1">
           <Card title="Current customer">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
-              <a
-                href={`tel:${customer.phone}`}
-                className="text-base font-semibold tabular-nums tracking-wide hover:underline"
-              >
-                {customer.phone}
-              </a>
+              <span className="text-base font-semibold tabular-nums tracking-wide">{customer.phone}</span>
               <span className="flex items-center gap-2">
                 <Badge tone={statusTone(customer.status)}>{humanize(customer.status)}</Badge>
                 <span className="text-slate-500 dark:text-slate-400">{humanize(customer.priority)}</span>
@@ -312,12 +307,7 @@ export default async function CallingScreen({
                   <span className="text-base font-semibold">{customerLabel(callLead(lastCall))}</span>
                 </Row>
                 <Row label="Phone">
-                  <a
-                    href={`tel:${callLead(lastCall).phone}`}
-                    className="tabular-nums tracking-wide hover:underline"
-                  >
-                    {callLead(lastCall).phone}
-                  </a>
+                  <span className="tabular-nums tracking-wide">{callLead(lastCall).phone}</span>
                 </Row>
                 <Row label="Company">{callLead(lastCall).company ?? "—"}</Row>
                 <Row label="City">{callLead(lastCall).city ?? "—"}</Row>

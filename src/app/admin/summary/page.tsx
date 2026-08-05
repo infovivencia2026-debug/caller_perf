@@ -103,7 +103,7 @@ export default async function DailySummary({
         {rows.length === 0 ? (
           <p className="text-sm text-neutral-500">No counsellors.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="table-scroll max-w-full">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <tr>

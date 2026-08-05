@@ -10,24 +10,17 @@ import { useFormStatus } from "react-dom";
  */
 
 /**
- * The one button a counsellor presses per call: opens the phone's dialer AND stamps
- * the start, instead of relying on them remembering to do both. The form submits
- * normally (no preventDefault), so with scripts off this is still just "Start call".
+ * Starts the call clock. Deliberately does NOT open the dialer: counsellors dial on
+ * the handset themselves, and a tel: navigation mid-form was one more thing to go
+ * wrong. This screen only ever records when the call started and ended.
  */
-export function DialAndStart({ phone, disabled, children }: { phone: string; disabled?: boolean; children: ReactNode }) {
+export function StartCallButton({ disabled, children }: { disabled?: boolean; children: ReactNode }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      name="intent"
-      value="start"
       formNoValidate
       disabled={disabled || pending}
-      onClick={() => {
-        // Fire the dialer on the way out. Navigating to a tel: URL hands off to the
-        // dialer app without unloading the page, so the POST still completes.
-        window.location.href = `tel:${phone}`;
-      }}
       className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-600/60 bg-gradient-to-b from-emerald-500 to-emerald-600 px-4 py-3.5 text-base font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_2px_4px_0_rgb(15_15_30/0.2),0_10px_20px_-8px_rgb(16_185_129/0.8)] transition-all active:translate-y-px active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.3)] disabled:opacity-50 disabled:pointer-events-none"
     >
       {pending ? "Starting…" : children}

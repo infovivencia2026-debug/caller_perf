@@ -242,7 +242,7 @@ export default async function CustomersPage({
               Assign selected
             </button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="table-scroll max-w-full">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <tr>

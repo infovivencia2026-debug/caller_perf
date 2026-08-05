@@ -165,7 +165,7 @@ export default async function MyCalls({
         />
 
         <BentoTile title="Date range" glow="amber" span={12}>
-          <form method="get" className="flex flex-wrap items-end gap-3">
+          <form method="get" className="grid gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end">
             <label className="text-sm font-medium">
               From
               <input type="date" name="from" defaultValue={fromInput} className={`${bentoInputClass} mt-1`} />
@@ -185,7 +185,7 @@ export default async function MyCalls({
                 ))}
               </select>
             </label>
-            <label className="min-w-[12rem] flex-1 text-sm font-medium">
+            <label className="w-full text-sm font-medium sm:w-auto sm:min-w-[12rem] sm:flex-1">
               Search
               <input
                 type="search"
@@ -227,7 +227,7 @@ export default async function MyCalls({
               No calls in this range{isToday ? " yet today" : ""}.
             </p>
           ) : (
-            <div className="max-h-[70vh] overflow-auto">
+            <div className="table-scroll max-h-[70vh] max-w-full overflow-y-auto">
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-white/90 text-[11px] uppercase tracking-widest text-neutral-500 backdrop-blur dark:bg-black/80 dark:text-neutral-400">
                   <tr>

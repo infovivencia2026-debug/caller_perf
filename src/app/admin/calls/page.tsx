@@ -145,7 +145,7 @@ export default async function AdminCallLog({
         ) : (
           // Scrolls inside the card (both directions) so a long call list doesn't stretch
           // the whole page; the header stays pinned while you scroll.
-          <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-200 dark:border-slate-800">
+          <div className="table-scroll max-h-[70vh] max-w-full overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                 <tr>

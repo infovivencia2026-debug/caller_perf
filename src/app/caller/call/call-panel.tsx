@@ -10,7 +10,7 @@ import { BentoTile, bentoGhostButtonClass, bentoInputClass } from "@/components/
 import type { CallTiming } from "@/lib/call-timer";
 import { currentClock, elapsedSecondsSince, formatClock } from "@/lib/datetime";
 import { CALL_STATUSES, COURSES, PRIORITIES, formatDuration, humanize, shortStatus } from "@/lib/labels";
-import { CallShortcuts, DialAndStart, FollowUpPresets, SubmitButton } from "./call-controls";
+import { CallShortcuts, FollowUpPresets, StartCallButton, SubmitButton } from "./call-controls";
 
 type CustomerDetails = {
   name: string;
@@ -79,12 +79,8 @@ export default function CallPanel({
           number, the clock and the green button. */}
       <div className="border-b border-neutral-200 p-4 dark:border-neutral-800">
         <p className="text-base font-bold">{customerName}</p>
-        <a
-          href={`tel:${phone}`}
-          className="text-3xl font-extrabold tabular-nums tracking-tight underline underline-offset-4"
-        >
-          {phone}
-        </a>
+        {/* Plain text, not a tel: link — tapping the number should never navigate. */}
+        <p className="break-all text-2xl font-extrabold tabular-nums tracking-tight sm:text-3xl">{phone}</p>
 
         {/* Daily target, as a bar rather than a line of small print. */}
         <div className="mt-3">
@@ -121,7 +117,7 @@ export default function CallPanel({
             )}
           </p>
           <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
-            {!startedAt && "Tap Call — it dials and starts the timer"}
+            {!startedAt && "Dial on your phone, then press Start call"}
             {startedAt && !ended && (
               <>
                 Now <span id="call-now" className="tabular-nums">{currentClock()}</span>
@@ -133,7 +129,7 @@ export default function CallPanel({
           <div className="mt-3 space-y-2">
             {!startedAt && (
               <span data-shortcut="start" className="block">
-                <DialAndStart phone={phone}>Call {phone}</DialAndStart>
+                <StartCallButton>Start call</StartCallButton>
               </span>
             )}
 
@@ -155,11 +151,7 @@ export default function CallPanel({
                   Reset timer
                 </SubmitButton>
               )}
-              {startedAt && (
-                <a href={`tel:${phone}`} className={bentoGhostButtonClass}>
-                  Redial
-                </a>
-              )}
+
             </div>
           </div>
 

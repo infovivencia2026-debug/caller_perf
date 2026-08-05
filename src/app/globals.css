@@ -170,6 +170,13 @@ table {
   }
 }
 
+/* Opt-out for tiles holding a sticky child: `overflow: hidden` on any ancestor
+   disables `position: sticky`, and Tailwind's own utility cannot win against
+   `.bento` from this file, so the class is paired here. */
+.bento.overflow-visible {
+  overflow: visible;
+}
+
 .bento[data-glow="violet"] { --glow: 139 92 246; }
 .bento[data-glow="emerald"] { --glow: 16 185 129; }
 .bento[data-glow="amber"] { --glow: 245 158 11; }
@@ -180,7 +187,14 @@ table {
 .bento-grid {
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Single column on a phone: two columns of stat tiles at 360px wrapped every
+     number onto three lines. */
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 480px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (min-width: 1024px) {
   .bento-grid {
@@ -234,6 +248,27 @@ table {
 /* ---------------------------------------------------------------------------
    Phone ergonomics.
    --------------------------------------------------------------------------- */
+
+/* The page itself never scrolls sideways. Wide content (tables, long numbers)
+   scrolls inside its own container instead — `clip` rather than `hidden` so it
+   does not create a scroll container and break sticky positioning. */
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+/* Long unbroken strings — an email, a pasted note — used to force the whole layout
+   wider than the screen. */
+:where(p, span, td, dd, h1, h2, h3, li) {
+  overflow-wrap: anywhere;
+}
+
+/* Every table in the app is wider than a phone; each one scrolls within its tile. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
 /* Installed to a home screen the app runs edge to edge, so the sticky save bar
    would sit under the home indicator without this. */

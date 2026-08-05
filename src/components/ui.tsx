@@ -172,7 +172,7 @@ export function Row({ label, children }: { label: string; children: ReactNode })
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: Tone }) {
   return (
     <span
-      className={`inline-flex w-36 shrink-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-[inset_0_1px_0_0_rgb(255_255_255/0.5)] dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.08)] ${TONES[tone]}`}
+      className={`inline-flex w-[8.5rem] max-w-full items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-[inset_0_1px_0_0_rgb(255_255_255/0.5)] dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.08)] ${TONES[tone]}`}
     >
       {children}
     </span>

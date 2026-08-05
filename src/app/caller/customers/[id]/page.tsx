@@ -56,9 +56,7 @@ export default async function CustomerThread({ params }: { params: Promise<{ id:
         <div>
           <h1 className="text-lg font-semibold">{customerLabel(customer)}</h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            <a href={`tel:${customer.phone}`} className="hover:underline">
-              {customer.phone}
-            </a>
+<span className="tabular-nums">{customer.phone}</span>
             {customer.company ? ` · ${customer.company}` : ""}
             {customer.city ? ` · ${customer.city}` : ""}
           </p>
