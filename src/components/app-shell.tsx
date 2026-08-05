@@ -18,7 +18,7 @@ export default function AppShell({
       <Sidebar
         items={nav}
         userName={session.name}
-        roleLabel={session.role === "ADMIN" ? "Admin" : "Telecaller"}
+        roleLabel={session.role === "ADMIN" ? "Admin" : "Counsellor"}
         signOut={
           <form action={logout}>
             <button type="submit" className={`${secondaryButtonClass} w-full`}>

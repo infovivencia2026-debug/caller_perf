@@ -186,10 +186,10 @@ export default async function CustomersPage({
         </div>
       </Card>
 
-      <Card title="Quick assign to a telecaller">
+      <Card title="Quick assign to a counsellor">
         <form action={assignCountToCaller} className="flex flex-wrap items-end gap-3">
           <label className="block text-sm font-medium">
-            Telecaller
+            Counsellor
             <select name="callerId" defaultValue="" className={`${inputClass} mt-1`} required>
               <option value="" disabled>
                 Choose…
@@ -217,16 +217,16 @@ export default async function CustomersPage({
           </button>
           <p className="w-full text-xs text-slate-500 dark:text-slate-400">
             Hands that many currently-unassigned leads (highest priority, longest-waiting first) to the
-            telecaller and sets it as their daily target. They appear in that telecaller&apos;s calling queue
+            counsellor and sets it as their daily target. They appear in that counsellor&apos;s calling queue
             immediately.
           </p>
         </form>
       </Card>
 
       <Card title="Customers">
-        {/* Hand-pick rows with the checkboxes, choose a telecaller, and assign the lot. */}
+        {/* Hand-pick rows with the checkboxes, choose a counsellor, and assign the lot. */}
         <form action={assignSelected}>
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2">
             <span className="text-xs font-bold uppercase tracking-wide">
               Bulk assign — tick rows below, then hand them to:
             </span>

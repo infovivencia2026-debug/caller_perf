@@ -77,22 +77,22 @@ export default async function SettingsPage({
           </form>
         </Card>
 
-        <Card title="Reset a telecaller's password">
+        <Card title="Reset a counsellor's password">
           {callers.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              No telecallers yet. Add one from the Telecallers page.
+              No counsellors yet. Add one from the Counsellors page.
             </p>
           ) : (
             <form action={resetCallerPassword} className="space-y-4">
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Sets a new password immediately. The telecaller is not notified — share it with them
+                Sets a new password immediately. The counsellor is not notified — share it with them
                 yourself.
               </p>
               <label className="block text-sm font-medium">
-                Telecaller
+                Counsellor
                 <select name="callerId" required defaultValue="" className={`${inputClass} mt-1`}>
                   <option value="" disabled>
-                    Choose a telecaller
+                    Choose a counsellor
                   </option>
                   {callers.map((caller) => (
                     <option key={caller.id} value={caller.id}>

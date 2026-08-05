@@ -126,7 +126,7 @@ export default async function AdminDashboard({
         <h1 className="text-lg font-semibold">Admin dashboard</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {filters.label}
-          {selectedCaller ? ` · ${selectedCaller.name}` : " · all telecallers"}
+          {selectedCaller ? ` · ${selectedCaller.name}` : " · all counsellors"}
         </p>
       </div>
 
@@ -134,13 +134,13 @@ export default async function AdminDashboard({
           real-time floor view of who's in and who's working. */}
       <Card title={`Team — live (${presentCount} present)`}>
         {team.length === 0 ? (
-          <p className="text-sm text-slate-500">No active telecallers.</p>
+          <p className="text-sm text-slate-500">No active counsellors.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Telecaller</th>
+                  <th className="px-3 py-2 font-medium">Counsellor</th>
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium">Calls today</th>
                   <th className="px-3 py-2 font-medium">Progress</th>
@@ -222,9 +222,9 @@ export default async function AdminDashboard({
             <input type="date" name="to" defaultValue={filters.toInput} className={`${inputClass} mt-1`} />
           </label>
           <label className="block text-sm font-medium">
-            Telecaller
+            Counsellor
             <select name="caller" defaultValue={filters.callerId} className={`${inputClass} mt-1`}>
-              <option value="">All telecallers</option>
+              <option value="">All counsellors</option>
               {callers.map((caller) => (
                 <option key={caller.id} value={caller.id}>
                   {caller.name}
@@ -272,7 +272,7 @@ export default async function AdminDashboard({
         {/* Roster size is deliberately not narrowed by the filters — it describes the
             team, not the selected period. */}
         <Stat
-          label="Total telecallers"
+          label="Total counsellors"
           value={callers.length}
           hint={`${callers.filter((c) => c.active).length} active`}
           accent="slate"
@@ -338,7 +338,7 @@ export default async function AdminDashboard({
 
       <Card title={`Calls per caller (${filters.label.toLowerCase()})`}>
         {callerRows.length === 0 ? (
-          <Empty>No telecallers yet.</Empty>
+          <Empty>No counsellors yet.</Empty>
         ) : (
           <ul className="space-y-3">
             {callerRows.map((row) => (

@@ -16,8 +16,8 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Telecaller Performance",
-  description: "Telecaller call logging and performance tracking",
+  title: "Counsellor Performance",
+  description: "Counsellor call logging and performance tracking",
 };
 
 export default function RootLayout({

@@ -8,23 +8,23 @@ const openWhere = { status: { notIn: CLOSED_STATUSES as unknown as never } };
 export type TopUpResult = { assigned: number; present: number; detail: string };
 
 /**
- * Tops every present telecaller up to their own daily target from the unassigned pool
+ * Tops every present counsellor up to their own daily target from the unassigned pool
  * (highest-priority, longest-waiting leads first, spread round-robin so the good leads are
  * shared fairly). Used by the scheduled morning cron so admins don't hand-assign daily.
- * Only present telecallers receive leads; anyone already at target is left alone.
+ * Only present counsellors receive leads; anyone already at target is left alone.
  */
-export async function topUpPresentTelecallers(): Promise<TopUpResult> {
+export async function topUpPresentCounsellors(): Promise<TopUpResult> {
   await syncPresentFromWorkforce();
 
   const present = await prisma.attendance.findMany({ where: { date: dayDate() }, select: { userId: true } });
   const presentIds = present.map((p) => p.userId);
-  if (presentIds.length === 0) return { assigned: 0, present: 0, detail: "no telecallers present" };
+  if (presentIds.length === 0) return { assigned: 0, present: 0, detail: "no counsellors present" };
 
   const callers = await prisma.user.findMany({
     where: { id: { in: presentIds }, role: "TELECALLER", active: true },
     select: { id: true, name: true, dailyTarget: true },
   });
-  if (callers.length === 0) return { assigned: 0, present: 0, detail: "no present telecallers" };
+  if (callers.length === 0) return { assigned: 0, present: 0, detail: "no present counsellors" };
 
   const needs = await Promise.all(
     callers.map(async (c) => {

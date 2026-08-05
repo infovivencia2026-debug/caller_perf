@@ -68,6 +68,7 @@ model User {
   followUps   FollowUp[]
   activities  ActivityLog[]
   attendance  Attendance[]
+  callEdits   CallEdit[]
 }
 
 /** One row per telecaller per day they were present (marked or derived from a call). */
@@ -112,25 +113,62 @@ model Customer {
 }
 
 model Call {
-  id         String     @id @default(cuid())
-  customerId String
-  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  callerId   String
-  caller     User       @relation(fields: [callerId], references: [id], onDelete: Cascade)
-  status     CallStatus
-  response   String?
-  comments   String?
-  course     String? // course the interested lead was tagged with
-  startedAt  DateTime
-  endedAt    DateTime
-  duration   Int // seconds
-  createdAt  DateTime   @default(now())
+  id String @id @default(cuid())
+  // Optional, and SetNull rather than Cascade: an invalid number is deleted outright
+  // (see deleteInvalidLead), but the work still happened — the call stays, so the
+  // counsellor keeps credit for it and past performance numbers do not move.
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  // Who was called, captured at the time. This is the only record of them once the
+  // lead is deleted, so every read falls back to it (see callLead).
+  customerPhone String  @default("")
+  customerName  String?
+  callerId      String
+  caller        User       @relation(fields: [callerId], references: [id], onDelete: Cascade)
+  status        CallStatus
+  response      String?
+  comments      String?
+  course        String? // course the interested lead was tagged with
+  startedAt     DateTime
+  endedAt       DateTime
+  duration      Int // seconds
+  createdAt     DateTime   @default(now())
 
   followUp FollowUp?
+  edits    CallEdit[]
 
   @@index([callerId, startedAt])
   @@index([customerId, startedAt])
   @@index([startedAt])
+}
+
+/**
+ * One row per correction made to a logged call. Counsellors can edit their own call
+ * history, so the before-value has to survive somewhere or the numbers stop being
+ * defensible — this is that trail. Append-only; nothing in the app updates or
+ * deletes these.
+ */
+model CallEdit {
+  id     String @id @default(cuid())
+  callId String
+  call   Call   @relation(fields: [callId], references: [id], onDelete: Cascade)
+  // Who made the edit. Kept even if they leave, hence SetNull rather than Cascade.
+  editorId String?
+  editor   User?   @relation(fields: [editorId], references: [id], onDelete: SetNull)
+
+  fromStatus   CallStatus
+  toStatus     CallStatus
+  fromResponse String?
+  toResponse   String?
+  fromComments String?
+  toComments   String?
+  fromCourse   String?
+  toCourse     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([callId, createdAt])
+  @@index([editorId, createdAt])
 }
 
 model FollowUp {

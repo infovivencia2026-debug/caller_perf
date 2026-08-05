@@ -18,6 +18,14 @@ import { CALL_STATUSES, CALL_TO_CUSTOMER_STATUS } from "@/lib/labels";
  */
 const RETRY_STATUSES = new Set(["NO_ANSWER", "BUSY", "SWITCHED_OFF", "CALLBACK_REQUESTED"]);
 
+/**
+ * Outcomes that mean the number is not a prospect at all. These leads are deleted from
+ * the database rather than parked with a status: nothing should ever surface them
+ * again — not the queue, not auto-assign, not a search. Every other outcome, including
+ * "Not interested", leaves the lead in place to be called another day.
+ */
+const DELETE_STATUSES = new Set(["WRONG_NUMBER", "INVALID_NUMBER"]);
+
 const saveSchema = z.object({
   customerId: z.string().min(1),
   status: z.enum(CALL_STATUSES as [string, ...string[]]),
@@ -183,6 +191,10 @@ export async function saveCall(formData: FormData) {
     const call = await tx.call.create({
       data: {
         customerId: customer.id,
+        // Snapshot who was called. If this lead is deleted later (invalid number),
+        // this is all that is left of them — see callLead.
+        customerPhone: customer.phone,
+        customerName: input.name?.trim() || customer.name || null,
         callerId: session.userId,
         status: input.status as never,
         response: input.response || null,
@@ -201,7 +213,7 @@ export async function saveCall(formData: FormData) {
         status: CALL_TO_CUSTOMER_STATUS[input.status as keyof typeof CALL_TO_CUSTOMER_STATUS],
         // Only when the caller actively chose a priority — see saveSchema.
         ...(input.priority ? { priority: input.priority as never } : {}),
-        // A scheduled callback stays with the telecaller who took the call, so it never
+        // A scheduled callback stays with the counsellor who took the call, so it never
         // gets handed to someone else (auto-assign only touches unassigned leads anyway).
         assignedToId: session.userId,
         // Persist any edits the caller made to the lead's details on the call.
@@ -231,6 +243,14 @@ export async function saveCall(formData: FormData) {
           notes: input.comments || null,
         },
       });
+    }
+
+    // A number that is not a real prospect is removed from the database entirely, so
+    // nobody is ever handed it again. The call rows survive (customerId is SetNull and
+    // the phone/name are snapshotted above), so the counsellor keeps credit for the
+    // work and the day's numbers do not move. Follow-ups cascade away with the lead.
+    if (DELETE_STATUSES.has(input.status)) {
+      await tx.customer.delete({ where: { id: customer.id } });
     }
   });
 
@@ -278,7 +298,7 @@ const editSchema = z.object({
 });
 
 /**
- * Lets a telecaller correct a call they logged themselves — the outcome picked in a
+ * Lets a counsellor correct a call they logged themselves — the outcome picked in a
  * hurry, a typo in the response, a missing comment. Timings are not editable: they are
  * stamped by the Start/End buttons and are what the performance numbers are built on.
  */
@@ -301,19 +321,44 @@ export async function updateOwnCall(formData: FormData) {
 
   const call = await prisma.call.findUnique({
     where: { id: input.callId },
-    select: { id: true, callerId: true, customerId: true, startedAt: true },
+    select: {
+      id: true,
+      callerId: true,
+      customerId: true,
+      startedAt: true,
+      status: true,
+      response: true,
+      comments: true,
+      course: true,
+    },
   });
   if (!call || call.callerId !== session.userId) {
     redirect(`${back}${back.includes("?") ? "&" : "?"}error=${encodeURIComponent("That call is not yours to edit")}`);
   }
 
+  const nextCourse = input.status === "INTERESTED" ? input.course || null : null;
+  const changed =
+    call.status !== input.status ||
+    (call.response ?? null) !== (input.response || null) ||
+    (call.comments ?? null) !== (input.comments || null) ||
+    (call.course ?? null) !== nextCourse;
+
+  // Nothing to record if the form came back unchanged — an empty audit row would just
+  // be noise on the timeline.
+  if (!changed) {
+    redirect(`${back}${back.includes("?") ? "&" : "?"}saved=1`);
+  }
+
   // The customer's status mirrors their most recent call, so only re-derive it when
-  // this is still the latest one — editing an old call must not rewind the lead.
-  const latest = await prisma.call.findFirst({
-    where: { customerId: call.customerId },
-    orderBy: { startedAt: "desc" },
-    select: { id: true },
-  });
+  // this is still the latest one — editing an old call must not rewind the lead. Skipped
+  // entirely when the lead has been deleted (invalid number), hence the null check.
+  const latest = call.customerId
+    ? await prisma.call.findFirst({
+        where: { customerId: call.customerId },
+        orderBy: { startedAt: "desc" },
+        select: { id: true },
+      })
+    : null;
 
   await prisma.$transaction(async (tx) => {
     await tx.call.update({
@@ -322,11 +367,28 @@ export async function updateOwnCall(formData: FormData) {
         status: input.status as never,
         response: input.response || null,
         comments: input.comments || null,
-        course: input.status === "INTERESTED" ? input.course || null : null,
+        course: nextCourse,
       },
     });
 
-    if (latest?.id === call.id) {
+    // Keep what it said before. Editable history is only trustworthy if the original
+    // survives the edit.
+    await tx.callEdit.create({
+      data: {
+        callId: call.id,
+        editorId: session.userId,
+        fromStatus: call.status,
+        toStatus: input.status as never,
+        fromResponse: call.response,
+        toResponse: input.response || null,
+        fromComments: call.comments,
+        toComments: input.comments || null,
+        fromCourse: call.course,
+        toCourse: nextCourse,
+      },
+    });
+
+    if (call.customerId && latest?.id === call.id) {
       await tx.customer.update({
         where: { id: call.customerId },
         data: { status: CALL_TO_CUSTOMER_STATUS[input.status as keyof typeof CALL_TO_CUSTOMER_STATUS] },
@@ -339,7 +401,7 @@ export async function updateOwnCall(formData: FormData) {
     action: "CALL_UPDATED",
     entity: "Call",
     entityId: call.id,
-    detail: `Outcome changed to ${input.status}`,
+    detail: `Outcome ${call.status} → ${input.status}`,
   });
 
   revalidatePath("/caller/my-calls");

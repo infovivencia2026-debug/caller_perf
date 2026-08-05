@@ -95,7 +95,7 @@ table {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 1rem;
+  border-radius: 0.625rem;
   border: 1px solid color-mix(in srgb, var(--line) 10%, transparent);
   background: linear-gradient(180deg, #ffffff 0%, #fbfbfe 100%);
   transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;

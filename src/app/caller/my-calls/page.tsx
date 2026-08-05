@@ -12,7 +12,15 @@ import {
   bentoInputClass,
   statusTone,
 } from "@/components/ui";
-import { CALL_STATUSES, COURSES, SUCCESS_STATUSES, customerLabel, formatDuration, humanize } from "@/lib/labels";
+import {
+  CALL_STATUSES,
+  COURSES,
+  SUCCESS_STATUSES,
+  callLead,
+  customerLabel,
+  formatDuration,
+  humanize,
+} from "@/lib/labels";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
 
@@ -34,7 +42,7 @@ function parseDate(value?: string) {
 }
 
 /**
- * "My calls" — every call this telecaller has logged, filtered by date. Both dates
+ * "My calls" — every call this counsellor has logged, filtered by date. Both dates
  * default to today, so the page opens on what they have done so far this shift; widen
  * From to look further back. Each row can be edited to fix an outcome or note.
  *
@@ -83,6 +91,12 @@ export default async function MyCalls({
         comments: true,
         course: true,
         customer: { select: { id: true, name: true, phone: true, company: true } },
+        customerPhone: true,
+        customerName: true,
+        // Whether this call scheduled a callback, and whether it was kept.
+        followUp: { select: { dueAt: true, status: true } },
+        // Only the count — the before-values live on the customer's thread page.
+        _count: { select: { edits: true } },
       },
     }),
   ]);
@@ -103,12 +117,12 @@ export default async function MyCalls({
       </div>
 
       {params.saved && (
-        <p className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+        <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300">
           Call updated.
         </p>
       )}
       {params.error && (
-        <p className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm text-rose-700 dark:text-rose-300">
+        <p className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm text-rose-700 dark:text-rose-300">
           {params.error}
         </p>
       )}
@@ -182,12 +196,15 @@ export default async function MyCalls({
                     <th className="px-4 py-3 font-semibold">Duration</th>
                     <th className="px-4 py-3 font-semibold">Customer</th>
                     <th className="px-4 py-3 font-semibold">Outcome</th>
+                    <th className="px-4 py-3 font-semibold">Follow-up</th>
                     <th className="px-4 py-3 font-semibold">Response / notes</th>
                     <th className="px-4 py-3 font-semibold">Edit</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {calls.map((call) => (
+                  {calls.map((call) => {
+                    const lead = callLead(call);
+                    return (
                     <tr key={call.id} className="align-top transition-colors hover:bg-indigo-500/5">
                       <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDateTime(call.startedAt)}</td>
                       <td className="whitespace-nowrap px-4 py-3 tabular-nums text-neutral-500 dark:text-neutral-400">
@@ -195,10 +212,20 @@ export default async function MyCalls({
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDuration(call.duration)}</td>
                       <td className="px-4 py-3">
-                        <span className="font-medium">{customerLabel(call.customer)}</span>
+                        {call.customer ? (
+                          <Link
+                            href={`/caller/customers/${call.customer.id}`}
+                            className="font-medium underline-offset-2 hover:underline"
+                          >
+                            {customerLabel(lead)}
+                          </Link>
+                        ) : (
+                          <span className="font-medium">{customerLabel(lead)}</span>
+                        )}
                         <span className="block text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
-                          {call.customer.phone}
-                          {call.customer.company ? ` · ${call.customer.company}` : ""}
+                          {lead.phone}
+                          {lead.company ? ` · ${lead.company}` : ""}
+                          {lead.deleted ? " · lead deleted" : ""}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -207,6 +234,23 @@ export default async function MyCalls({
                           <span className="mt-1 block text-xs text-neutral-500 dark:text-neutral-400">
                             {call.course}
                           </span>
+                        )}
+                        {call._count.edits > 0 && (
+                          <span className="mt-1 block text-[10px] font-bold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+                            Edited
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {call.followUp ? (
+                          <>
+                            <Badge tone={statusTone(call.followUp.status)}>{humanize(call.followUp.status)}</Badge>
+                            <span className="mt-1 block text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+                              {formatDateTime(call.followUp.dueAt)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-neutral-400 dark:text-neutral-500">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-neutral-600 dark:text-neutral-300">
@@ -251,9 +295,9 @@ export default async function MyCalls({
                           </div>
 
                           <dl className="mb-4 space-y-2">
-                            <Row label="Customer">{customerLabel(call.customer)}</Row>
+                            <Row label="Customer">{customerLabel(lead)}</Row>
                             <Row label="Phone">
-                              <span className="tabular-nums">{call.customer.phone}</span>
+                              <span className="tabular-nums">{lead.phone}</span>
                             </Row>
                             <Row label="Called">
                               {formatDateTime(call.startedAt)} · {formatDuration(call.duration)}
@@ -327,7 +371,8 @@ export default async function MyCalls({
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

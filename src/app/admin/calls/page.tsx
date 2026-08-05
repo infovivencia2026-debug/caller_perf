@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, buttonClass, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
-import { customerLabel, formatDuration, humanize } from "@/lib/labels";
+import { callLead, customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { RANGES, resolveFilters } from "@/lib/report-filters";
 
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 200;
 
 /**
- * A flat, filterable log of every call any telecaller has made: who called whom, when
+ * A flat, filterable log of every call any counsellor has made: who called whom, when
  * they pressed Start and End, how long it ran, the outcome and their notes. This is the
  * admin's drill-down behind the dashboard's aggregate numbers.
  */
@@ -55,6 +55,8 @@ export default async function AdminCallLog({
         comments: true,
         caller: { select: { name: true } },
         customer: { select: { name: true, phone: true, company: true } },
+        customerPhone: true,
+        customerName: true,
       },
     }),
   ]);
@@ -68,7 +70,7 @@ export default async function AdminCallLog({
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {filters.label}
-            {selectedCaller ? ` · ${selectedCaller.name}` : " · all telecallers"} · {total} call
+            {selectedCaller ? ` · ${selectedCaller.name}` : " · all counsellors"} · {total} call
             {total === 1 ? "" : "s"}
           </p>
           {/* Exports every call matching the current filters (not just the shown page). */}
@@ -99,9 +101,9 @@ export default async function AdminCallLog({
             <input type="date" name="to" defaultValue={filters.toInput} className={`${inputClass} mt-1`} />
           </label>
           <label className="block text-sm font-medium">
-            Telecaller
+            Counsellor
             <select name="caller" defaultValue={filters.callerId} className={`${inputClass} mt-1`}>
-              <option value="">All telecallers</option>
+              <option value="">All counsellors</option>
               {callers.map((caller) => (
                 <option key={caller.id} value={caller.id}>
                   {caller.name}
@@ -138,7 +140,7 @@ export default async function AdminCallLog({
       >
         {calls.length === 0 ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            No calls in this period. Try “All time”, or a different telecaller.
+            No calls in this period. Try “All time”, or a different counsellor.
           </p>
         ) : (
           // Scrolls inside the card (both directions) so a long call list doesn't stretch
@@ -150,14 +152,16 @@ export default async function AdminCallLog({
                   <th className="px-3 py-2 font-medium">Started</th>
                   <th className="px-3 py-2 font-medium">Ended</th>
                   <th className="px-3 py-2 font-medium">Duration</th>
-                  <th className="px-3 py-2 font-medium">Telecaller</th>
+                  <th className="px-3 py-2 font-medium">Counsellor</th>
                   <th className="px-3 py-2 font-medium">Customer</th>
                   <th className="px-3 py-2 font-medium">Outcome</th>
                   <th className="px-3 py-2 font-medium">Response / notes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {calls.map((call) => (
+                {calls.map((call) => {
+                  const lead = callLead(call);
+                  return (
                   <tr key={call.id} className="align-top">
                     <td className="whitespace-nowrap px-3 py-2 tabular-nums">{formatDateTime(call.startedAt)}</td>
                     <td className="whitespace-nowrap px-3 py-2 tabular-nums text-slate-500 dark:text-slate-400">
@@ -166,10 +170,11 @@ export default async function AdminCallLog({
                     <td className="whitespace-nowrap px-3 py-2 tabular-nums">{formatDuration(call.duration)}</td>
                     <td className="px-3 py-2">{call.caller.name}</td>
                     <td className="px-3 py-2">
-                      <span className="font-medium">{customerLabel(call.customer)}</span>
+                      <span className="font-medium">{customerLabel(lead)}</span>
                       <span className="block text-xs tabular-nums text-slate-500 dark:text-slate-400">
-                        {call.customer.phone}
-                        {call.customer.company ? ` · ${call.customer.company}` : ""}
+                        {lead.phone}
+                        {lead.company ? ` · ${lead.company}` : ""}
+                        {lead.deleted ? " · lead deleted" : ""}
                       </span>
                     </td>
                     <td className="px-3 py-2">
@@ -185,7 +190,8 @@ export default async function AdminCallLog({
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

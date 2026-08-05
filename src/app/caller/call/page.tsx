@@ -13,7 +13,7 @@ import {
   secondaryButtonClass,
   statusTone,
 } from "@/components/ui";
-import { customerLabel, formatDuration, humanize } from "@/lib/labels";
+import { callLead, customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { getAssignedCustomer, getNextCustomer, getQueueCount, searchAssignedCustomers } from "@/lib/queue";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
@@ -79,7 +79,7 @@ export default async function CallingScreen({
       </form>
 
       {query && matches.length === 0 && (
-        <p className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">
+        <p className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">
           No open customer of yours matches “{query}”.
         </p>
       )}
@@ -89,7 +89,7 @@ export default async function CallingScreen({
             <li key={match.id}>
               <Link
                 href={`/caller/call?focus=${match.id}${skipIds.length > 0 ? `&skip=${skipIds.join(",")}` : ""}`}
-                className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-300 px-3 py-2 text-sm transition-colors hover:border-sky-400 hover:bg-sky-500/10 dark:border-neutral-700 dark:hover:border-sky-400"
+                className="flex flex-wrap items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm transition-colors hover:border-sky-400 hover:bg-sky-500/10 dark:border-neutral-700 dark:hover:border-sky-400"
               >
                 <span className="font-semibold">{customerLabel(match)}</span>
                 <span className="tabular-nums text-neutral-500 dark:text-neutral-400">{match.phone}</span>
@@ -100,7 +100,7 @@ export default async function CallingScreen({
         </ul>
       )}
       {query && matches.length === 1 && (
-        <p className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+        <p className="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
           Showing {customerLabel(matches[0])} below — ready to call.
         </p>
       )}
@@ -255,18 +255,18 @@ export default async function CallingScreen({
             ) : (
               <dl className="space-y-2 text-sm">
                 <Row label="Name">
-                  <span className="text-base font-semibold">{customerLabel(lastCall.customer)}</span>
+                  <span className="text-base font-semibold">{customerLabel(callLead(lastCall))}</span>
                 </Row>
                 <Row label="Phone">
                   <a
-                    href={`tel:${lastCall.customer.phone}`}
+                    href={`tel:${callLead(lastCall).phone}`}
                     className="tabular-nums tracking-wide hover:underline"
                   >
-                    {lastCall.customer.phone}
+                    {callLead(lastCall).phone}
                   </a>
                 </Row>
-                <Row label="Company">{lastCall.customer.company ?? "—"}</Row>
-                <Row label="City">{lastCall.customer.city ?? "—"}</Row>
+                <Row label="Company">{callLead(lastCall).company ?? "—"}</Row>
+                <Row label="City">{callLead(lastCall).city ?? "—"}</Row>
                 <Row label="Outcome">
                   <Badge tone={statusTone(lastCall.status)}>{humanize(lastCall.status)}</Badge>
                 </Row>
@@ -289,7 +289,21 @@ export default async function CallingScreen({
             </Card>
           )}
 
-          <Card title={`Previous responses (${customer.calls.length})`}>
+          {/* The count is the real total, not the three loaded here — the full thread
+              lives on the customer's own page. */}
+          <Card
+            title={`Previous responses (${customer._count.calls})`}
+            action={
+              customer._count.calls > customer.calls.length ? (
+                <Link
+                  href={`/caller/customers/${customer.id}`}
+                  className="text-sm font-bold uppercase tracking-wide underline underline-offset-2"
+                >
+                  Full history →
+                </Link>
+              ) : undefined
+            }
+          >
             {customer.calls.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">First contact with this customer.</p>
             ) : (

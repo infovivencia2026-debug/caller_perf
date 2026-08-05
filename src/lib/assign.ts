@@ -1,5 +1,5 @@
 /**
- * Auto-assignment distributes unassigned customers to telecallers up to a chosen
+ * Auto-assignment distributes unassigned customers to counsellors up to a chosen
  * target each, but balanced by how many calls they have made recently: each customer
  * goes to whoever has the lowest projected call load. So a caller who has been calling
  * a lot gets fewer new customers, and over time everyone's call volume evens out — the

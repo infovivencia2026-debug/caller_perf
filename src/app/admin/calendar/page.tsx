@@ -125,7 +125,7 @@ export default async function CalendarPage({
 
       {!caller ? (
         <Card title="Calendar">
-          <p className="text-sm text-slate-500 dark:text-slate-400">No telecallers yet.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No counsellors yet.</p>
         </Card>
       ) : (
         <>

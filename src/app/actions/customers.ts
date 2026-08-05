@@ -122,7 +122,7 @@ export async function updateCustomer(
 }
 
 /**
- * Deletes every customer matching the current filters (status, telecaller, priority,
+ * Deletes every customer matching the current filters (status, counsellor, priority,
  * search). Destructive — their calls and follow-ups go with them (database cascade).
  * The confirmation lives in the UI; this trusts an admin who has confirmed.
  */

@@ -12,7 +12,7 @@ function csvCell(value: unknown) {
 }
 
 /** Exports the call log — every call with its response, comments, timing and outcome —
- *  as a CSV that Excel/Sheets open directly. Honours the same period + telecaller filters
+ *  as a CSV that Excel/Sheets open directly. Honours the same period + counsellor filters
  *  as the Call log screen. */
 export async function GET(request: Request) {
   const session = await getSession();
@@ -48,6 +48,8 @@ export async function GET(request: Request) {
       course: true,
       caller: { select: { name: true } },
       customer: { select: { name: true, phone: true, company: true, city: true } },
+      customerPhone: true,
+      customerName: true,
       // The callback/follow-up scheduled off this call, so its due time exports too.
       followUp: { select: { dueAt: true } },
     },
@@ -57,7 +59,7 @@ export async function GET(request: Request) {
   const header = [
     "phone",
     "customer",
-    "telecaller",
+    "counsellor",
     "started_at",
     "ended_at",
     "duration_seconds",
@@ -72,11 +74,13 @@ export async function GET(request: Request) {
 
   const lines = [
     header.join(","),
-    ...calls.map((c) =>
-      [
+    ...calls.map((c) => {
+      // Falls back to the snapshot on the call when the lead has been deleted.
+      const lead = callLead(c);
+      return [
         // ="…" keeps Excel from reading the phone as a number and rounding it.
-        `="${c.customer.phone}"`,
-        c.customer.name,
+        `="${lead.phone}"`,
+        lead.name,
         c.caller.name,
         formatDateTime(c.startedAt),
         formatDateTime(c.endedAt),
@@ -86,12 +90,12 @@ export async function GET(request: Request) {
         c.followUp ? formatDateTime(c.followUp.dueAt) : "",
         c.response,
         c.comments,
-        c.customer.company,
-        c.customer.city,
+        lead.company,
+        lead.city,
       ]
         .map(csvCell)
-        .join(","),
-    ),
+        .join(",");
+    }),
   ];
 
   // Prepend a BOM so Excel reads the UTF-8 correctly.

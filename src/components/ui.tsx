@@ -104,18 +104,18 @@ export function BentoStat({
  * in on :active, which is what makes it feel like a physical button.
  */
 export const bentoButtonClass =
-  "inline-flex items-center justify-center rounded-xl border border-indigo-500/50 bg-gradient-to-b from-indigo-500 to-indigo-600 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_1px_2px_0_rgb(15_15_30/0.2),0_8px_16px_-8px_rgb(99_102_241/0.8)] transition-all hover:-translate-y-px hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.3),0_2px_4px_0_rgb(15_15_30/0.22),0_12px_22px_-8px_rgb(99_102_241/0.9)] active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.3)] disabled:opacity-50 disabled:pointer-events-none";
+  "inline-flex items-center justify-center rounded-lg border border-indigo-500/50 bg-gradient-to-b from-indigo-500 to-indigo-600 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_1px_2px_0_rgb(15_15_30/0.2),0_8px_16px_-8px_rgb(99_102_241/0.8)] transition-all hover:-translate-y-px hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.3),0_2px_4px_0_rgb(15_15_30/0.22),0_12px_22px_-8px_rgb(99_102_241/0.9)] active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.3)] disabled:opacity-50 disabled:pointer-events-none";
 
 /** Secondary action: a raised neutral surface, same lighting, no colour. */
 export const bentoGhostButtonClass =
-  "inline-flex items-center justify-center rounded-xl border border-neutral-300 bg-gradient-to-b from-white to-neutral-100 px-4 py-2 text-sm font-bold uppercase tracking-wide text-neutral-700 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.9),0_1px_2px_0_rgb(15_15_30/0.1),0_6px_14px_-8px_rgb(15_15_30/0.25)] transition-all hover:-translate-y-px hover:text-black hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.9),0_2px_4px_0_rgb(15_15_30/0.12),0_10px_20px_-8px_rgb(15_15_30/0.3)] active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.18)] disabled:opacity-50 disabled:pointer-events-none dark:border-neutral-700 dark:from-neutral-800 dark:to-neutral-900 dark:text-neutral-200 dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.07),0_1px_2px_0_rgb(0_0_0/0.5),0_8px_18px_-10px_rgb(0_0_0/0.8)] dark:hover:text-white";
+  "inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-gradient-to-b from-white to-neutral-100 px-4 py-2 text-sm font-bold uppercase tracking-wide text-neutral-700 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.9),0_1px_2px_0_rgb(15_15_30/0.1),0_6px_14px_-8px_rgb(15_15_30/0.25)] transition-all hover:-translate-y-px hover:text-black hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.9),0_2px_4px_0_rgb(15_15_30/0.12),0_10px_20px_-8px_rgb(15_15_30/0.3)] active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.18)] disabled:opacity-50 disabled:pointer-events-none dark:border-neutral-700 dark:from-neutral-800 dark:to-neutral-900 dark:text-neutral-200 dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.07),0_1px_2px_0_rgb(0_0_0/0.5),0_8px_18px_-10px_rgb(0_0_0/0.8)] dark:hover:text-white";
 
 /**
  * Inputs read as recessed — the opposite lighting to the buttons: a soft inner
  * shadow at the top edge, as though the field were pressed into the tile.
  */
 export const bentoInputClass =
-  "w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-black shadow-[inset_0_2px_4px_-2px_rgb(15_15_30/0.15)] outline-none transition-shadow placeholder:text-neutral-400 focus:border-indigo-400 focus:shadow-[inset_0_2px_4px_-2px_rgb(15_15_30/0.12),0_0_0_3px_rgb(99_102_241/0.18)] dark:border-neutral-700 dark:bg-black/40 dark:text-white dark:shadow-[inset_0_2px_4px_-2px_rgb(0_0_0/0.6)] dark:placeholder:text-neutral-500 dark:focus:border-indigo-400";
+  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-black shadow-[inset_0_2px_4px_-2px_rgb(15_15_30/0.15)] outline-none transition-shadow placeholder:text-neutral-400 focus:border-indigo-400 focus:shadow-[inset_0_2px_4px_-2px_rgb(15_15_30/0.12),0_0_0_3px_rgb(99_102_241/0.18)] dark:border-neutral-700 dark:bg-black/40 dark:text-white dark:shadow-[inset_0_2px_4px_-2px_rgb(0_0_0/0.6)] dark:placeholder:text-neutral-500 dark:focus:border-indigo-400";
 
 export type StatAccent ="indigo" | "emerald" | "amber" | "rose" | "sky" | "violet" | "slate";
 
@@ -172,7 +172,7 @@ export function Row({ label, children }: { label: string; children: ReactNode })
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: Tone }) {
   return (
     <span
-      className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide shadow-[inset_0_1px_0_0_rgb(255_255_255/0.5)] dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.08)] ${TONES[tone]}`}
+      className={`inline-flex w-36 shrink-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-[inset_0_1px_0_0_rgb(255_255_255/0.5)] dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.08)] ${TONES[tone]}`}
     >
       {children}
     </span>

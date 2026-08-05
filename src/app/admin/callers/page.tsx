@@ -28,7 +28,7 @@ export default async function CallersPage({
   const tomorrow = endOfDay();
 
   const [callers, unassigned, presentRows, assignLogs] = await Promise.all([
-    // Deleted telecallers are soft-removed (active=false) so their calls survive; hide them
+    // Deleted counsellors are soft-removed (active=false) so their calls survive; hide them
     // from the roster here — their history stays visible in the Call log and reports.
     prisma.user.findMany({
       where: { role: "TELECALLER", active: true },
@@ -63,7 +63,7 @@ export default async function CallersPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold">Telecallers</h1>
+      <h1 className="text-lg font-semibold">Counsellors</h1>
 
       {ok && (
         <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
@@ -76,7 +76,7 @@ export default async function CallersPage({
         </p>
       )}
 
-      <Card title="Add a telecaller">
+      <Card title="Add a counsellor">
         <form action={createCaller} className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-medium">
             Name
@@ -101,13 +101,13 @@ export default async function CallersPage({
               className={`${inputClass} mt-1`}
             />
             <span className="mt-1 block text-xs font-normal text-slate-500 dark:text-slate-400">
-              Leave blank and the telecaller gets the default password{" "}
+              Leave blank and the counsellor gets the default password{" "}
               <span className="font-mono">onrol@ai</span>. Share it so they can sign in.
             </span>
           </label>
           <div className="sm:col-span-2">
             <button type="submit" className={buttonClass}>
-              Add telecaller
+              Add counsellor
             </button>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               The daily target is set automatically when you run auto-assign.
@@ -119,7 +119,7 @@ export default async function CallersPage({
       <Card title="Auto-assign customers">
         <div className="space-y-3 text-sm">
           <p className="text-slate-600 dark:text-slate-300">
-            Set a target and split the unassigned customers equally among telecallers marked
+            Set a target and split the unassigned customers equally among counsellors marked
             present today, up to that many each. The target becomes their daily target. Highest
             priority and longest waiting go out first; it is safe to run again to top everyone up.
           </p>
@@ -128,7 +128,7 @@ export default async function CallersPage({
               <strong>{unassigned}</strong> unassigned · <strong>{presentCount}</strong> present today
             </span>
             <label className="block text-sm font-medium">
-              Target per telecaller
+              Target per counsellor
               <input
                 type="number"
                 name="target"
@@ -149,13 +149,13 @@ export default async function CallersPage({
 
       <Card title="Daily targets">
         {rows.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">No telecallers yet.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No counsellors yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 <tr>
-                  <th className="px-3 py-2">Telecaller</th>
+                  <th className="px-3 py-2">Counsellor</th>
                   <th className="px-3 py-2">Calls today</th>
                   <th className="px-3 py-2">In queue</th>
                   <th className="px-3 py-2">Daily target</th>

@@ -25,9 +25,9 @@ function revalidate() {
 }
 
 /**
- * Assigns the hand-picked customers (checkboxes on the list) to one telecaller — or
- * back to the unassigned pool when no telecaller is chosen. Once assigned, each customer
- * shows up in that telecaller's calling queue automatically.
+ * Assigns the hand-picked customers (checkboxes on the list) to one counsellor — or
+ * back to the unassigned pool when no counsellor is chosen. Once assigned, each customer
+ * shows up in that counsellor's calling queue automatically.
  */
 export async function assignSelected(formData: FormData) {
   const session = await requireAdmin();
@@ -45,7 +45,7 @@ export async function assignSelected(formData: FormData) {
       select: { role: true, name: true },
     });
     if (!caller || caller.role !== "TELECALLER") {
-      redirect(customersHref(undefined, "Pick a valid telecaller"));
+      redirect(customersHref(undefined, "Pick a valid counsellor"));
     }
     callerName = caller.name;
   }
@@ -67,9 +67,9 @@ export async function assignSelected(formData: FormData) {
 }
 
 /**
- * Hands a chosen number of currently-unassigned open leads to one telecaller (highest
+ * Hands a chosen number of currently-unassigned open leads to one counsellor (highest
  * priority and longest-waiting first) and makes that number their daily target. A manual
- * alternative to auto-assign when you want to load one specific telecaller.
+ * alternative to auto-assign when you want to load one specific counsellor.
  */
 export async function assignCountToCaller(formData: FormData) {
   const session = await requireAdmin();
@@ -81,7 +81,7 @@ export async function assignCountToCaller(formData: FormData) {
     select: { role: true, name: true },
   });
   if (!caller || caller.role !== "TELECALLER") {
-    redirect(customersHref(undefined, "Pick a valid telecaller"));
+    redirect(customersHref(undefined, "Pick a valid counsellor"));
   }
   if (count < 1) {
     redirect(customersHref(undefined, "Enter how many customers to assign (1–500)"));
@@ -100,7 +100,7 @@ export async function assignCountToCaller(formData: FormData) {
       data: { assignedToId: callerId },
     });
   }
-  // The batch becomes this telecaller's daily target.
+  // The batch becomes this counsellor's daily target.
   await prisma.user.update({ where: { id: callerId }, data: { dailyTarget: count } });
 
   await logActivity({

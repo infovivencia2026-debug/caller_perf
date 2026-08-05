@@ -1,7 +1,16 @@
 import { prisma } from "@/lib/prisma";
 
-/** Customer statuses that take a customer out of the calling queue. */
-export const CLOSED_STATUSES = ["NOT_INTERESTED", "CLOSED", "INVALID"] as const;
+/**
+ * Customer statuses that take a customer out of the calling queue.
+ *
+ * Deliberately short. "Not interested" is a mood on the day, not a verdict — those
+ * leads stay in the queue and come round again (tomorrow at the earliest, since the
+ * queue skips anyone already called today), as do Interested and every other
+ * outcome. Only two things end a lead: the sale is done (CLOSED), or the number is
+ * not a real prospect (INVALID) — and invalid ones are deleted outright, so they are
+ * listed here only to keep them out of the queue in the moment before that happens.
+ */
+export const CLOSED_STATUSES = ["CLOSED", "INVALID"] as const;
 
 const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
 
@@ -32,6 +41,9 @@ export async function getNextCustomer(callerId: string, skipIds: string[] = []) 
     include: {
       calls: { orderBy: { startedAt: "desc" }, take: 3, include: { caller: { select: { name: true } } } },
       followUps: { where: { status: "PENDING" }, orderBy: { dueAt: "asc" }, take: 1 },
+      // The calling screen shows the latest three but must be able to say how many
+      // there really are — counting `calls.length` there would only ever report 3.
+      _count: { select: { calls: true } },
     },
     take: 200,
   });
@@ -82,6 +94,9 @@ export async function getAssignedCustomer(callerId: string, customerId: string) 
     include: {
       calls: { orderBy: { startedAt: "desc" }, take: 3, include: { caller: { select: { name: true } } } },
       followUps: { where: { status: "PENDING" }, orderBy: { dueAt: "asc" }, take: 1 },
+      // The calling screen shows the latest three but must be able to say how many
+      // there really are — counting `calls.length` there would only ever report 3.
+      _count: { select: { calls: true } },
     },
   });
 }

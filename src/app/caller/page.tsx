@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, Stat, buttonClass, statusTone } from "@/components/ui";
-import { customerLabel, formatDuration, humanize } from "@/lib/labels";
+import { callLead, customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metrics";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
@@ -38,7 +38,15 @@ export default async function CallerDashboard() {
       where: { callerId: session.userId },
       orderBy: { startedAt: "desc" },
       take: 8,
-      include: { customer: { select: { name: true, phone: true } } },
+      select: {
+        id: true,
+        status: true,
+        startedAt: true,
+        duration: true,
+        customer: { select: { name: true, phone: true } },
+        customerPhone: true,
+        customerName: true,
+      },
     }),
   ]);
 
@@ -151,7 +159,7 @@ export default async function CallerDashboard() {
             {recentCalls.map((call) => (
               <li key={call.id} className="flex flex-wrap items-center gap-2">
                 <Badge tone={statusTone(call.status)}>{humanize(call.status)}</Badge>
-                <span className="font-medium">{customerLabel(call.customer)}</span>
+                <span className="font-medium">{customerLabel(callLead(call))}</span>
                 <span className="text-slate-500 dark:text-slate-400">
                   {formatDateTime(call.startedAt)} · {formatDuration(call.duration)}
                 </span>

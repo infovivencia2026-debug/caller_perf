@@ -3,7 +3,7 @@
 import { deleteCaller } from "@/app/actions/callers";
 
 /**
- * Deleting a telecaller removes them from the roster and disables their login, but keeps
+ * Deleting a counsellor removes them from the roster and disables their login, but keeps
  * their call history in the database (still visible in the Call log and reports). This
  * confirms first; the confirm is the only client JavaScript — the delete is a plain form
  * post, so it still works without it.

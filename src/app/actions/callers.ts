@@ -14,7 +14,7 @@ import { CLOSED_STATUSES } from "@/lib/queue";
 /** A sane ceiling — a typo like 5000 would swallow the whole customer list. */
 const MAX_DAILY_TARGET = 500;
 
-/** New telecallers get this password when the admin leaves the field blank. */
+/** New counsellors get this password when the admin leaves the field blank. */
 const DEFAULT_CALLER_PASSWORD = "onrol@ai";
 
 const targetSchema = z.object({
@@ -81,7 +81,7 @@ export async function createCaller(formData: FormData) {
 }
 
 /**
- * Removes a telecaller by DEACTIVATING them rather than hard-deleting: they can no
+ * Removes a counsellor by DEACTIVATING them rather than hard-deleting: they can no
  * longer sign in and drop out of auto-assign, and their customers are unassigned back
  * into the pool — but their call history, follow-ups and attendance are kept so reports
  * and the calendar stay accurate. (A hard delete would cascade and erase all of that.)
@@ -92,7 +92,7 @@ export async function deleteCaller(formData: FormData) {
 
   const caller = await prisma.user.findUnique({ where: { id: callerId } });
   if (!caller || caller.role !== "TELECALLER") {
-    redirect(callersHref(undefined, "Telecaller not found"));
+    redirect(callersHref(undefined, "Counsellor not found"));
   }
 
   // Free up their customers so those leads return to the pool for reassignment.
@@ -114,7 +114,7 @@ export async function deleteCaller(formData: FormData) {
   revalidatePath("/admin/callers");
   revalidatePath("/admin");
   revalidatePath("/admin/customers");
-  // No confirmation banner — the telecaller simply disappears from the roster.
+  // No confirmation banner — the counsellor simply disappears from the roster.
   redirect(callersHref());
 }
 
@@ -131,7 +131,7 @@ export async function updateDailyTarget(formData: FormData) {
 
   const caller = await prisma.user.findUnique({ where: { id: parsed.data.callerId } });
   if (!caller || caller.role !== "TELECALLER") {
-    redirect(callersHref(undefined, "Telecaller not found"));
+    redirect(callersHref(undefined, "Counsellor not found"));
   }
 
   await prisma.user.update({
@@ -156,8 +156,8 @@ const autoAssignSchema = z.object({
 });
 
 /**
- * Distributes unassigned, still-open customers equally across active telecallers, up to
- * the chosen target each. The target also becomes every active telecaller's daily
+ * Distributes unassigned, still-open customers equally across active counsellors, up to
+ * the chosen target each. The target also becomes every active counsellor's daily
  * target. Highest-priority and longest-waiting customers go out first; anyone already
  * holding open customers is topped up toward the target rather than reset.
  */
@@ -178,10 +178,10 @@ export async function autoAssign(formData: FormData) {
     select: { id: true, name: true },
   });
   if (activeCallers.length === 0) {
-    redirect(callersHref(undefined, "No active telecallers to assign to"));
+    redirect(callersHref(undefined, "No active counsellors to assign to"));
   }
 
-  // Only telecallers marked present today receive new leads — pull in workforce-os
+  // Only counsellors marked present today receive new leads — pull in workforce-os
   // punch-ins first so clocking in there counts as present here.
   await syncPresentFromWorkforce();
   const presentRows = await prisma.attendance.findMany({
@@ -191,10 +191,10 @@ export async function autoAssign(formData: FormData) {
   const presentIds = new Set(presentRows.map((r) => r.userId));
   const callers = activeCallers.filter((c) => presentIds.has(c.id));
   if (callers.length === 0) {
-    redirect(callersHref(undefined, "No telecallers are marked present today — they must click “Mark present” first"));
+    redirect(callersHref(undefined, "No counsellors are marked present today — they must click “Mark present” first"));
   }
 
-  // The chosen target becomes the daily target for the present telecallers.
+  // The chosen target becomes the daily target for the present counsellors.
   await prisma.user.updateMany({
     where: { id: { in: callers.map((c) => c.id) } },
     data: { dailyTarget: target },
@@ -241,7 +241,7 @@ export async function autoAssign(formData: FormData) {
       ? [...plan.byCaller.entries()]
           .map(([callerId, ids]) => `${callers.find((c) => c.id === callerId)?.name ?? callerId}: ${ids.length}`)
           .join(", ")
-      : "none — every telecaller was already at the target";
+      : "none — every counsellor was already at the target";
 
   await logActivity({
     userId: session.userId,

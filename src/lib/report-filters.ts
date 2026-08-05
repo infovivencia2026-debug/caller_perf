@@ -18,7 +18,7 @@ export type ReportFilters = {
   range: RangeKey;
   from?: Date;
   to?: Date;
-  /** Empty means every telecaller. */
+  /** Empty means every counsellor. */
   callerId: string;
   fromInput: string;
   toInput: string;

@@ -66,11 +66,11 @@ export async function changeOwnPassword(formData: FormData) {
 }
 
 const resetSchema = z.object({
-  callerId: z.string().min(1, "Choose a telecaller"),
+  callerId: z.string().min(1, "Choose a counsellor"),
   newPassword: z.string().min(8, "Password must be at least 8 characters"),
 });
 
-/** Admin sets a telecaller's password directly. Scoped to telecallers only. */
+/** Admin sets a counsellor's password directly. Scoped to counsellors only. */
 export async function resetCallerPassword(formData: FormData) {
   const session = await requireAdmin();
 
@@ -81,12 +81,12 @@ export async function resetCallerPassword(formData: FormData) {
   if (!parsed.success) redirect(settingsHref(undefined, parsed.error.issues[0].message));
 
   const caller = await prisma.user.findUnique({ where: { id: parsed.data.callerId } });
-  // Only telecallers — an admin cannot reset another admin's password here.
+  // Only counsellors — an admin cannot reset another admin's password here.
   if (!caller || caller.role !== "TELECALLER") {
-    redirect(settingsHref(undefined, "Telecaller not found"));
+    redirect(settingsHref(undefined, "Counsellor not found"));
   }
 
-  // Bump the token version so the telecaller's current sessions (and the old password)
+  // Bump the token version so the counsellor's current sessions (and the old password)
   // stop working — they must sign in again with the new password.
   await prisma.user.update({
     where: { id: caller.id },

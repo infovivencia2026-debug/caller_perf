@@ -5,7 +5,7 @@ import { requireCaller } from "@/lib/auth";
 import { markAbsent, markPresent } from "@/lib/attendance";
 import { logActivity } from "@/lib/activity";
 
-/** Telecaller marks themselves present for today. */
+/** Counsellor marks themselves present for today. */
 export async function checkIn() {
   const session = await requireCaller();
   await markPresent(session.userId);
@@ -19,7 +19,7 @@ export async function checkIn() {
   revalidatePath("/caller");
 }
 
-/** Telecaller marks themselves absent for today (undo of an accidental/earlier check-in). */
+/** Counsellor marks themselves absent for today (undo of an accidental/earlier check-in). */
 export async function checkOut() {
   const session = await requireCaller();
   await markAbsent(session.userId);

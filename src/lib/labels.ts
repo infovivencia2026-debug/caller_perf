@@ -62,6 +62,31 @@ export const CALL_TO_CUSTOMER_STATUS: Record<CallStatus, CustomerStatus> = {
   INVALID_NUMBER: "INVALID",
 };
 
+/**
+ * The lead a call was made to. Reads the live customer when they still exist, and
+ * falls back to the snapshot stored on the call itself when the lead has been deleted
+ * (an invalid number). Every call display goes through this, so history never shows a
+ * blank where a deleted lead used to be.
+ */
+export function callLead(call: {
+  customer?: { name?: string | null; phone: string; company?: string | null; city?: string | null } | null;
+  customerPhone: string;
+  customerName: string | null;
+}) {
+  if (call.customer) return { ...call.customer, deleted: false };
+  return {
+    name: call.customerName ?? "",
+    phone: call.customerPhone,
+    company: null as string | null,
+    city: null as string | null,
+    deleted: true,
+  };
+}
+
+/** What a counsellor is called throughout the UI. */
+export const COUNSELLOR = "Counsellor";
+export const COUNSELLORS = "Counsellors";
+
 /** A customer's display label — their name, or their phone number when unnamed. */
 export function customerLabel(customer: { name?: string | null; phone: string }) {
   const name = customer.name?.trim();

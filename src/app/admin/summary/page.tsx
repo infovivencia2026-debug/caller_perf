@@ -11,7 +11,7 @@ import { IconPhone, IconCheck, IconStar, IconTrophy, IconClock, IconUsers } from
 export const dynamic = "force-dynamic";
 
 /**
- * End-of-day report: team totals plus a per-telecaller breakdown for one chosen day.
+ * End-of-day report: team totals plus a per-counsellor breakdown for one chosen day.
  * Defaults to today (India time). A quick way to see who did what without touching the
  * period filters on the main dashboard.
  */
@@ -99,15 +99,15 @@ export default async function DailySummary({
         <Stat label="Present" value={`${presentCount}/${callers.length}`} accent="slate" icon={<IconUsers />} />
       </div>
 
-      <Card title="Per telecaller">
+      <Card title="Per counsellor">
         {rows.length === 0 ? (
-          <p className="text-sm text-neutral-500">No telecallers.</p>
+          <p className="text-sm text-neutral-500">No counsellors.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <tr>
-                  <th className="px-3 py-2 font-bold">Telecaller</th>
+                  <th className="px-3 py-2 font-bold">Counsellor</th>
                   <th className="px-3 py-2 font-bold">Present</th>
                   <th className="px-3 py-2 font-bold">Calls</th>
                   <th className="px-3 py-2 font-bold">Target</th>

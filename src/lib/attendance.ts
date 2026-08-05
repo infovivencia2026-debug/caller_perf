@@ -7,7 +7,7 @@ export function dayDate(reference = new Date()) {
   return istDayUTC(reference);
 }
 
-/** Records the telecaller as present on the given day (idempotent). */
+/** Records the counsellor as present on the given day (idempotent). */
 export async function markPresent(userId: string, when = new Date()) {
   const date = dayDate(when);
   await prisma.attendance.upsert({
@@ -17,15 +17,15 @@ export async function markPresent(userId: string, when = new Date()) {
   });
 }
 
-/** Removes today's present mark for the telecaller (idempotent). */
+/** Removes today's present mark for the counsellor (idempotent). */
 export async function markAbsent(userId: string, when = new Date()) {
   const date = dayDate(when);
   await prisma.attendance.deleteMany({ where: { userId, date } });
 }
 
 /**
- * Marks present every active telecaller who has punched in on workforce-os today, matched
- * by email. Idempotent and best-effort — so telecallers who already clocked in there don't
+ * Marks present every active counsellor who has punched in on workforce-os today, matched
+ * by email. Idempotent and best-effort — so counsellors who already clocked in there don't
  * have to press "Mark present" again here. Safe to call on page loads.
  */
 export async function syncPresentFromWorkforce() {
@@ -50,7 +50,7 @@ export async function syncPresentFromWorkforce() {
   );
 }
 
-/** Whether the telecaller is already marked present today. */
+/** Whether the counsellor is already marked present today. */
 export async function isPresentToday(userId: string) {
   const row = await prisma.attendance.findUnique({
     where: { userId_date: { userId, date: dayDate() } },

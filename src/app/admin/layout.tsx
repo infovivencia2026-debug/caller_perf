@@ -8,7 +8,7 @@ const NAV = [
   { href: "/admin/summary", label: "Daily summary" },
   { href: "/admin/calls", label: "Call log" },
   { href: "/admin/customers", label: "Customers" },
-  { href: "/admin/callers", label: "Telecallers" },
+  { href: "/admin/callers", label: "Counsellors" },
   { href: "/admin/calendar", label: "Calendar" },
   { href: "/admin/settings", label: "Settings" },
 ];

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 /**
  * Periodically re-fetches the current route's server data so changes made elsewhere (a
- * telecaller logging a call, an admin assigning leads) show up without a manual reload.
+ * counsellor logging a call, an admin assigning leads) show up without a manual reload.
  * Uses router.refresh(), which swaps the server-rendered data in place and preserves
  * client state and uncontrolled inputs (typed drafts, ticked checkboxes) across refreshes.
  * Pauses while the tab is hidden to avoid needless load.
