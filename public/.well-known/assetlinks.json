@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.onrol.calls.twa",
+      "sha256_cert_fingerprints": [
+        "95:2A:C8:B5:BF:F3:DC:80:7B:EE:ED:37:75:13:98:3B:64:00:52:B0:8A:E4:58:F7:C2:6E:8F:98:82:B8:6C:03"
+      ]
+    }
+  }
+]
