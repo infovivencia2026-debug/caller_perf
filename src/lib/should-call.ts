@@ -53,10 +53,13 @@ export async function getShouldCallList(callerId: string): Promise<ShouldCallEnt
     if (!customer) continue;
     if ((CLOSED_STATUSES as readonly string[]).includes(customer.status)) continue;
 
-    const existing = seen.get(customer.id);
-    if (existing) {
+    // `has`, not a truthiness check: leads that were reached later in the day are
+    // recorded with a null sentinel, and testing the value would treat that as
+    // "unseen" and let an earlier no-connect put them back on the list.
+    if (seen.has(customer.id)) {
       // Calls arrive newest first, so anything after the first is an earlier attempt.
-      existing.attemptsToday += 1;
+      const existing = seen.get(customer.id);
+      if (existing) existing.attemptsToday += 1;
       continue;
     }
 

@@ -109,7 +109,10 @@ export async function getAssignedCustomer(callerId: string, customerId: string) 
 export async function searchAssignedCustomers(callerId: string, query: string, take = 10) {
   const text = query.trim();
   if (!text) return [];
-  const digits = text.replace(/\D/g, "");
+  // Phones are stored normalised to their last 10 digits (see normalizePhone), so a
+  // pasted "+91 90000 00002" has to be reduced the same way or it matches nothing.
+  const rawDigits = text.replace(/\D/g, "");
+  const digits = rawDigits.length > 10 ? rawDigits.slice(-10) : rawDigits;
 
   return prisma.customer.findMany({
     where: {
