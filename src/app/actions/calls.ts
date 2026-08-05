@@ -269,6 +269,85 @@ export async function skipCustomer(formData: FormData) {
   redirect(queueHref(next.join(",")));
 }
 
+const editSchema = z.object({
+  callId: z.string().min(1),
+  status: z.enum(CALL_STATUSES as [string, ...string[]]),
+  response: z.string().optional(),
+  comments: z.string().optional(),
+  course: z.string().optional(),
+});
+
+/**
+ * Lets a telecaller correct a call they logged themselves — the outcome picked in a
+ * hurry, a typo in the response, a missing comment. Timings are not editable: they are
+ * stamped by the Start/End buttons and are what the performance numbers are built on.
+ */
+export async function updateOwnCall(formData: FormData) {
+  const session = await requireCaller();
+  // Preserved so the caller lands back on the same date range they were looking at.
+  const back = String(formData.get("back") ?? "/caller/my-calls");
+
+  const parsed = editSchema.safeParse({
+    callId: String(formData.get("callId") ?? ""),
+    status: String(formData.get("status") ?? ""),
+    response: String(formData.get("response") ?? "").trim(),
+    comments: String(formData.get("comments") ?? "").trim(),
+    course: String(formData.get("course") ?? "").trim(),
+  });
+  if (!parsed.success) {
+    redirect(`${back}${back.includes("?") ? "&" : "?"}error=${encodeURIComponent(parsed.error.issues[0].message)}`);
+  }
+  const input = parsed.data;
+
+  const call = await prisma.call.findUnique({
+    where: { id: input.callId },
+    select: { id: true, callerId: true, customerId: true, startedAt: true },
+  });
+  if (!call || call.callerId !== session.userId) {
+    redirect(`${back}${back.includes("?") ? "&" : "?"}error=${encodeURIComponent("That call is not yours to edit")}`);
+  }
+
+  // The customer's status mirrors their most recent call, so only re-derive it when
+  // this is still the latest one — editing an old call must not rewind the lead.
+  const latest = await prisma.call.findFirst({
+    where: { customerId: call.customerId },
+    orderBy: { startedAt: "desc" },
+    select: { id: true },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.call.update({
+      where: { id: call.id },
+      data: {
+        status: input.status as never,
+        response: input.response || null,
+        comments: input.comments || null,
+        course: input.status === "INTERESTED" ? input.course || null : null,
+      },
+    });
+
+    if (latest?.id === call.id) {
+      await tx.customer.update({
+        where: { id: call.customerId },
+        data: { status: CALL_TO_CUSTOMER_STATUS[input.status as keyof typeof CALL_TO_CUSTOMER_STATUS] },
+      });
+    }
+  });
+
+  await logActivity({
+    userId: session.userId,
+    action: "CALL_UPDATED",
+    entity: "Call",
+    entityId: call.id,
+    detail: `Outcome changed to ${input.status}`,
+  });
+
+  revalidatePath("/caller/my-calls");
+  revalidatePath("/caller");
+  revalidatePath("/admin/calls");
+  redirect(`${back}${back.includes("?") ? "&" : "?"}saved=1`);
+}
+
 const detailsSchema = z.object({
   customerId: z.string().min(1),
   name: z.string().optional(),

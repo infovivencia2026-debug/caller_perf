@@ -2,9 +2,19 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
-import { Badge, Card, Row, secondaryButtonClass, statusTone } from "@/components/ui";
+import {
+  Badge,
+  BentoTile,
+  Card,
+  Row,
+  bentoButtonClass,
+  bentoGhostButtonClass,
+  bentoInputClass,
+  secondaryButtonClass,
+  statusTone,
+} from "@/components/ui";
 import { customerLabel, formatDuration, humanize } from "@/lib/labels";
-import { getAssignedCustomer, getNextCustomer, getQueueCount } from "@/lib/queue";
+import { getAssignedCustomer, getNextCustomer, getQueueCount, searchAssignedCustomers } from "@/lib/queue";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
 import { formatDateTime } from "@/lib/datetime";
@@ -17,10 +27,10 @@ export const dynamic = "force-dynamic";
 export default async function CallingScreen({
   searchParams,
 }: {
-  searchParams: Promise<{ skip?: string; error?: string; saved?: string; focus?: string }>;
+  searchParams: Promise<{ skip?: string; error?: string; saved?: string; focus?: string; q?: string }>;
 }) {
   const session = await requireCaller();
-  const { skip, error, saved, focus } = await searchParams;
+  const { skip, error, saved, focus, q } = await searchParams;
   // The skip list lives in a cookie (so it survives navigating away and back) and is also
   // carried in the URL during the calling flow — merge both so nothing is lost.
   const cookieStore = await cookies();
@@ -28,9 +38,74 @@ export default async function CallingScreen({
   const urlSkip = (skip ?? "").split(",").filter(Boolean);
   const skipIds = [...new Set([...urlSkip, ...cookieSkip])];
 
-  // "focus" (from a follow-up's Call button) pins a specific customer; otherwise the
-  // queue picks the next one.
-  const focused = focus ? await getAssignedCustomer(session.userId, focus) : null;
+  // Search by name or number. Pressing enter on a query that matches exactly one of the
+  // caller's customers drops straight into the call screen for them; several matches show
+  // a pick-list instead.
+  const query = (q ?? "").trim();
+  const matches = query ? await searchAssignedCustomers(session.userId, query) : [];
+
+  // "focus" (from a follow-up's Call button, or a search hit) pins a specific customer;
+  // otherwise the queue picks the next one.
+  const focusId = focus ?? (matches.length === 1 ? matches[0].id : undefined);
+  const focused = focusId ? await getAssignedCustomer(session.userId, focusId) : null;
+
+  const searchCard = (
+    <BentoTile title="Find a customer" glow="sky">
+      <form method="get" className="flex flex-wrap items-end gap-3">
+        {/* Keeps the session's skip list alive across a search. */}
+        {skipIds.length > 0 && <input type="hidden" name="skip" value={skipIds.join(",")} />}
+        <label className="min-w-[16rem] flex-1 text-sm font-medium">
+          Search by name or number
+          <input
+            type="search"
+            name="q"
+            defaultValue={query}
+            autoComplete="off"
+            placeholder="e.g. Priya or 98765 — press enter to call"
+            className={`${bentoInputClass} mt-1`}
+          />
+        </label>
+        <button type="submit" className={bentoButtonClass}>
+          Search
+        </button>
+        {query && (
+          <Link
+            href={skipIds.length > 0 ? `/caller/call?skip=${skipIds.join(",")}` : "/caller/call"}
+            className={bentoGhostButtonClass}
+          >
+            Clear
+          </Link>
+        )}
+      </form>
+
+      {query && matches.length === 0 && (
+        <p className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">
+          No open customer of yours matches “{query}”.
+        </p>
+      )}
+      {matches.length > 1 && (
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {matches.map((match) => (
+            <li key={match.id}>
+              <Link
+                href={`/caller/call?focus=${match.id}${skipIds.length > 0 ? `&skip=${skipIds.join(",")}` : ""}`}
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-300 px-3 py-2 text-sm transition-colors hover:border-sky-400 hover:bg-sky-500/10 dark:border-neutral-700 dark:hover:border-sky-400"
+              >
+                <span className="font-semibold">{customerLabel(match)}</span>
+                <span className="tabular-nums text-neutral-500 dark:text-neutral-400">{match.phone}</span>
+                <Badge tone={statusTone(match.status)}>{humanize(match.status)}</Badge>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {query && matches.length === 1 && (
+        <p className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+          Showing {customerLabel(matches[0])} below — ready to call.
+        </p>
+      )}
+    </BentoTile>
+  );
 
   const [nextInQueue, queueCount, callsToday, me, lastCall] = await Promise.all([
     focused ? Promise.resolve(null) : getNextCustomer(session.userId, skipIds),
@@ -83,6 +158,7 @@ export default async function CallingScreen({
   if (!customer) {
     return (
       <div className="space-y-6">
+        {searchCard}
         <Card title="Calling screen">
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {skipIds.length > 0
@@ -120,6 +196,8 @@ export default async function CallingScreen({
           {skipIds.length > 0 && ` · ${skipIds.length} skipped`}
         </p>
       </div>
+
+      {searchCard}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         {/* On a phone the call panel comes first (order-1); the read-only info sits below.
@@ -285,7 +363,7 @@ export default async function CallingScreen({
               notes: customer.notes,
             }}
             skipped={skipIds}
-            focus={focused ? focus : undefined}
+            focus={focused ? focusId : undefined}
             timing={timing}
             error={error}
           />

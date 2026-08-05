@@ -86,6 +86,31 @@ export async function getAssignedCustomer(callerId: string, customerId: string) 
   });
 }
 
+/**
+ * Finds the caller's own open customers by name or phone number. Digits in the query
+ * are matched against the phone (so "98765" or "+91 98765" both work) and the raw text
+ * against the name, case-insensitively.
+ */
+export async function searchAssignedCustomers(callerId: string, query: string, take = 10) {
+  const text = query.trim();
+  if (!text) return [];
+  const digits = text.replace(/\D/g, "");
+
+  return prisma.customer.findMany({
+    where: {
+      assignedToId: callerId,
+      status: { notIn: CLOSED_STATUSES as unknown as never },
+      OR: [
+        { name: { contains: text, mode: "insensitive" as const } },
+        ...(digits ? [{ phone: { contains: digits } }] : []),
+      ],
+    },
+    orderBy: { name: "asc" },
+    take,
+    select: { id: true, name: true, phone: true, company: true, city: true, status: true },
+  });
+}
+
 function startOfToday(reference: Date) {
   const d = new Date(reference);
   d.setHours(0, 0, 0, 0);

@@ -57,6 +57,91 @@ table {
   display: block;
 }
 
+/* ---------------------------------------------------------------------------
+   Bento surfaces. Used by the caller's own screens (My calls, customer search):
+   soft rounded tiles on a grid, each with one subtle coloured glow bleeding in
+   from a corner. The glow is a low-opacity radial gradient behind the content —
+   enough to tint the tile, never enough to fight the text. The rest of the app
+   stays on the hard-edged brutalist cards.
+   --------------------------------------------------------------------------- */
+.bento {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--line) 18%, transparent);
+  background: #ffffff;
+  transition: border-color 150ms ease, transform 150ms ease;
+  /* Default glow; per-tile tones override this. */
+  --glow: 99 102 241;
+  --glow-strength: 0.1;
+}
+.dark .bento {
+  background: #0f0f0f;
+  border-color: color-mix(in srgb, var(--line) 22%, transparent);
+  /* Colour reads dimmer against black, so lift it a little. */
+  --glow-strength: 0.16;
+}
+.bento::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -40% -20% auto -20%;
+  height: 220px;
+  background: radial-gradient(
+    60% 100% at 50% 0%,
+    rgb(var(--glow) / var(--glow-strength)),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+/* A hairline of the glow along the top edge, so tiles read as lit rather than dirty. */
+.bento::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--glow) / 0.5), transparent);
+  pointer-events: none;
+}
+.bento:hover {
+  border-color: rgb(var(--glow) / 0.45);
+}
+
+.bento[data-glow="violet"] { --glow: 139 92 246; }
+.bento[data-glow="emerald"] { --glow: 16 185 129; }
+.bento[data-glow="amber"] { --glow: 245 158 11; }
+.bento[data-glow="sky"] { --glow: 14 165 233; }
+.bento[data-glow="rose"] { --glow: 244 63 94; }
+
+/* 12-column bento board; tiles pick their span with the `bento-span-*` classes. */
+.bento-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .bento-span-3 { grid-column: span 3; }
+  .bento-span-4 { grid-column: span 4; }
+  .bento-span-5 { grid-column: span 5; }
+  .bento-span-7 { grid-column: span 7; }
+  .bento-span-8 { grid-column: span 8; }
+  .bento-span-12 { grid-column: span 12; }
+}
+.bento-span-full {
+  grid-column: 1 / -1;
+}
+
+/* Inside a bento tile the hard brutalist gridlines are too loud — soften them. */
+.bento table :where(th, td) {
+  border-color: color-mix(in srgb, var(--line) 12%, transparent);
+  border-left: 0;
+  border-right: 0;
+}
+
 /* Hide the browser's native password reveal so it doesn't fight the custom eye. */
 input::-ms-reveal,
 input::-ms-clear {

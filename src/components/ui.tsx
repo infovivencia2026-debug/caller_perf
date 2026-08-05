@@ -28,7 +28,83 @@ export function Card({
   );
 }
 
-export type StatAccent = "indigo" | "emerald" | "amber" | "rose" | "sky" | "violet" | "slate";
+export type Glow = "indigo" | "violet" | "emerald" | "amber" | "sky" | "rose";
+
+/**
+ * A tile on a bento board — soft rounded surface with one subtle coloured glow.
+ * Used on the caller's own screens; the rest of the app keeps the hard-edged `Card`.
+ * `span` is the column count on the 12-wide grid at `lg` and up (stacks below).
+ */
+export function BentoTile({
+  title,
+  children,
+  action,
+  glow = "indigo",
+  span = 12,
+  /** Drops the tile's own padding so content (a table, say) can run edge-to-edge. */
+  flush = false,
+  className = "",
+}: {
+  title?: string;
+  children: ReactNode;
+  action?: ReactNode;
+  glow?: Glow;
+  span?: 3 | 4 | 5 | 7 | 8 | 12;
+  flush?: boolean;
+  className?: string;
+}) {
+  return (
+    <section data-glow={glow} className={`bento bento-span-${span} ${flush ? "" : "p-5"} ${className}`}>
+      {(title || action) && (
+        <header className="mb-4 flex items-center justify-between gap-3">
+          {title && (
+            <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+              {title}
+            </h2>
+          )}
+          {action}
+        </header>
+      )}
+      {children}
+    </section>
+  );
+}
+
+/** A single big number on the bento board. */
+export function BentoStat({
+  label,
+  value,
+  hint,
+  glow = "indigo",
+  span = 3,
+}: {
+  label: string;
+  value: ReactNode;
+  hint?: string;
+  glow?: Glow;
+  span?: 3 | 4 | 5 | 7 | 8 | 12;
+}) {
+  return (
+    <div data-glow={glow} className={`bento bento-span-${span} p-5`}>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">{label}</p>
+      <p className="mt-2 text-3xl font-extrabold tabular-nums leading-none">{value}</p>
+      {hint && <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
+    </div>
+  );
+}
+
+/** Softer, rounded button that sits with the bento surfaces. */
+export const bentoButtonClass =
+  "inline-flex items-center justify-center rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-bold uppercase tracking-wide text-indigo-700 transition-colors hover:bg-indigo-500/20 disabled:opacity-50 disabled:pointer-events-none dark:border-indigo-400/40 dark:text-indigo-200";
+
+export const bentoGhostButtonClass =
+  "inline-flex items-center justify-center rounded-xl border border-neutral-300 bg-transparent px-4 py-2 text-sm font-bold uppercase tracking-wide text-neutral-700 transition-colors hover:border-neutral-500 hover:text-black dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-400 dark:hover:text-white";
+
+/** Rounded input to match the bento tiles. */
+export const bentoInputClass =
+  "w-full rounded-xl border border-neutral-300 bg-white/60 px-3 py-2 text-sm text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 dark:border-neutral-700 dark:bg-white/5 dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-indigo-400";
+
+export type StatAccent ="indigo" | "emerald" | "amber" | "rose" | "sky" | "violet" | "slate";
 
 export function Stat({
   label,
