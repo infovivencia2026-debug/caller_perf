@@ -89,7 +89,7 @@ export default async function CustomersPage({
 
       {/* Import lives at the top of the customers page; the list below refreshes after
           an upload. Collapsible so it doesn't crowd the list. */}
-      <details className="rounded-none border border-black bg-white dark:border-white dark:bg-black">
+      <details className="bento">
         <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
           Import customers from CSV or Excel
         </summary>
@@ -104,7 +104,7 @@ export default async function CustomersPage({
       </details>
 
       {/* Import history — one line per CSV import: when, who ran it, and the outcome. */}
-      <details className="rounded-none border border-black bg-white dark:border-white dark:bg-black">
+      <details className="bento">
         <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
           Import history ({importLogs.length})
         </summary>
@@ -226,7 +226,7 @@ export default async function CustomersPage({
       <Card title="Customers">
         {/* Hand-pick rows with the checkboxes, choose a telecaller, and assign the lot. */}
         <form action={assignSelected}>
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-none border border-black bg-neutral-100 px-3 py-2 dark:border-white dark:bg-neutral-900">
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2">
             <span className="text-xs font-bold uppercase tracking-wide">
               Bulk assign — tick rows below, then hand them to:
             </span>

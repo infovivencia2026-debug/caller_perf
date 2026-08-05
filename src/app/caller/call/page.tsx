@@ -315,7 +315,7 @@ export default async function CallingScreen({
                     <div
                       id={`call-detail-${call.id}`}
                       popover="auto"
-                      className="w-[min(28rem,90vw)] rounded-none border border-black bg-white p-5 text-sm text-slate-900 backdrop:bg-slate-900/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="bento w-[min(28rem,90vw)] p-5 text-sm backdrop:bg-black/50 backdrop:backdrop-blur-sm"
                     >
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <h3 className="text-sm font-semibold">Call details</h3>

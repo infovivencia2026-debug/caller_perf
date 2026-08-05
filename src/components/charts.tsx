@@ -6,7 +6,7 @@
  */
 
 const BAR = "bg-black dark:bg-white";
-const TRACK = "border border-black bg-white dark:border-white dark:bg-black";
+const TRACK = "border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900";
 
 /** Vertical bars over time — e.g. calls per day. */
 export function TimeBars({ data }: { data: { key: string; label: string; value: number }[] }) {
@@ -23,8 +23,8 @@ export function TimeBars({ data }: { data: { key: string; label: string; value: 
             </span>
             <div className="flex flex-1 items-end">
               <div
-                className={`w-full rounded-none transition-[height] duration-500 ease-out hover:opacity-80 ${
-                  d.value > 0 ? `border border-black dark:border-white ${BAR}` : "bg-neutral-300 dark:bg-neutral-700"
+                className={`w-full rounded-t-md transition-[height] duration-500 ease-out hover:opacity-80 ${
+                  d.value > 0 ? BAR : "bg-neutral-200 dark:bg-neutral-800"
                 }`}
                 style={{ height: d.value > 0 ? `${(d.value / max) * 100}%` : "2px" }}
               />
@@ -58,7 +58,7 @@ export function RankedBars({ data }: { data: { label: string; value: number }[] 
             <span>{d.label}</span>
             <span className="tabular-nums text-slate-500 dark:text-slate-400">{d.value}</span>
           </div>
-          <div className={`group/rb relative h-4 overflow-hidden rounded-none ${TRACK}`}>
+          <div className={`group/rb relative h-4 overflow-hidden rounded-full ${TRACK}`}>
             <div
               className={`h-full transition-[width] duration-500 ease-out group-hover/rb:opacity-80 ${BAR}`}
               style={{ width: `${(d.value / max) * 100}%` }}

@@ -1,24 +1,29 @@
 import type { ReactNode } from "react";
 
-/* Brutalist system: square corners, thin 1px black borders, no shadows, JetBrains Mono,
-   black-on-white (inverted in dark). Accent colour is reserved for semantic badges;
-   everything structural is monochrome. */
+/* Bento system: soft rounded surfaces, hairline borders, one subtle coloured glow per
+   tile, JetBrains Mono kept for the numerals. Colour stays quiet — a tint on the edge
+   and behind the header, never a slab of it. The `.bento` primitives live in
+   globals.css so plain elements (popovers, details panels) can opt in too. */
 
 export function Card({
   title,
   children,
   action,
+  glow = "indigo",
 }: {
   title?: string;
   children: ReactNode;
   action?: ReactNode;
+  glow?: Glow;
 }) {
   return (
-    <section className="rounded-none border border-black bg-white p-5 dark:border-white dark:bg-black">
+    <section data-glow={glow} className="bento p-5">
       {(title || action) && (
-        <header className="mb-4 flex items-center justify-between gap-3 border-b border-black pb-3 dark:border-white">
+        <header className="mb-4 flex items-center justify-between gap-3">
           {title && (
-            <h2 className="text-sm font-bold uppercase tracking-wide text-black dark:text-white">{title}</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+              {title}
+            </h2>
           )}
           {action}
         </header>
@@ -111,6 +116,7 @@ export function Stat({
   value,
   hint,
   icon,
+  accent = "indigo",
 }: {
   label: string;
   value: ReactNode;
@@ -118,17 +124,32 @@ export function Stat({
   accent?: StatAccent;
   icon?: ReactNode;
 }) {
+  // The old `accent` names map onto the glow palette, so every existing caller keeps
+  // its colour coding without being touched.
+  const glow = ACCENT_GLOW[accent] ?? "indigo";
   return (
-    <div className="rounded-none border border-black bg-white p-5 dark:border-white dark:bg-black">
-      <div className="flex items-center justify-between border-b border-black pb-2 dark:border-white">
-        <span className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-white">{label}</span>
-        {icon && <span className="text-black dark:text-white">{icon}</span>}
+    <div data-glow={glow} className="bento p-5">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+          {label}
+        </span>
+        {icon && <span className="text-neutral-400 dark:text-neutral-500">{icon}</span>}
       </div>
-      <p className="mt-3 text-4xl font-extrabold tabular-nums leading-none text-black dark:text-white">{value}</p>
-      {hint && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-400">{hint}</p>}
+      <p className="mt-3 text-4xl font-extrabold tabular-nums leading-none">{value}</p>
+      {hint && <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
     </div>
   );
 }
+
+const ACCENT_GLOW: Record<StatAccent, Glow> = {
+  indigo: "indigo",
+  emerald: "emerald",
+  amber: "amber",
+  rose: "rose",
+  sky: "sky",
+  violet: "violet",
+  slate: "indigo",
+};
 
 /** One label/value line inside a definition list. Shared by the customer detail views. */
 export function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -143,7 +164,7 @@ export function Row({ label, children }: { label: string; children: ReactNode })
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: Tone }) {
   return (
     <span
-      className={`inline-flex min-w-[104px] items-center justify-center rounded-none border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${TONES[tone]}`}
+      className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${TONES[tone]}`}
     >
       {children}
     </span>
@@ -152,13 +173,14 @@ export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?
 
 type Tone = "slate" | "green" | "red" | "amber" | "blue";
 
-// Solid fills with a hard black (or white, in dark) border — bold and even-sized.
+// Tinted pills: a translucent fill and a matching border, so the colour reads as a
+// glow on the surface rather than a printed slab. Same weights in both themes.
 const TONES: Record<Tone, string> = {
-  slate: "border-black bg-neutral-200 text-black dark:border-white dark:bg-neutral-700 dark:text-white",
-  green: "border-black bg-emerald-300 text-black dark:border-white dark:bg-emerald-600 dark:text-white",
-  red: "border-black bg-red-300 text-black dark:border-white dark:bg-red-600 dark:text-white",
-  amber: "border-black bg-amber-300 text-black dark:border-white dark:bg-amber-500 dark:text-black",
-  blue: "border-black bg-sky-300 text-black dark:border-white dark:bg-sky-600 dark:text-white",
+  slate: "border-neutral-400/40 bg-neutral-400/15 text-neutral-700 dark:text-neutral-300",
+  green: "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  red: "border-rose-500/40 bg-rose-500/15 text-rose-700 dark:text-rose-300",
+  amber: "border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  blue: "border-sky-500/40 bg-sky-500/15 text-sky-700 dark:text-sky-300",
 };
 
 export function statusTone(status: string): Tone {
@@ -169,11 +191,9 @@ export function statusTone(status: string): Tone {
   return "slate";
 }
 
-export const inputClass =
-  "w-full rounded-none border border-black bg-white px-3 py-2 text-sm text-black outline-none transition-colors placeholder:text-neutral-500 focus:outline focus:outline-1 focus:outline-offset-2 focus:outline-black dark:border-white dark:bg-black dark:text-white dark:placeholder:text-neutral-400 dark:focus:outline-white";
+/* The app-wide input and button styles are now the bento ones — every existing page
+   imports these names, so restyling here restyles the whole app. */
 
-export const buttonClass =
-  "inline-flex items-center justify-center rounded-none border border-black bg-black px-4 py-2 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:opacity-50 disabled:pointer-events-none dark:border-white dark:bg-white dark:text-black dark:hover:bg-black dark:hover:text-white";
-
-export const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-none border border-black bg-white px-4 py-2 text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white disabled:opacity-50 disabled:pointer-events-none dark:border-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black";
+export const inputClass = bentoInputClass;
+export const buttonClass = bentoButtonClass;
+export const secondaryButtonClass = bentoGhostButtonClass;

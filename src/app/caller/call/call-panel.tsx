@@ -59,7 +59,7 @@ export default function CallPanel({
     <Card title="Log this call">
       {/* Name + big tappable phone up top, so on a phone everything needed to make the
           call and log it is in one place without scrolling. */}
-      <div className="mb-4 border-b border-black pb-3 dark:border-white">
+      <div className="mb-4 border-b border-neutral-200 pb-3 dark:border-neutral-800">
         <p className="text-base font-bold">{customerName}</p>
         <a href={`tel:${phone}`} className="text-3xl font-extrabold tabular-nums tracking-tight underline underline-offset-4">
           {phone}

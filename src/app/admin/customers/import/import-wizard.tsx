@@ -215,7 +215,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
           const file = event.dataTransfer.files?.[0];
           if (file) onFile(file);
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-none border border-dashed px-4 py-8 text-center text-sm transition-colors ${
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-8 text-center text-sm transition-colors ${
           dragging
             ? "border-slate-500 bg-slate-100 dark:border-slate-400 dark:bg-slate-800"
             : "border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-900"
@@ -239,7 +239,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
       </div>
 
       {parsing && (
-        <div className="flex items-center justify-between gap-3 rounded-none border border-black bg-neutral-100 px-4 py-3 text-sm dark:border-white dark:bg-neutral-900">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm dark:border-neutral-800 dark:bg-neutral-900">
           <span className="flex items-center gap-3 font-bold uppercase tracking-wide">
             <Spinner />
             Reading {fileName || "file"}…

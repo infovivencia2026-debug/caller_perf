@@ -22,7 +22,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label="Toggle light and dark appearance"
-      className="mb-3 flex w-full items-center justify-center gap-2 rounded-none border border-black bg-white px-3 py-2 text-sm font-bold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white dark:border-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black"
+      className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-300 px-3 py-2 text-sm font-bold uppercase tracking-wide text-neutral-700 transition-colors hover:border-neutral-500 hover:text-black dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-400 dark:hover:text-white"
     >
       {/* Shown in dark mode — offers a switch to light. */}
       <span className="hidden items-center gap-2 dark:flex">
