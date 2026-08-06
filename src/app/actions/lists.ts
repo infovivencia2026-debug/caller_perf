@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { CLOSED_STATUSES } from "@/lib/queue";
+import { findUnfiledGroups } from "@/lib/lead-grouping";
+import { formatDateTime } from "@/lib/datetime";
 
 function listsHref(message?: string, error?: string) {
   const params = new URLSearchParams();
@@ -146,4 +148,68 @@ export async function deleteList(formData: FormData) {
   revalidatePath("/admin/lists");
   revalidatePath("/admin/customers");
   redirect(listsHref(`${list.name} removed — its ${list._count.members} lead(s) were kept`));
+}
+
+
+/**
+ * Files the leads that arrived before lists existed.
+ *
+ * Their original filenames are gone, so the grouping is reconstructed from creation
+ * time: an upload writes its rows in one burst, so a run of rows created together was
+ * one file. Each group becomes a list named for when it landed and marked as
+ * reconstructed, so nobody mistakes it for the real filename.
+ *
+ * Safe to re-run: it only ever touches leads that belong to no list yet.
+ */
+export async function groupUnfiledLeads() {
+  const session = await requireAdmin();
+  const groups = await findUnfiledGroups();
+
+  if (groups.length === 0) {
+    redirect(listsHref("Every lead is already in a list"));
+  }
+
+  let filed = 0;
+  for (const group of groups) {
+    // The bucket is a minute, so the end of the window is the end of that minute.
+    const until = new Date(group.to.getTime() + 60 * 1000);
+
+    const list = await prisma.importList.create({
+      data: {
+        name: `Imported ${formatDateTime(group.from)}`,
+        note: "Reconstructed from upload time — the original filename was not recorded",
+        rowsImported: group.count,
+        uploadedById: session.userId,
+      },
+    });
+
+    // Only leads still unfiled, inside this window. Two statements rather than a
+    // read-then-write so 27,000 rows do not travel through the app.
+    await prisma.$executeRaw`
+      UPDATE "Customer" c
+      SET "listId" = ${list.id}
+      WHERE c."createdAt" >= ${group.from} AND c."createdAt" < ${until}
+        AND NOT EXISTS (SELECT 1 FROM "ListMembership" m WHERE m."customerId" = c."id")
+    `;
+    const inserted = await prisma.$executeRaw`
+      INSERT INTO "ListMembership" ("id", "listId", "customerId", "isOrigin", "createdAt")
+      SELECT 'lm_' || substr(md5(c."id" || ':' || ${list.id}), 1, 22), ${list.id}, c."id", true, now()
+      FROM "Customer" c
+      WHERE c."listId" = ${list.id}
+        AND NOT EXISTS (SELECT 1 FROM "ListMembership" m WHERE m."customerId" = c."id")
+      ON CONFLICT DO NOTHING
+    `;
+    filed += inserted;
+  }
+
+  await logActivity({
+    userId: session.userId,
+    action: "LEADS_GROUPED",
+    entity: "ImportList",
+    detail: `${filed} unfiled lead(s) grouped into ${groups.length} list(s) by upload time`,
+  });
+
+  revalidatePath("/admin/lists");
+  revalidatePath("/admin/customers");
+  redirect(listsHref(`${filed.toLocaleString("en-IN")} leads filed into ${groups.length} list(s)`));
 }

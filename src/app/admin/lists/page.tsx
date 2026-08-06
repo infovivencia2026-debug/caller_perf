@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-import { assignFromList, deleteList, unassignList, updateList } from "@/app/actions/lists";
+import { assignFromList, deleteList, groupUnfiledLeads, unassignList, updateList } from "@/app/actions/lists";
+import { findUnfiledGroups } from "@/lib/lead-grouping";
 import {
   BentoStat,
   BentoTile,
@@ -42,6 +43,9 @@ export default async function Lists({
     // Leads that belong to no file: added by hand, or imported before lists existed.
     prisma.customer.count({ where: { memberships: { none: {} } } }),
   ]);
+
+  // What filing the older leads would produce, shown before anyone commits to it.
+  const unfiledGroups = looseCount > 0 ? await findUnfiledGroups() : [];
 
   // Per-list breakdown in one round trip each, rather than N queries per list.
   const [assignedCounts, calledCounts] = await Promise.all([
@@ -100,6 +104,41 @@ export default async function Lists({
           hint="Added by hand or before lists"
         />
       </div>
+
+      {/* The leads that arrived before lists existed. Offered as a preview first —
+          this is a reconstruction from upload times, not a recovery of filenames. */}
+      {unfiledGroups.length > 0 && (
+        <BentoTile title={`Unfiled leads (${looseCount.toLocaleString("en-IN")})`} glow="amber">
+          <p className="text-sm text-neutral-600 dark:text-neutral-300">
+            These arrived before lists existed, so no filename was recorded. They can be filed by when they were
+            uploaded — an import writes its rows in one burst, so each burst below was almost certainly one file.
+          </p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {unfiledGroups.slice(0, 8).map((group) => (
+              <li key={group.from.toISOString()} className="flex flex-wrap justify-between gap-2">
+                <span>{formatDateTime(group.from)}</span>
+                <span className="tabular-nums text-neutral-500 dark:text-neutral-400">
+                  {group.count.toLocaleString("en-IN")} leads
+                </span>
+              </li>
+            ))}
+          </ul>
+          {unfiledGroups.length > 8 && (
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              …and {unfiledGroups.length - 8} more group{unfiledGroups.length - 8 === 1 ? "" : "s"}.
+            </p>
+          )}
+          <form action={groupUnfiledLeads} className="mt-3">
+            <button type="submit" className={bentoButtonClass}>
+              File into {unfiledGroups.length} list{unfiledGroups.length === 1 ? "" : "s"}
+            </button>
+          </form>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Each list is named for when it landed and marked as reconstructed. Nothing is moved or deleted — leads are
+            only labelled, and lists can be renamed or removed afterwards.
+          </p>
+        </BentoTile>
+      )}
 
       {lists.length === 0 ? (
         <BentoTile title="No lists yet" glow="indigo">
