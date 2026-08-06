@@ -170,6 +170,7 @@ export async function groupUnfiledLeads() {
   }
 
   let filed = 0;
+  let created = 0;
   for (const group of groups) {
     // The bucket is a minute, so the end of the window is the end of that minute.
     const until = new Date(group.to.getTime() + 60 * 1000);
@@ -199,19 +200,34 @@ export async function groupUnfiledLeads() {
         AND NOT EXISTS (SELECT 1 FROM "ListMembership" m WHERE m."customerId" = c."id")
       ON CONFLICT DO NOTHING
     `;
+
+    // A concurrent run (a double-click on a 27,000-row job takes long enough to
+    // invite one) can file the leads first, leaving this run holding an empty folder.
+    // An empty list is noise at best and a dead end at worst — someone opens it and
+    // concludes their data is gone — so it is removed again rather than kept.
+    if (inserted === 0) {
+      await prisma.importList.delete({ where: { id: list.id } });
+      continue;
+    }
+
+    created += 1;
     filed += inserted;
+  }
+
+  if (created === 0) {
+    redirect(listsHref("Every lead is already in a list"));
   }
 
   await logActivity({
     userId: session.userId,
     action: "LEADS_GROUPED",
     entity: "ImportList",
-    detail: `${filed} unfiled lead(s) grouped into ${groups.length} list(s) by upload time`,
+    detail: `${filed} unfiled lead(s) grouped into ${created} list(s) by upload time`,
   });
 
   revalidatePath("/admin/lists");
   revalidatePath("/admin/customers");
-  redirect(listsHref(`${filed.toLocaleString("en-IN")} leads filed into ${groups.length} list(s)`));
+  redirect(listsHref(`${filed.toLocaleString("en-IN")} leads filed into ${created} list(s)`));
 }
 
 

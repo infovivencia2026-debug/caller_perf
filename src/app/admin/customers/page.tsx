@@ -224,6 +224,22 @@ export default async function CustomersPage({
         </div>
       </details>
 
+      {openList && total === 0 && !filtered && (
+        <Card title="This file is empty" glow="amber">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            No leads belong to <strong>{openList.name}</strong>. Your other leads are unaffected —{" "}
+            <Link href="/admin/customers?list=all" className="font-semibold underline underline-offset-2">
+              view all leads
+            </Link>{" "}
+            or{" "}
+            <Link href="/admin/customers" className="font-semibold underline underline-offset-2">
+              go back to the files
+            </Link>
+            .
+          </p>
+        </Card>
+      )}
+
       {/* Renaming lives here as well as on the lists page: the moment you notice a
           file is called "leads_final_v3 (2).csv" is the moment you have opened it. */}
       {openList && (
