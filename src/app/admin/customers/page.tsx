@@ -6,6 +6,7 @@ import ImportWizard from "./import/import-wizard";
 import { DeleteMatchingButton } from "./delete-matching-button";
 import { SelectAll } from "./select-all";
 import { assignCountToCaller, assignSelected } from "@/app/actions/assign";
+import { assignListEqually } from "@/app/actions/lists";
 import { parseTags } from "@/lib/tags";
 import { buildCustomerWhere, hasAnyFilter } from "@/lib/customer-filter";
 import { formatDateTime } from "@/lib/datetime";
@@ -23,6 +24,7 @@ type Search = {
   page?: string;
   ok?: string;
   error?: string;
+  message?: string;
 };
 
 export default async function CustomersPage({
@@ -34,13 +36,19 @@ export default async function CustomersPage({
   const page = Math.max(1, Number(params.page ?? 1) || 1);
   const q = params.q?.trim() ?? "";
 
-  const where = buildCustomerWhere(params);
+  // Folders first. Without a list chosen, the page shows the uploaded files rather
+  // than 27,000 rows nobody asked for; `list=all` is the deliberate way past that.
+  const browsingAll = params.list === "all";
+  const scoped = { ...params, list: browsingAll ? undefined : params.list };
+  const where = buildCustomerWhere(scoped);
   const lists = await prisma.importList.findMany({
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true },
+    select: { id: true, name: true, note: true, createdAt: true, _count: { select: { members: true } } },
     take: 200,
   });
-  const filtered = hasAnyFilter(params);
+  const openList = params.list && !browsingAll ? lists.find((l) => l.id === params.list) : undefined;
+  const showFolders = !params.list;
+  const filtered = hasAnyFilter(scoped);
 
   const [customers, total, callers, importLogs] = await Promise.all([
     prisma.customer.findMany({
@@ -81,8 +89,21 @@ export default async function CustomersPage({
           {params.error}
         </p>
       )}
+      {params.message && (
+        <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+          {params.message}
+        </p>
+      )}
+
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <h1 className="text-lg font-semibold">Customers ({total})</h1>
+        <h1 className="text-lg font-semibold">
+          {showFolders ? "Customers" : openList ? openList.name : `Customers (${total})`}
+          {!showFolders && (
+            <Link href="/admin/customers" className="ml-2 text-sm font-normal underline underline-offset-2">
+              ← all files
+            </Link>
+          )}
+        </h1>
         <div className="flex gap-2">
           <Link href={`/api/customers/export?${exportQuery}`} className={secondaryButtonClass}>
             Export customers
@@ -92,6 +113,68 @@ export default async function CustomersPage({
           </Link>
         </div>
       </div>
+
+      {/* Files first: each upload is a folder you open, rather than every lead in the
+          database dumped on screen. */}
+      {showFolders && (
+        <div className="bento-grid">
+          {lists.map((list) => (
+            <Link
+              key={list.id}
+              href={`/admin/customers?list=${list.id}`}
+              data-glow="indigo"
+              className="bento bento-span-4 block p-4"
+            >
+              <div className="flex items-start gap-3">
+                <span aria-hidden="true" className="text-2xl leading-none">
+                  📁
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-bold">{list.name}</span>
+                  <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+                    {list._count.members.toLocaleString("en-IN")} leads · {formatDateTime(list.createdAt)}
+                  </span>
+                  {list.note && (
+                    <span className="mt-1 block truncate text-xs text-neutral-500 dark:text-neutral-400">
+                      {list.note}
+                    </span>
+                  )}
+                </span>
+              </div>
+            </Link>
+          ))}
+
+          <Link
+            href="/admin/customers?list=all"
+            data-glow="amber"
+            className="bento bento-span-4 block p-4"
+          >
+            <div className="flex items-start gap-3">
+              <span aria-hidden="true" className="text-2xl leading-none">
+                🗂️
+              </span>
+              <span className="min-w-0">
+                <span className="block font-bold">All leads</span>
+                <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+                  Everything, regardless of which file it came from
+                </span>
+              </span>
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {showFolders && lists.length === 0 && (
+        <Card title="No files yet">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Upload a file below, or{" "}
+            <Link href="/admin/lists" className="font-semibold underline underline-offset-2">
+              file your existing leads by upload date
+            </Link>
+            .
+          </p>
+        </Card>
+      )}
 
       {/* Import lives at the top of the customers page; the list below refreshes after
           an upload. Collapsible so it doesn't crowd the list. */}
@@ -133,223 +216,264 @@ export default async function CustomersPage({
         </div>
       </details>
 
-      <Card title="Search & filters">
-        <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="Name, phone, company, city"
-            className={`${inputClass} lg:col-span-2`}
-          />
-          <select name="status" defaultValue={params.status ?? ""} className={inputClass}>
-            <option value="">Any status</option>
-            {CUSTOMER_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {humanize(status)}
-              </option>
-            ))}
-          </select>
-          {/* Which uploaded file these leads came from. */}
-          <select name="list" defaultValue={params.list ?? ""} className={inputClass}>
-            <option value="">Any list</option>
-            <option value="none">Not in a list</option>
-            {lists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.name}
-              </option>
-            ))}
-          </select>
-          <select name="caller" defaultValue={params.caller ?? ""} className={inputClass}>
-            <option value="">Any caller</option>
-            <option value="unassigned">Unassigned</option>
-            {callers.map((caller) => (
-              <option key={caller.id} value={caller.id}>
-                {caller.name}
-              </option>
-            ))}
-          </select>
-          <div className="flex gap-2">
-            <select name="priority" defaultValue={params.priority ?? ""} className={inputClass}>
-              <option value="">Any priority</option>
-              {PRIORITIES.map((priority) => (
-                <option key={priority} value={priority}>
-                  {humanize(priority)}
-                </option>
-              ))}
-            </select>
-            <button type="submit" className={secondaryButtonClass}>
-              Apply
-            </button>
-            {filtered && (
-              <Link href="/admin/customers" className={secondaryButtonClass}>
-                Clear
-              </Link>
-            )}
-          </div>
-        </form>
+      {/* Split this file's unassigned leads evenly — the common way a file gets
+          handed out to a team. */}
+      {openList && (
+        <Card title={`Share out ${openList.name}`} glow="emerald">
+          <form action={assignListEqually} className="space-y-3">
+            <input type="hidden" name="listId" value={openList.id} />
+            <fieldset>
+              <legend className="text-sm font-medium">Split equally between</legend>
+              <div className="mt-1.5 grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                {callers.map((caller) => (
+                  <label
+                    key={caller.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10 dark:border-neutral-700"
+                  >
+                    <input type="checkbox" name="callerIds" value={caller.id} className="h-4 w-4" />
+                    {caller.name}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="text-sm font-medium">
+                How many (blank = all unassigned)
+                <input type="number" name="count" min={1} placeholder="All" className={`${inputClass} mt-1 sm:w-40`} />
+              </label>
+              <button type="submit" className={buttonClass}>
+                Split evenly
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Leads are dealt out one at a time, so an uneven number spreads the remainder rather than dumping it on
+              the last person, and everyone gets leads from across the file.
+            </p>
+          </form>
+        </Card>
+      )}
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {filtered
-              ? "Delete removes only the customers matching the filters above (with their calls and follow-ups)."
-              : "No filters set — Delete would remove every customer. Set a filter to narrow it."}
-          </p>
-          <DeleteMatchingButton
-            count={total}
-            filtered={filtered}
-            filters={{ q: params.q, status: params.status, caller: params.caller, priority: params.priority, list: params.list }}
-          />
-        </div>
-      </Card>
-
-      <Card title="Quick assign to a counsellor">
-        <form action={assignCountToCaller} className="flex flex-wrap items-end gap-3">
-          <label className="block text-sm font-medium">
-            Counsellor
-            <select name="callerId" defaultValue="" className={`${inputClass} mt-1`} required>
-              <option value="" disabled>
-                Choose…
-              </option>
-              {callers.map((caller) => (
-                <option key={caller.id} value={caller.id}>
-                  {caller.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm font-medium">
-            How many
+      {!showFolders && (
+        <>
+        <Card title="Search & filters">
+          <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <input
-              type="number"
-              name="count"
-              min={1}
-              max={500}
-              defaultValue={50}
-              className={`${inputClass} mt-1 w-28`}
+              name="q"
+              defaultValue={q}
+              placeholder="Name, phone, company, city"
+              className={`${inputClass} lg:col-span-2`}
             />
-          </label>
-          <button type="submit" className={buttonClass}>
-            Assign
-          </button>
-          <p className="w-full text-xs text-slate-500 dark:text-slate-400">
-            Hands that many currently-unassigned leads (highest priority, longest-waiting first) to the
-            counsellor and sets it as their daily target. They appear in that counsellor&apos;s calling queue
-            immediately.
-          </p>
-        </form>
-      </Card>
-
-      <Card title="Customers">
-        {/* Hand-pick rows with the checkboxes, choose a counsellor, and assign the lot. */}
-        <form action={assignSelected}>
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2">
-            <span className="text-xs font-bold uppercase tracking-wide">
-              Bulk assign — tick rows below, then hand them to:
-            </span>
-            <select name="callerId" defaultValue="" className={inputClass}>
-              <option value="">Unassigned (return to pool)</option>
+            <select name="status" defaultValue={params.status ?? ""} className={inputClass}>
+              <option value="">Any status</option>
+              {CUSTOMER_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {humanize(status)}
+                </option>
+              ))}
+            </select>
+            {/* Which uploaded file these leads came from. */}
+            <select name="list" defaultValue={params.list ?? ""} className={inputClass}>
+              <option value="">Any list</option>
+              <option value="none">Not in a list</option>
+              {lists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.name}
+                </option>
+              ))}
+            </select>
+            <select name="caller" defaultValue={params.caller ?? ""} className={inputClass}>
+              <option value="">Any caller</option>
+              <option value="unassigned">Unassigned</option>
               {callers.map((caller) => (
                 <option key={caller.id} value={caller.id}>
                   {caller.name}
                 </option>
               ))}
             </select>
-            <button type="submit" className={buttonClass}>
-              Assign selected
-            </button>
-          </div>
-          <div className="stack-table-wrap table-scroll max-w-full">
-          <table className="stack-table w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              <tr>
-                <th className="px-3 py-2">
-                  <SelectAll />
-                </th>
-                <th className="px-3 py-2">Name</th>
-                <th className="px-3 py-2">Phone</th>
-                <th className="px-3 py-2">Company</th>
-                <th className="px-3 py-2">City</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Priority</th>
-                <th className="px-3 py-2">Assigned</th>
-                <th className="px-3 py-2">Calls</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-3 py-6 text-center text-slate-500 dark:text-slate-400">
-                    No customers match these filters.
-                  </td>
-                </tr>
-              )}
-              {customers.map((customer) => (
-                <tr
-                  key={customer.id}
-                  className="border-b border-slate-100 last:border-0 dark:border-slate-800"
-                >
-                  <td className="px-3 py-2">
-                    <input
-                      type="checkbox"
-                      name="customerIds"
-                      value={customer.id}
-                      aria-label={`Select ${customerLabel(customer)}`}
-                      className="h-4 w-4 cursor-pointer accent-indigo-500"
-                    />
-                  </td>
-                  <td className="px-3 py-2 font-medium">
-                    <Link href={`/admin/customers/${customer.id}`} className="hover:underline">
-                      {customerLabel(customer)}
-                    </Link>
-                    {parseTags(customer.tags).length > 0 && (
-                      <span className="ml-2 space-x-1">
-                        {parseTags(customer.tags).map((tag) => (
-                          <Badge key={tag}>{tag}</Badge>
-                        ))}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">{customer.phone}</td>
-                  <td className="px-3 py-2">{customer.company ?? "—"}</td>
-                  <td className="px-3 py-2">{customer.city ?? "—"}</td>
-                  <td className="px-3 py-2">
-                    <Badge tone={statusTone(customer.status)}>{humanize(customer.status)}</Badge>
-                  </td>
-                  <td className="px-3 py-2">{humanize(customer.priority)}</td>
-                  <td className="px-3 py-2">{customer.assignedTo?.name ?? "—"}</td>
-                  <td className="px-3 py-2 tabular-nums">{customer._count.calls}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-        </form>
-      </Card>
-
-      {pages > 1 && (
-        <nav className="flex items-center gap-2 text-sm">
-          {Array.from({ length: pages }, (_, index) => index + 1)
-            .filter((n) => n === 1 || n === pages || Math.abs(n - page) <= 2)
-            .map((n) => {
-              const query = new URLSearchParams(
-                Object.entries(params).filter(([, value]) => Boolean(value)) as [string, string][],
-              );
-              query.set("page", String(n));
-              return (
-                <Link
-                  key={n}
-                  href={`/admin/customers?${query}`}
-                  className={`rounded-md px-3 py-1 ${
-                    n === page
-                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                      : "border border-slate-300 dark:border-slate-700"
-                  }`}
-                >
-                  {n}
+            <div className="flex gap-2">
+              <select name="priority" defaultValue={params.priority ?? ""} className={inputClass}>
+                <option value="">Any priority</option>
+                {PRIORITIES.map((priority) => (
+                  <option key={priority} value={priority}>
+                    {humanize(priority)}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" className={secondaryButtonClass}>
+                Apply
+              </button>
+              {filtered && (
+                <Link href="/admin/customers" className={secondaryButtonClass}>
+                  Clear
                 </Link>
-              );
-            })}
-        </nav>
+              )}
+            </div>
+          </form>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {filtered
+                ? "Delete removes only the customers matching the filters above (with their calls and follow-ups)."
+                : "No filters set — Delete would remove every customer. Set a filter to narrow it."}
+            </p>
+            <DeleteMatchingButton
+              count={total}
+              filtered={filtered}
+              filters={{ q: params.q, status: params.status, caller: params.caller, priority: params.priority, list: params.list }}
+            />
+          </div>
+        </Card>
+
+        <Card title="Quick assign to a counsellor">
+          <form action={assignCountToCaller} className="flex flex-wrap items-end gap-3">
+            <label className="block text-sm font-medium">
+              Counsellor
+              <select name="callerId" defaultValue="" className={`${inputClass} mt-1`} required>
+                <option value="" disabled>
+                  Choose…
+                </option>
+                {callers.map((caller) => (
+                  <option key={caller.id} value={caller.id}>
+                    {caller.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm font-medium">
+              How many
+              <input
+                type="number"
+                name="count"
+                min={1}
+                max={500}
+                defaultValue={50}
+                className={`${inputClass} mt-1 w-28`}
+              />
+            </label>
+            <button type="submit" className={buttonClass}>
+              Assign
+            </button>
+            <p className="w-full text-xs text-slate-500 dark:text-slate-400">
+              Hands that many currently-unassigned leads (highest priority, longest-waiting first) to the
+              counsellor and sets it as their daily target. They appear in that counsellor&apos;s calling queue
+              immediately.
+            </p>
+          </form>
+        </Card>
+
+        <Card title="Customers">
+          {/* Hand-pick rows with the checkboxes, choose a counsellor, and assign the lot. */}
+          <form action={assignSelected}>
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2">
+              <span className="text-xs font-bold uppercase tracking-wide">
+                Bulk assign — tick rows below, then hand them to:
+              </span>
+              <select name="callerId" defaultValue="" className={inputClass}>
+                <option value="">Unassigned (return to pool)</option>
+                {callers.map((caller) => (
+                  <option key={caller.id} value={caller.id}>
+                    {caller.name}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" className={buttonClass}>
+                Assign selected
+              </button>
+            </div>
+            <div className="stack-table-wrap table-scroll max-w-full">
+            <table className="stack-table w-full text-left text-sm">
+              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                <tr>
+                  <th className="px-3 py-2">
+                    <SelectAll />
+                  </th>
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2">Phone</th>
+                  <th className="px-3 py-2">Company</th>
+                  <th className="px-3 py-2">City</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Priority</th>
+                  <th className="px-3 py-2">Assigned</th>
+                  <th className="px-3 py-2">Calls</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customers.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-3 py-6 text-center text-slate-500 dark:text-slate-400">
+                      No customers match these filters.
+                    </td>
+                  </tr>
+                )}
+                {customers.map((customer) => (
+                  <tr
+                    key={customer.id}
+                    className="border-b border-slate-100 last:border-0 dark:border-slate-800"
+                  >
+                    <td className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        name="customerIds"
+                        value={customer.id}
+                        aria-label={`Select ${customerLabel(customer)}`}
+                        className="h-4 w-4 cursor-pointer accent-indigo-500"
+                      />
+                    </td>
+                    <td className="px-3 py-2 font-medium">
+                      <Link href={`/admin/customers/${customer.id}`} className="hover:underline">
+                        {customerLabel(customer)}
+                      </Link>
+                      {parseTags(customer.tags).length > 0 && (
+                        <span className="ml-2 space-x-1">
+                          {parseTags(customer.tags).map((tag) => (
+                            <Badge key={tag}>{tag}</Badge>
+                          ))}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 tabular-nums">{customer.phone}</td>
+                    <td className="px-3 py-2">{customer.company ?? "—"}</td>
+                    <td className="px-3 py-2">{customer.city ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      <Badge tone={statusTone(customer.status)}>{humanize(customer.status)}</Badge>
+                    </td>
+                    <td className="px-3 py-2">{humanize(customer.priority)}</td>
+                    <td className="px-3 py-2">{customer.assignedTo?.name ?? "—"}</td>
+                    <td className="px-3 py-2 tabular-nums">{customer._count.calls}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            </div>
+          </form>
+        </Card>
+
+        {pages > 1 && (
+          <nav className="flex items-center gap-2 text-sm">
+            {Array.from({ length: pages }, (_, index) => index + 1)
+              .filter((n) => n === 1 || n === pages || Math.abs(n - page) <= 2)
+              .map((n) => {
+                const query = new URLSearchParams(
+                  Object.entries(params).filter(([, value]) => Boolean(value)) as [string, string][],
+                );
+                query.set("page", String(n));
+                return (
+                  <Link
+                    key={n}
+                    href={`/admin/customers?${query}`}
+                    className={`rounded-md px-3 py-1 ${
+                      n === page
+                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                        : "border border-slate-300 dark:border-slate-700"
+                    }`}
+                  >
+                    {n}
+                  </Link>
+                );
+              })}
+          </nav>
+        )}
+        </>
       )}
     </div>
   );

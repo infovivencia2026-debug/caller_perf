@@ -213,3 +213,78 @@ export async function groupUnfiledLeads() {
   revalidatePath("/admin/customers");
   redirect(listsHref(`${filed.toLocaleString("en-IN")} leads filed into ${groups.length} list(s)`));
 }
+
+
+/**
+ * Splits a file's unassigned leads evenly between the counsellors picked.
+ *
+ * Round-robin over the pool rather than slicing it, so when the count does not divide
+ * cleanly the remainder is spread one each rather than dumped on the last person, and
+ * everyone gets leads from across the file rather than one getting the whole front of
+ * it (which matters when a file is ordered by city or by source).
+ */
+export async function assignListEqually(formData: FormData) {
+  const session = await requireAdmin();
+  const listId = String(formData.get("listId") ?? "");
+  const callerIds = formData.getAll("callerIds").map(String).filter(Boolean);
+  // Blank means "everything unassigned in this file".
+  const requested = Number(formData.get("count") ?? 0) || 0;
+
+  const list = await prisma.importList.findUnique({ where: { id: listId }, select: { id: true, name: true } });
+  if (!list) redirect(listsHref(undefined, "That list no longer exists"));
+  if (callerIds.length === 0) {
+    redirect(`/admin/customers?list=${listId}&error=${encodeURIComponent("Pick at least one counsellor")}`);
+  }
+
+  const callers = await prisma.user.findMany({
+    where: { id: { in: callerIds }, role: "TELECALLER", active: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+  if (callers.length === 0) {
+    redirect(`/admin/customers?list=${listId}&error=${encodeURIComponent("Those counsellors are not available")}`);
+  }
+
+  const pool = await prisma.customer.findMany({
+    where: {
+      memberships: { some: { listId: list.id } },
+      assignedToId: null,
+      status: { notIn: CLOSED_STATUSES as unknown as never },
+    },
+    orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+    ...(requested > 0 ? { take: Math.min(requested, 20000) } : {}),
+    select: { id: true },
+  });
+
+  if (pool.length === 0) {
+    redirect(`/admin/customers?list=${listId}&error=${encodeURIComponent("No unassigned leads left in this list")}`);
+  }
+
+  // Deal the leads out like cards.
+  const buckets = new Map<string, string[]>(callers.map((caller) => [caller.id, []]));
+  pool.forEach((customer, index) => {
+    buckets.get(callers[index % callers.length].id)!.push(customer.id);
+  });
+
+  for (const [callerId, ids] of buckets) {
+    if (ids.length === 0) continue;
+    await prisma.customer.updateMany({ where: { id: { in: ids } }, data: { assignedToId: callerId } });
+  }
+
+  const summary = callers.map((c) => `${c.name}: ${buckets.get(c.id)!.length}`).join(", ");
+  await logActivity({
+    userId: session.userId,
+    action: "LIST_SPLIT",
+    entity: "ImportList",
+    entityId: list.id,
+    detail: `${pool.length} from ${list.name} split evenly — ${summary}`,
+  });
+
+  revalidatePath("/admin/lists");
+  revalidatePath("/admin/customers");
+  redirect(
+    `/admin/customers?list=${listId}&message=${encodeURIComponent(
+      `${pool.length} leads split evenly — ${summary}`,
+    )}`,
+  );
+}
