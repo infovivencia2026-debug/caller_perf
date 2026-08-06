@@ -47,7 +47,9 @@ export default async function CustomersPage({
     take: 200,
   });
   const openList = params.list && !browsingAll ? lists.find((l) => l.id === params.list) : undefined;
-  const showFolders = !params.list;
+  // Folders are only worth showing once there are files. With none, the page would
+  // otherwise open on a single tile and no way through.
+  const showFolders = !params.list && lists.length > 0;
   const filtered = hasAnyFilter(scoped);
 
   const [customers, total, callers, importLogs] = await Promise.all([
@@ -139,6 +141,9 @@ export default async function CustomersPage({
                       {list.note}
                     </span>
                   )}
+                  <span className="mt-2 block text-xs font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+                    View leads →
+                  </span>
                 </span>
               </div>
             </Link>
@@ -157,6 +162,9 @@ export default async function CustomersPage({
                 <span className="block font-bold">All leads</span>
                 <span className="block text-xs text-neutral-500 dark:text-neutral-400">
                   Everything, regardless of which file it came from
+                </span>
+                <span className="mt-2 block text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                  View leads →
                 </span>
               </span>
             </div>

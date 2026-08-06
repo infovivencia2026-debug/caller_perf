@@ -176,7 +176,7 @@ export default async function Lists({
                     href={`/admin/customers?list=${list.id}`}
                     className={`${bentoGhostButtonClass} shrink-0`}
                   >
-                    Open leads
+                    View leads
                   </Link>
                 </div>
 
