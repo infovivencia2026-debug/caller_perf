@@ -123,8 +123,14 @@ export async function updateCustomer(
 
 /**
  * Deletes every customer matching the current filters (status, counsellor, priority,
- * search). Destructive — their calls and follow-ups go with them (database cascade).
- * The confirmation lives in the UI; this trusts an admin who has confirmed.
+ * search).
+ *
+ * Destructive, and it has already cost real data once: an unfiltered run removed 206
+ * customers, and back when Call.customerId still cascaded, every call attached to them
+ * went too. Calls now survive (the link is SET NULL and the phone is snapshotted onto
+ * the call), but deleting the entire customer base by accident is still not something
+ * a single click should be able to do. An unfiltered delete is therefore refused
+ * unless the form explicitly says so.
  */
 export async function deleteMatchingCustomers(formData: FormData) {
   const session = await requireAdmin();
@@ -136,9 +142,20 @@ export async function deleteMatchingCustomers(formData: FormData) {
     priority: String(formData.get("priority") ?? ""),
   };
   const where = buildCustomerWhere(filter);
+  const hasFilter = Object.values(filter).some(Boolean);
 
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(filter)) if (v) params.set(k, v);
+
+  // "Delete everything" has to be asked for by name, not arrived at by leaving the
+  // filters blank.
+  if (!hasFilter && String(formData.get("confirmAll") ?? "") !== "DELETE ALL") {
+    redirect(
+      `/admin/customers?error=${encodeURIComponent(
+        "Refusing to delete every customer. Filter the list first, or type DELETE ALL to confirm.",
+      )}`,
+    );
+  }
 
   const { count } = await prisma.customer.deleteMany({ where });
 

@@ -21,11 +21,24 @@ export function DeleteMatchingButton({
       action={deleteMatchingCustomers}
       onSubmit={(event) => {
         const scope = filtered ? `${count} matching customer(s)` : `ALL ${count} customer(s)`;
-        if (!confirm(`Delete ${scope}? Their calls and follow-ups are removed too. This cannot be undone.`)) {
+        if (!confirm(`Delete ${scope}? Their follow-ups go too, and this cannot be undone.`)) {
           event.preventDefault();
+          return;
+        }
+        // Wiping the whole customer base needs the words typed out. The server
+        // refuses an unfiltered delete without them, so this is the prompt for it.
+        if (!filtered) {
+          const typed = prompt(`This deletes EVERY customer (${count}). Type DELETE ALL to confirm.`);
+          if (typed !== "DELETE ALL") {
+            event.preventDefault();
+            return;
+          }
+          const field = event.currentTarget.querySelector<HTMLInputElement>('input[name="confirmAll"]');
+          if (field) field.value = typed;
         }
       }}
     >
+      <input type="hidden" name="confirmAll" value="" />
       <input type="hidden" name="q" value={filters.q ?? ""} />
       <input type="hidden" name="status" value={filters.status ?? ""} />
       <input type="hidden" name="caller" value={filters.caller ?? ""} />

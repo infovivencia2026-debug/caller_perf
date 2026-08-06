@@ -308,7 +308,7 @@ export default async function MyCalls({
                         <button
                           type="button"
                           popoverTarget={`edit-call-${call.id}`}
-                          className="rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-indigo-700 transition-colors hover:bg-indigo-500/20 dark:text-indigo-200"
+                          className="whitespace-nowrap rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-indigo-700 transition-colors hover:bg-indigo-500/20 dark:text-indigo-200"
                         >
                           Edit
                         </button>
