@@ -259,7 +259,12 @@ export default async function CallingScreen({
         <div className="order-2 space-y-3 lg:order-1">
           <Card title="Current customer">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span className="text-base font-semibold tabular-nums tracking-wide">{customer.phone}</span>
+              <a
+                href={`tel:${customer.phone}`}
+                className="text-base font-semibold tabular-nums tracking-wide underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current hover:text-emerald-700 dark:hover:text-emerald-400"
+              >
+                {customer.phone}
+              </a>
               <span className="flex items-center gap-2">
                 <Badge tone={statusTone(customer.status)}>{humanize(customer.status)}</Badge>
                 <span className="text-slate-500 dark:text-slate-400">{humanize(customer.priority)}</span>
@@ -307,7 +312,12 @@ export default async function CallingScreen({
                   <span className="text-base font-semibold">{customerLabel(callLead(lastCall))}</span>
                 </Row>
                 <Row label="Phone">
-                  <span className="tabular-nums tracking-wide">{callLead(lastCall).phone}</span>
+                  <a
+                    href={`tel:${callLead(lastCall).phone}`}
+                    className="tabular-nums tracking-wide underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current hover:text-emerald-700 dark:hover:text-emerald-400"
+                  >
+                    {callLead(lastCall).phone}
+                  </a>
                 </Row>
                 <Row label="Company">{callLead(lastCall).company ?? "—"}</Row>
                 <Row label="City">{callLead(lastCall).city ?? "—"}</Row>

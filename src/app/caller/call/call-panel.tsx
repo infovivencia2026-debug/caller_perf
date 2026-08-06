@@ -79,8 +79,14 @@ export default function CallPanel({
           number, the clock and the green button. */}
       <div className="border-b border-neutral-200 p-4 dark:border-neutral-800">
         <p className="text-base font-bold">{customerName}</p>
-        {/* Plain text, not a tel: link — tapping the number should never navigate. */}
-        <p className="break-all text-2xl font-extrabold tabular-nums tracking-tight sm:text-3xl">{phone}</p>
+        {/* Click-to-call: the app is used in a browser as well as on a handset, so the
+            number is a link. It only dials — the timer is Start/End below. */}
+        <a
+          href={`tel:${phone}`}
+          className="inline-block break-all text-2xl font-extrabold tabular-nums tracking-tight underline decoration-transparent underline-offset-4 transition-colors hover:decoration-emerald-500 hover:text-emerald-700 focus-visible:decoration-emerald-500 sm:text-3xl dark:hover:text-emerald-400"
+        >
+          {phone}
+        </a>
 
         {/* Daily target, as a bar rather than a line of small print. */}
         <div className="mt-3">
