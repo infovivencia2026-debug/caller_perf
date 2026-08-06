@@ -14,11 +14,23 @@ import { useFormStatus } from "react-dom";
  * the handset themselves, and a tel: navigation mid-form was one more thing to go
  * wrong. This screen only ever records when the call started and ended.
  */
-export function StartCallButton({ disabled, children }: { disabled?: boolean; children: ReactNode }) {
+export function StartCallButton({
+  formAction,
+  disabled,
+  children,
+}: {
+  /* Required in practice: without it the button submits the form's own action
+     (saveCall) instead of stamping the start, which fails validation and looks like
+     a dead button. */
+  formAction: (formData: FormData) => void | Promise<void>;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
+      formAction={formAction}
       formNoValidate
       disabled={disabled || pending}
       className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-600/60 bg-gradient-to-b from-emerald-500 to-emerald-600 px-4 py-3.5 text-base font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_2px_4px_0_rgb(15_15_30/0.2),0_10px_20px_-8px_rgb(16_185_129/0.8)] transition-all hover:-translate-y-px hover:border-emerald-500 hover:from-emerald-400 hover:to-emerald-500 hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.35),0_4px_8px_0_rgb(15_15_30/0.22),0_16px_28px_-10px_rgb(16_185_129/0.95)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.3)] disabled:opacity-50 disabled:pointer-events-none"

@@ -158,7 +158,9 @@ export default function CallPanel({
               that moved around. */}
           <div className="mt-3 grid grid-cols-2 gap-2">
             <span data-shortcut="start" className="block">
-              <StartCallButton disabled={Boolean(startedAt)}>Start</StartCallButton>
+              <StartCallButton formAction={startCall} disabled={Boolean(startedAt)}>
+                Start
+              </StartCallButton>
             </span>
 
             <span data-shortcut="end" className="block">
