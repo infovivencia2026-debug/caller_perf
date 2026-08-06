@@ -164,34 +164,38 @@ export default function CallPanel({
             </p>
           )}
 
-          <div className="mt-3 space-y-2">
-            {!startedAt && (
-              <span data-shortcut="start" className="block">
-                <StartCallButton>Start call</StartCallButton>
-              </span>
-            )}
+          {/* Both controls are always on screen, so the pair reads as one timer:
+              Start is live until it is pressed, End until the call is stopped. Hiding
+              whichever did not apply left the panel looking like it had one button
+              that moved around. */}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <span data-shortcut="start" className="block">
+              <StartCallButton disabled={Boolean(startedAt)}>Start</StartCallButton>
+            </span>
 
-            {startedAt && !ended && (
-              <span data-shortcut="end" className="block">
-                <SubmitButton
-                  formAction={endCall}
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-rose-600/60 bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-3.5 text-base font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_2px_4px_0_rgb(15_15_30/0.2)] transition-all active:translate-y-px"
-                  pendingLabel="Ending…"
-                >
-                  End call
-                </SubmitButton>
-              </span>
-            )}
-
-            <div className="flex flex-wrap gap-2">
-              {startedAt && (
-                <SubmitButton formAction={resetCall} className={bentoGhostButtonClass} pendingLabel="…">
-                  Reset timer
-                </SubmitButton>
-              )}
-
-            </div>
+            <span data-shortcut="end" className="block">
+              <SubmitButton
+                disabled={!startedAt || ended}
+                formAction={endCall}
+                className="inline-flex w-full items-center justify-center rounded-lg border border-rose-600/60 bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-3.5 text-base font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_2px_4px_0_rgb(15_15_30/0.2),0_10px_20px_-8px_rgb(244_63_94/0.7)] transition-all hover:-translate-y-px hover:border-rose-500 hover:from-rose-400 hover:to-rose-500 hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.35),0_4px_8px_0_rgb(15_15_30/0.22),0_16px_28px_-10px_rgb(244_63_94/0.85)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.3)] disabled:translate-y-0 disabled:opacity-40 disabled:shadow-none disabled:pointer-events-none"
+                pendingLabel="Ending…"
+              >
+                End
+              </SubmitButton>
+            </span>
           </div>
+
+          {startedAt && (
+            <div className="mt-2">
+              <SubmitButton
+                formAction={resetCall}
+                className={`${bentoGhostButtonClass} w-full`}
+                pendingLabel="…"
+              >
+                Reset timer
+              </SubmitButton>
+            </div>
+          )}
 
           {/* Forgetting to press Call used to make the conversation unloggable — the
               save is refused without both stamps. This is the way out: state the
@@ -363,7 +367,7 @@ export default function CallPanel({
           <span data-shortcut="save" className="block">
             <SubmitButton
               noValidate={false}
-              className="inline-flex w-full items-center justify-center rounded-lg border border-indigo-500/50 bg-gradient-to-b from-indigo-500 to-indigo-600 px-4 py-3.5 text-base font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_2px_4px_0_rgb(15_15_30/0.2)] transition-all active:translate-y-px disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-indigo-500/50 bg-gradient-to-b from-indigo-500 to-indigo-600 px-4 py-3.5 text-base font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_0_rgb(255_255_255/0.25),0_2px_4px_0_rgb(15_15_30/0.2),0_10px_20px_-8px_rgb(99_102_241/0.8)] transition-all hover:-translate-y-px hover:border-indigo-400 hover:from-indigo-400 hover:to-indigo-500 hover:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.35),0_4px_8px_0_rgb(15_15_30/0.22),0_16px_28px_-10px_rgb(99_102_241/0.95)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 active:translate-y-0 active:shadow-[inset_0_2px_4px_0_rgb(15_15_30/0.3)] disabled:opacity-50"
               pendingLabel="Saving…"
             >
               Save &amp; next
