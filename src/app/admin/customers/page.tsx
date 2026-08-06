@@ -6,7 +6,15 @@ import ImportWizard from "./import/import-wizard";
 import { DeleteMatchingButton } from "./delete-matching-button";
 import { SelectAll } from "./select-all";
 import { assignCountToCaller, assignSelected } from "@/app/actions/assign";
-import { assignListEqually, updateList } from "@/app/actions/lists";
+import {
+  assignFromList,
+  assignListEqually,
+  deleteList,
+  groupUnfiledLeads,
+  unassignList,
+  updateList,
+} from "@/app/actions/lists";
+import { findUnfiledGroups } from "@/lib/lead-grouping";
 import { parseTags } from "@/lib/tags";
 import { buildCustomerWhere, hasAnyFilter } from "@/lib/customer-filter";
 import { formatDateTime } from "@/lib/datetime";
@@ -46,10 +54,20 @@ export default async function CustomersPage({
     select: { id: true, name: true, note: true, createdAt: true, _count: { select: { members: true } } },
     take: 200,
   });
+  // How much of each file is already handed out — the one number that decides what to
+  // do with a folder next.
+  const assignedPerList = await prisma.listMembership.groupBy({
+    by: ["listId"],
+    where: { customer: { assignedToId: { not: null } } },
+    _count: { _all: true },
+  });
+  const assignedBy = new Map(assignedPerList.map((row) => [row.listId, row._count._all]));
   const openList = params.list && !browsingAll ? lists.find((l) => l.id === params.list) : undefined;
   // Folders are only worth showing once there are files. With none, the page would
   // otherwise open on a single tile and no way through.
   const showFolders = !params.list && lists.length > 0;
+  const looseCount = showFolders ? await prisma.customer.count({ where: { memberships: { none: {} } } }) : 0;
+  const unfiledGroups = looseCount > 0 ? await findUnfiledGroups() : [];
   const filtered = hasAnyFilter(scoped);
 
   const [customers, total, callers, importLogs] = await Promise.all([
@@ -134,7 +152,11 @@ export default async function CustomersPage({
                 <span className="min-w-0">
                   <span className="block truncate font-bold">{list.name}</span>
                   <span className="block text-xs text-neutral-500 dark:text-neutral-400">
-                    {list._count.members.toLocaleString("en-IN")} leads · {formatDateTime(list.createdAt)}
+                    {list._count.members.toLocaleString("en-IN")} leads ·{" "}
+                    {(list._count.members - (assignedBy.get(list.id) ?? 0)).toLocaleString("en-IN")} unassigned
+                  </span>
+                  <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+                    {formatDateTime(list.createdAt)}
                   </span>
                   {list.note && (
                     <span className="mt-1 block truncate text-xs text-neutral-500 dark:text-neutral-400">
@@ -172,13 +194,38 @@ export default async function CustomersPage({
         </div>
       )}
 
+      {showFolders && unfiledGroups.length > 0 && (
+        <Card title={`Leads in no file (${looseCount.toLocaleString("en-IN")})`} glow="amber">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            These arrived before files existed, so no name was recorded. They can be filed by when they were
+            uploaded — an import writes its rows in one burst, and each burst below was almost certainly one file.
+          </p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {unfiledGroups.slice(0, 6).map((group) => (
+              <li key={group.from.toISOString()} className="flex flex-wrap justify-between gap-2">
+                <span>{formatDateTime(group.from)}</span>
+                <span className="tabular-nums text-slate-500 dark:text-slate-400">
+                  {group.count.toLocaleString("en-IN")} leads
+                </span>
+              </li>
+            ))}
+          </ul>
+          <form action={groupUnfiledLeads} className="mt-3">
+            <button type="submit" className={buttonClass}>
+              File into {unfiledGroups.length} file{unfiledGroups.length === 1 ? "" : "s"}
+            </button>
+          </form>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Named by upload time and marked as reconstructed — rename them afterwards. Nothing is moved or deleted.
+          </p>
+        </Card>
+      )}
+
       {showFolders && lists.length === 0 && (
         <Card title="No files yet">
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Upload a file below, or{" "}
-            <Link href="/admin/lists" className="font-semibold underline underline-offset-2">
-              file your existing leads by upload date
-            </Link>
+            <span className="font-semibold">use the panel above to file your existing leads by upload date</span>
             .
           </p>
         </Card>
@@ -240,6 +287,39 @@ export default async function CustomersPage({
         </Card>
       )}
 
+      {/* Everything that used to be on the lists page: hand a slice to one person,
+          rename the file, return untouched leads, remove the file. */}
+      {openList && (
+        <Card title={`Assign from ${openList.name}`} glow="violet">
+          <form action={assignFromList} className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="listId" value={openList.id} />
+            <label className="text-sm font-medium">
+              Give to
+              <select name="callerId" required defaultValue="" className={`${inputClass} mt-1 w-auto`}>
+                <option value="" disabled>
+                  Choose a counsellor
+                </option>
+                {callers.map((caller) => (
+                  <option key={caller.id} value={caller.id}>
+                    {caller.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm font-medium">
+              How many
+              <input type="number" name="count" min={1} defaultValue={50} className={`${inputClass} mt-1 sm:w-28`} />
+            </label>
+            <button type="submit" className={buttonClass}>
+              Assign
+            </button>
+          </form>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Takes unassigned, still-open leads from this file only, oldest first.
+          </p>
+        </Card>
+      )}
+
       {/* Renaming lives here as well as on the lists page: the moment you notice a
           file is called "leads_final_v3 (2).csv" is the moment you have opened it. */}
       {openList && (
@@ -266,7 +346,31 @@ export default async function CustomersPage({
         </Card>
       )}
 
-      {/* Split this file's unassigned leads evenly — the common way a file gets
+      {openList && (
+        <details className="bento p-4">
+          <summary className="cursor-pointer text-sm font-semibold">Return leads or remove this file</summary>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <form action={unassignList}>
+              <input type="hidden" name="listId" value={openList.id} />
+              <button type="submit" className={secondaryButtonClass}>
+                Return untouched leads
+              </button>
+            </form>
+            <form action={deleteList}>
+              <input type="hidden" name="listId" value={openList.id} />
+              <button type="submit" className={secondaryButtonClass}>
+                Remove file (keeps leads)
+              </button>
+            </form>
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            Returning only takes back leads nobody has called yet, so no follow-up is stranded. Removing deletes the
+            file, never the leads.
+          </p>
+        </details>
+      )}
+
+      {/* Split this file\'s unassigned leads evenly — the common way a file gets
           handed out to a team. */}
       {openList && (
         <Card title={`Share out ${openList.name}`} glow="emerald">

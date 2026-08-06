@@ -9,12 +9,13 @@ import { CLOSED_STATUSES } from "@/lib/queue";
 import { findUnfiledGroups } from "@/lib/lead-grouping";
 import { formatDateTime } from "@/lib/datetime";
 
+/** Files are managed on the customers page now, so that is where every action lands. */
 function listsHref(message?: string, error?: string) {
   const params = new URLSearchParams();
   if (message) params.set("message", message);
   if (error) params.set("error", error);
   const query = params.toString();
-  return query ? `/admin/lists?${query}` : "/admin/lists";
+  return query ? `/admin/customers?${query}` : "/admin/customers";
 }
 
 /**
@@ -69,9 +70,13 @@ export async function assignFromList(formData: FormData) {
     detail: `${pool.length} from ${list.name} → ${caller.name}`,
   });
 
-  revalidatePath("/admin/lists");
   revalidatePath("/admin/customers");
-  redirect(listsHref(`${pool.length} lead${pool.length === 1 ? "" : "s"} from ${list.name} assigned to ${caller.name}`));
+  revalidatePath("/admin/customers");
+  redirect(
+    `/admin/customers?list=${list.id}&message=${encodeURIComponent(
+      `${pool.length} lead${pool.length === 1 ? "" : "s"} assigned to ${caller.name}`,
+    )}`,
+  );
 }
 
 /** Takes every unassigned lead in a list back off whoever holds them. */
@@ -97,7 +102,7 @@ export async function unassignList(formData: FormData) {
     detail: `${count} untouched lead(s) from ${list.name} returned to the pool`,
   });
 
-  revalidatePath("/admin/lists");
+  revalidatePath("/admin/customers");
   revalidatePath("/admin/customers");
   redirect(listsHref(`${count} untouched lead${count === 1 ? "" : "s"} returned to the pool`));
 }
@@ -116,8 +121,8 @@ export async function updateList(formData: FormData) {
     data: { name: name.slice(0, 200), note: note.slice(0, 500) || null },
   });
 
-  revalidatePath("/admin/lists");
-  redirect(listsHref("List updated"));
+  revalidatePath("/admin/customers");
+  redirect(`/admin/customers?list=${listId}&message=${encodeURIComponent("File renamed")}`);
 }
 
 /**
@@ -145,7 +150,7 @@ export async function deleteList(formData: FormData) {
     detail: `${list.name} removed; its ${list._count.members} lead(s) kept`,
   });
 
-  revalidatePath("/admin/lists");
+  revalidatePath("/admin/customers");
   revalidatePath("/admin/customers");
   redirect(listsHref(`${list.name} removed — its ${list._count.members} lead(s) were kept`));
 }
@@ -225,7 +230,7 @@ export async function groupUnfiledLeads() {
     detail: `${filed} unfiled lead(s) grouped into ${created} list(s) by upload time`,
   });
 
-  revalidatePath("/admin/lists");
+  revalidatePath("/admin/customers");
   revalidatePath("/admin/customers");
   redirect(listsHref(`${filed.toLocaleString("en-IN")} leads filed into ${created} list(s)`));
 }
@@ -296,7 +301,7 @@ export async function assignListEqually(formData: FormData) {
     detail: `${pool.length} from ${list.name} split evenly — ${summary}`,
   });
 
-  revalidatePath("/admin/lists");
+  revalidatePath("/admin/customers");
   revalidatePath("/admin/customers");
   redirect(
     `/admin/customers?list=${listId}&message=${encodeURIComponent(

@@ -148,7 +148,6 @@ export async function importCustomers(
   });
 
   revalidatePath("/admin/customers");
-  revalidatePath("/admin/lists");
   revalidatePath("/admin");
 
   return {

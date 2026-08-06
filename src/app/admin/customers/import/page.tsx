@@ -36,9 +36,6 @@ export default async function ImportPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <h1 className="text-lg font-semibold">Upload a file</h1>
         <div className="flex gap-2">
-          <Link href="/admin/lists" className={secondaryButtonClass}>
-            Lead lists
-          </Link>
           <Link href="/admin/customers" className={secondaryButtonClass}>
             Customers
           </Link>
