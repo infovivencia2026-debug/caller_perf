@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, buttonClass, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
-import { callLead, customerLabel, formatDuration, humanize } from "@/lib/labels";
+import { CALL_STATUSES, callLead, customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { RANGES, resolveFilters } from "@/lib/report-filters";
 
@@ -18,10 +18,11 @@ const PAGE_SIZE = 200;
 export default async function AdminCallLog({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string; from?: string; to?: string; caller?: string }>;
+  searchParams: Promise<{ range?: string; from?: string; to?: string; caller?: string; status?: string }>;
 }) {
   const params = await searchParams;
   const filters = resolveFilters(params);
+  const status = CALL_STATUSES.includes(params.status as (typeof CALL_STATUSES)[number]) ? params.status! : "";
   const exportQuery = new URLSearchParams(
     Object.entries(params).filter(([, value]) => Boolean(value)) as [string, string][],
   ).toString();
@@ -34,6 +35,7 @@ export default async function AdminCallLog({
 
   const where = {
     ...(filters.callerId ? { callerId: filters.callerId } : {}),
+    ...(status ? { status: status as (typeof CALL_STATUSES)[number] } : {}),
     ...(filters.from || filters.to
       ? { startedAt: { ...(filters.from ? { gte: filters.from } : {}), ...(filters.to ? { lt: filters.to } : {}) } }
       : {}),
@@ -112,11 +114,22 @@ export default async function AdminCallLog({
               ))}
             </select>
           </label>
+          <label className="block text-sm font-medium">
+            Outcome
+            <select name="status" defaultValue={status} className={`${inputClass} mt-1`}>
+              <option value="">All outcomes</option>
+              {CALL_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {humanize(s)}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="flex items-end gap-2">
             <button type="submit" className={buttonClass}>
               Apply
             </button>
-            {filters.isFiltered && (
+            {(filters.isFiltered || status) && (
               <Link href="/admin/calls" className={secondaryButtonClass}>
                 Reset
               </Link>

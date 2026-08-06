@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { callLead, humanize } from "@/lib/labels";
+import { CALL_STATUSES, callLead, humanize } from "@/lib/labels";
 import { formatDateTime } from "@/lib/datetime";
 import { resolveFilters } from "@/lib/report-filters";
 import type { Prisma } from "@/generated/prisma/client";
@@ -28,8 +28,12 @@ export async function GET(request: Request) {
     caller: url.searchParams.get("caller") ?? undefined,
   });
 
+  const statusParam = url.searchParams.get("status");
+  const status = CALL_STATUSES.includes(statusParam as (typeof CALL_STATUSES)[number]) ? statusParam! : "";
+
   const where: Prisma.CallWhereInput = {
     ...(filters.callerId ? { callerId: filters.callerId } : {}),
+    ...(status ? { status: status as (typeof CALL_STATUSES)[number] } : {}),
     ...(filters.from || filters.to
       ? { startedAt: { ...(filters.from ? { gte: filters.from } : {}), ...(filters.to ? { lt: filters.to } : {}) } }
       : {}),
