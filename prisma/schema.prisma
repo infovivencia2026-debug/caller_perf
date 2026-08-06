@@ -106,10 +106,36 @@ model ImportList {
   uploadedById String?
   uploadedBy   User?   @relation("UploadedLists", fields: [uploadedById], references: [id], onDelete: SetNull)
 
+  /** Leads whose *origin* was this file — the first upload that introduced them. */
   customers Customer[]
+  /** Every lead this file contained, including ones an earlier file had already
+      introduced. This is the file's identity: exactly what was in it. */
+  members   ListMembership[]
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/**
+ * A lead appearing in an uploaded file.
+ *
+ * Phone is unique across the app, so a number that arrives in a second file is not
+ * imported again — but it *was* in that file, and the file's contents have to say so.
+ * Without this, a list would silently under-report itself, and assigning "from this
+ * file" would skip leads that were genuinely in it.
+ */
+model ListMembership {
+  id         String     @id @default(cuid())
+  listId     String
+  list       ImportList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /** True when this file is where the lead came from, rather than a later re-appearance. */
+  isOrigin   Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+
+  @@unique([listId, customerId])
+  @@index([customerId])
 }
 
 model Customer {
@@ -138,8 +164,9 @@ model Customer {
   listId String?
   list   ImportList? @relation(fields: [listId], references: [id], onDelete: SetNull)
 
-  calls     Call[]
-  followUps FollowUp[]
+  calls       Call[]
+  followUps   FollowUp[]
+  memberships ListMembership[]
 
   @@index([assignedToId, status])
   @@index([status])

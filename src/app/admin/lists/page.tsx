@@ -31,7 +31,7 @@ export default async function Lists({
       orderBy: { createdAt: "desc" },
       include: {
         uploadedBy: { select: { name: true } },
-        _count: { select: { customers: true } },
+        _count: { select: { members: true } },
       },
     }),
     prisma.user.findMany({
@@ -40,26 +40,26 @@ export default async function Lists({
       select: { id: true, name: true },
     }),
     // Leads that belong to no file: added by hand, or imported before lists existed.
-    prisma.customer.count({ where: { listId: null } }),
+    prisma.customer.count({ where: { memberships: { none: {} } } }),
   ]);
 
   // Per-list breakdown in one round trip each, rather than N queries per list.
   const [assignedCounts, calledCounts] = await Promise.all([
-    prisma.customer.groupBy({
+    prisma.listMembership.groupBy({
       by: ["listId"],
-      where: { listId: { not: null }, assignedToId: { not: null } },
+      where: { customer: { assignedToId: { not: null } } },
       _count: { _all: true },
     }),
-    prisma.customer.groupBy({
+    prisma.listMembership.groupBy({
       by: ["listId"],
-      where: { listId: { not: null }, status: { not: "NEW" } },
+      where: { customer: { status: { not: "NEW" } } },
       _count: { _all: true },
     }),
   ]);
   const assignedBy = new Map(assignedCounts.map((row) => [row.listId, row._count._all]));
   const calledBy = new Map(calledCounts.map((row) => [row.listId, row._count._all]));
 
-  const totalLeads = lists.reduce((sum, list) => sum + list._count.customers, 0);
+  const totalLeads = lists.reduce((sum, list) => sum + list._count.members, 0);
   const totalAssigned = [...assignedBy.values()].reduce((a, b) => a + b, 0);
 
   return (
@@ -114,7 +114,7 @@ export default async function Lists({
       ) : (
         <div className="space-y-2">
           {lists.map((list) => {
-            const total = list._count.customers;
+            const total = list._count.members;
             const assigned = assignedBy.get(list.id) ?? 0;
             const called = calledBy.get(list.id) ?? 0;
             const unassigned = total - assigned;

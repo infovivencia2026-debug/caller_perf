@@ -17,7 +17,13 @@ export type CustomerFilter = {
 export function buildCustomerWhere(params: CustomerFilter): Prisma.CustomerWhereInput {
   const q = params.q?.trim() ?? "";
   return {
-    ...(params.list ? (params.list === "none" ? { listId: null } : { listId: params.list }) : {}),
+    // Membership, not origin: a lead that arrived in an earlier file but appeared in
+    // this one too is part of this list.
+    ...(params.list
+      ? params.list === "none"
+        ? { memberships: { none: {} } }
+        : { memberships: { some: { listId: params.list } } }
+      : {}),
     ...(params.status ? { status: params.status as never } : {}),
     ...(params.priority ? { priority: params.priority as never } : {}),
     ...(params.caller

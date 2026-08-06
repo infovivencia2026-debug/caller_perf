@@ -78,7 +78,7 @@ export async function importCustomers(
 
   const existing = await prisma.customer.findMany({
     where: { phone: { in: candidates.map((row) => row.phone) } },
-    select: { phone: true },
+    select: { id: true, phone: true },
   });
   const existingPhones = new Set(existing.map((row) => row.phone));
   const toCreate = candidates.filter((row) => !existingPhones.has(row.phone));
@@ -109,6 +109,27 @@ export async function importCustomers(
   if (toCreate.length > 0) {
     await prisma.customer.createMany({
       data: toCreate.map((row) => ({ ...row, assignedToId: assignedToId || null, listId: list.id })),
+    });
+  }
+
+  // The file's identity is every row it contained — including numbers an earlier file
+  // already introduced, which are not re-imported but were still in this file. Without
+  // this the list under-reports itself and assigning "from this file" skips them.
+  const phonesInChunk = candidates.map((row) => row.phone);
+  if (phonesInChunk.length > 0) {
+    const members = await prisma.customer.findMany({
+      where: { phone: { in: phonesInChunk } },
+      select: { id: true, listId: true },
+    });
+    await prisma.listMembership.createMany({
+      data: members.map((member) => ({
+        listId: list.id,
+        customerId: member.id,
+        // Origin is the file that introduced the lead, which is this one only if the
+        // lead's own origin points back here.
+        isOrigin: member.listId === list.id,
+      })),
+      skipDuplicates: true,
     });
   }
 

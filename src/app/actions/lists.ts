@@ -41,7 +41,7 @@ export async function assignFromList(formData: FormData) {
 
   const pool = await prisma.customer.findMany({
     where: {
-      listId: list.id,
+      memberships: { some: { listId: list.id } },
       assignedToId: null,
       status: { notIn: CLOSED_STATUSES as unknown as never },
     },
@@ -83,7 +83,7 @@ export async function unassignList(formData: FormData) {
   // Only leads nobody has started on — pulling a lead back mid-conversation would
   // strand the counsellor's follow-ups.
   const { count } = await prisma.customer.updateMany({
-    where: { listId: list.id, status: "NEW", calls: { none: {} } },
+    where: { memberships: { some: { listId: list.id } }, status: "NEW", calls: { none: {} } },
     data: { assignedToId: null },
   });
 
@@ -129,7 +129,7 @@ export async function deleteList(formData: FormData) {
 
   const list = await prisma.importList.findUnique({
     where: { id: listId },
-    select: { id: true, name: true, _count: { select: { customers: true } } },
+    select: { id: true, name: true, _count: { select: { members: true } } },
   });
   if (!list) redirect(listsHref(undefined, "That list no longer exists"));
 
@@ -140,10 +140,10 @@ export async function deleteList(formData: FormData) {
     action: "LIST_DELETED",
     entity: "ImportList",
     entityId: list.id,
-    detail: `${list.name} removed; its ${list._count.customers} lead(s) kept`,
+    detail: `${list.name} removed; its ${list._count.members} lead(s) kept`,
   });
 
   revalidatePath("/admin/lists");
   revalidatePath("/admin/customers");
-  redirect(listsHref(`${list.name} removed — its ${list._count.customers} lead(s) were kept`));
+  redirect(listsHref(`${list.name} removed — its ${list._count.members} lead(s) were kept`));
 }
