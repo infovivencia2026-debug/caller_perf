@@ -67,7 +67,50 @@ export default function RootLayout({
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){function p(n){return n<10?'0'+n:''+n}setInterval(function(){var el=document.getElementById('call-elapsed');if(el){var s=el.getAttribute('data-started-at');if(s){var t=new Date(s).getTime();if(!isNaN(t)){var d=Math.max(0,Math.round((Date.now()-t)/1000));var x=Math.floor(d/60)+'m '+p(d%60)+'s';if(el.textContent!==x)el.textContent=x}}}var now=document.getElementById('call-now');if(now){var y=new Date().toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});if(now.textContent!==y)now.textContent=y}},1000)})();`,
+            __html: `(function(){
+  function p(n){return n<10?'0'+n:''+n}
+  // Anchor: the elapsed seconds the server rendered, and the device time we first
+  // saw them. Ticking adds only the difference between two readings of the DEVICE
+  // clock, so a phone whose clock disagrees with the server (budget Androids with
+  // auto-time off are routinely minutes out) still counts correctly. Comparing
+  // Date.now() against the server's start time made the timer sit at 0m 00s on any
+  // device running behind the server.
+  var anchorKey=null,anchorAt=0,anchorBase=0;
+  function tick(){
+    try{
+      var el=document.getElementById('call-elapsed');
+      if(el){
+        var started=el.getAttribute('data-started-at');
+        if(started){
+          if(anchorKey!==started){
+            anchorKey=started;
+            anchorAt=Date.now();
+            anchorBase=parseInt(el.getAttribute('data-elapsed')||'0',10);
+            if(isNaN(anchorBase)||anchorBase<0)anchorBase=0;
+          }
+          var d=anchorBase+Math.round((Date.now()-anchorAt)/1000);
+          if(d<0)d=0;
+          var x=Math.floor(d/60)+'m '+p(d%60)+'s';
+          if(el.textContent!==x)el.textContent=x;
+        }else{anchorKey=null}
+      }else{anchorKey=null}
+    }catch(e){}
+    try{
+      var now=document.getElementById('call-now');
+      if(now){
+        // Older Android WebViews throw on a timeZone option, which would otherwise
+        // kill the whole tick.
+        var y=new Date().toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
+        if(now.textContent!==y)now.textContent=y;
+      }
+    }catch(e){}
+  }
+  setInterval(tick,1000);
+  tick();
+  // A phone that slept mid-call resumes on a stale frame otherwise.
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)tick()});
+  window.addEventListener('pageshow',tick);
+})();`,
           }}
         />
       </body>

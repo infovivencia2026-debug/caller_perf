@@ -124,7 +124,14 @@ export default function CallPanel({
         >
           <p className="text-5xl font-extrabold tabular-nums leading-none sm:text-6xl">
             {startedAt ? (
-              <span id="call-elapsed" data-started-at={ended ? undefined : timing?.startedAt}>
+              <span
+                id="call-elapsed"
+                data-started-at={ended ? undefined : timing?.startedAt}
+                /* The server's own count of seconds so far. The ticker adds only
+                   locally-measured time to this, so a phone whose clock disagrees with
+                   the server still counts correctly. */
+                data-elapsed={ended ? undefined : elapsed}
+              >
                 {formatDuration(elapsed)}
               </span>
             ) : (
