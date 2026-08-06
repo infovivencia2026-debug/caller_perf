@@ -243,7 +243,7 @@ export default async function CallingScreen({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <h1 className="text-lg font-semibold">Calling screen</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
           {callsToday}/{me?.dailyTarget ?? 0} calls today · {queueCount} in queue

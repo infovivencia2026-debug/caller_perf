@@ -102,7 +102,7 @@ export default async function CalendarPage({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <h1 className="text-lg font-semibold">Calendar</h1>
         <form method="get" className="flex items-center gap-2">
           <input type="hidden" name="month" value={m} />

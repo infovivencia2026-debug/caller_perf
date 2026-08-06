@@ -128,7 +128,7 @@ export default async function MyCalls({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <h1 className="text-lg font-semibold">My calls</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           {isToday ? "Today" : `${fromInput} → ${toInput}`}
@@ -227,8 +227,8 @@ export default async function MyCalls({
               No calls in this range{isToday ? " yet today" : ""}.
             </p>
           ) : (
-            <div className="table-scroll max-h-[70vh] max-w-full overflow-y-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
+            <div className="stack-table-wrap table-scroll max-h-[70vh] max-w-full overflow-y-auto">
+              <table className="stack-table w-full min-w-[760px] text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-white/90 text-[11px] uppercase tracking-widest text-neutral-500 backdrop-blur dark:bg-black/80 dark:text-neutral-400">
                   <tr>
                     <th className="px-3 py-2 font-semibold">Started</th>

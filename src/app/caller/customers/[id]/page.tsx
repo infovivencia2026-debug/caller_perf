@@ -52,7 +52,7 @@ export default async function CustomerThread({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold">{customerLabel(customer)}</h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">

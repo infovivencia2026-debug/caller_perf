@@ -270,6 +270,48 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Below sm, a table is the wrong shape entirely: sideways scrolling to read a row is
+   miserable on a phone. `.stack-table` turns each row into its own card, one field per
+   line, and drops the header — every column in this app leads with something
+   self-describing (a name, a badge, a timestamp), so the labels are not missed.
+   Above sm the table is a table again. */
+@media (max-width: 639px) {
+  .stack-table {
+    min-width: 0 !important;
+  }
+  .stack-table thead {
+    display: none;
+  }
+  .stack-table tbody,
+  .stack-table tr,
+  .stack-table td {
+    display: block;
+    width: auto;
+  }
+  .stack-table tr {
+    margin-bottom: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--line) 12%, transparent);
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.75rem;
+  }
+  .stack-table tr:last-child {
+    margin-bottom: 0;
+  }
+  .stack-table td {
+    border: 0 !important;
+    padding: 0.125rem 0 !important;
+    white-space: normal !important;
+  }
+  /* The first cell of each row is its heading — usually a name or a timestamp. */
+  .stack-table td:first-child {
+    font-weight: 700;
+  }
+  /* A row that scrolled sideways cannot be a card. */
+  .stack-table-wrap {
+    overflow-x: visible;
+  }
+}
+
 /* Installed to a home screen the app runs edge to edge, so the sticky save bar
    would sit under the home indicator without this. */
 body {
@@ -283,6 +325,27 @@ body {
   select,
   textarea {
     font-size: 16px;
+  }
+}
+
+/* Anything the thumb has to hit is at least 44px on a phone — the platform
+   minimum. Applies to buttons, links styled as buttons, and select/date inputs,
+   which otherwise render at ~34px. */
+@media (max-width: 639px) {
+  button,
+  [type="submit"],
+  [type="button"],
+  select,
+  input[type="date"],
+  input[type="datetime-local"] {
+    min-height: 44px;
+  }
+
+  /* A form row of controls becomes a column: two 50%-wide buttons side by side are
+     narrower than a thumb is wide. */
+  form .flex.flex-wrap.items-end > button,
+  form .flex.flex-wrap.items-end > a {
+    width: 100%;
   }
 }
 

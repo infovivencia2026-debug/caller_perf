@@ -75,7 +75,7 @@ export default async function CustomersPage({
           {params.error}
         </p>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <h1 className="text-lg font-semibold">Customers ({total})</h1>
         <div className="flex gap-2">
           <Link href={`/api/customers/export?${exportQuery}`} className={secondaryButtonClass}>
@@ -128,7 +128,7 @@ export default async function CustomersPage({
       </details>
 
       <Card title="Search & filters">
-        <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <input
             name="q"
             defaultValue={q}
@@ -242,8 +242,8 @@ export default async function CustomersPage({
               Assign selected
             </button>
           </div>
-          <div className="table-scroll max-w-full">
-          <table className="w-full text-left text-sm">
+          <div className="stack-table-wrap table-scroll max-w-full">
+          <table className="stack-table w-full text-left text-sm">
             <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <tr>
                 <th className="px-3 py-2">

@@ -60,7 +60,7 @@ export default async function DailySummary({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <h1 className="text-lg font-semibold">Daily summary</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           {prettyDay} · {presentCount}/{callers.length} present
@@ -103,8 +103,8 @@ export default async function DailySummary({
         {rows.length === 0 ? (
           <p className="text-sm text-neutral-500">No counsellors.</p>
         ) : (
-          <div className="table-scroll max-w-full">
-            <table className="w-full min-w-[720px] text-left text-sm">
+          <div className="stack-table-wrap table-scroll max-w-full">
+            <table className="stack-table w-full min-w-[720px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <tr>
                   <th className="px-3 py-2 font-bold">Counsellor</th>

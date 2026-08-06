@@ -260,7 +260,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
           </p>
           {/* Every uploaded row, scrollable, with the header pinned so the list stays readable. */}
           <div className="max-h-[28rem] overflow-auto rounded-md border border-slate-200 dark:border-slate-800">
-            <table className="w-full text-left text-sm">
+            <table className="stack-table w-full text-left text-sm">
               <thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2">#</th>

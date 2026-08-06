@@ -151,8 +151,8 @@ export default async function CallersPage({
         {rows.length === 0 ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">No counsellors yet.</p>
         ) : (
-          <div className="table-scroll max-w-full">
-            <table className="w-full min-w-[40rem] text-left text-sm">
+          <div className="stack-table-wrap table-scroll max-w-full">
+            <table className="stack-table w-full min-w-[40rem] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2">Counsellor</th>

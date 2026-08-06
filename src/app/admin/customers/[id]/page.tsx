@@ -45,7 +45,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         <CustomerForm customer={customer} callers={callers} />
       </Card>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card title={`Call timeline (${customer.calls.length})`}>
           {customer.calls.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">No calls logged yet.</p>

@@ -24,7 +24,7 @@ export default async function ShouldCall() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <h1 className="text-lg font-semibold">Should call</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">Tried today, not reached</p>
       </div>

@@ -65,7 +65,7 @@ export default async function AdminCallLog({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <h1 className="text-lg font-semibold">Call log</h1>
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -81,7 +81,7 @@ export default async function AdminCallLog({
       </div>
 
       <Card title="Filters">
-        <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <form method="get" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="block text-sm font-medium">
             Period
             <select name="range" defaultValue={filters.range} className={`${inputClass} mt-1`}>
@@ -145,8 +145,8 @@ export default async function AdminCallLog({
         ) : (
           // Scrolls inside the card (both directions) so a long call list doesn't stretch
           // the whole page; the header stays pinned while you scroll.
-          <div className="table-scroll max-h-[70vh] max-w-full overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800">
-            <table className="w-full min-w-[720px] text-left text-sm">
+          <div className="stack-table-wrap table-scroll max-h-[70vh] max-w-full overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800">
+            <table className="stack-table w-full min-w-[720px] text-left text-sm">
               <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2 font-medium">Started</th>

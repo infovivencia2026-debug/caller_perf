@@ -122,7 +122,7 @@ export default async function AdminDashboard({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <h1 className="text-lg font-semibold">Admin dashboard</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {filters.label}
@@ -136,8 +136,8 @@ export default async function AdminDashboard({
         {team.length === 0 ? (
           <p className="text-sm text-slate-500">No active counsellors.</p>
         ) : (
-          <div className="table-scroll max-w-full">
-            <table className="w-full min-w-[560px] text-left text-sm">
+          <div className="stack-table-wrap table-scroll max-w-full">
+            <table className="stack-table w-full min-w-[560px] text-left text-sm">
               <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2 font-medium">Counsellor</th>
@@ -202,7 +202,7 @@ export default async function AdminDashboard({
 
       {/* A GET form: filters end up in the URL, so the view is shareable and needs no JS. */}
       <Card title="Filters">
-        <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <form method="get" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="block text-sm font-medium">
             Period
             <select name="range" defaultValue={filters.range} className={`${inputClass} mt-1`}>
@@ -249,7 +249,7 @@ export default async function AdminDashboard({
         </form>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Calls" value={stats.totalCalls} hint={filters.label} accent="indigo" icon={<IconPhone />} />
         <Stat
           label="Successful contacts"
@@ -287,7 +287,7 @@ export default async function AdminDashboard({
         />
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card title="Calls per day (last 14 days)">
           <TimeBars data={perDay} />
         </Card>
@@ -296,7 +296,7 @@ export default async function AdminDashboard({
         </Card>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card title={`Conversion (${filters.label.toLowerCase()})`}>
           <div className="space-y-3">
             <p className="text-3xl font-semibold tabular-nums">{stats.conversionRate}%</p>

@@ -59,7 +59,7 @@ export default async function SkippedPage({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link href={backHref} className={secondaryButtonClass} aria-label="Back to calling screen">
             ← Back
@@ -87,7 +87,7 @@ export default async function SkippedPage({
             return to the queue when you start over.
           </p>
 
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {ordered.map((entry, index) => (
               <Card
                 key={entry.id}

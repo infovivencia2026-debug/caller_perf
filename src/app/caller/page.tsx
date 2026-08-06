@@ -63,7 +63,7 @@ export default async function CallerDashboard() {
           dueAt: f.dueAt.toISOString(),
         }))}
       />
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <h1 className="text-lg font-semibold">Hello, {session.name}</h1>
         {/* Attendance comes from workforce-os punch-ins — no manual present button here. */}
         <Link href="/caller/call" className={buttonClass}>
@@ -71,7 +71,7 @@ export default async function CallerDashboard() {
         </Link>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           label="Today's target"
           value={target}
@@ -100,7 +100,7 @@ export default async function CallerDashboard() {
         />
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card title="Next customer">
           {next ? (
             <div className="space-y-2 text-sm">
