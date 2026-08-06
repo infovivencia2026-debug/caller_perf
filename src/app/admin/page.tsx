@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Badge, Card, Stat, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
+import { Badge, Card, Stat, buttonClass, inputClass, secondaryButtonClass, statusTone } from "@/components/ui";
 import { RankedBars, TimeBars } from "@/components/charts";
 import { formatDuration, humanize } from "@/lib/labels";
 import { endOfDay, getStats, percent, startOfDay } from "@/lib/metrics";
@@ -207,7 +207,7 @@ export default async function AdminDashboard({
       </Card>
 
       {/* A GET form: filters end up in the URL, so the view is shareable and needs no JS. */}
-      <Card title="Filters">
+      <Card title="Period & filters">
         <form method="get" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="block text-sm font-medium">
             Period
@@ -266,6 +266,34 @@ export default async function AdminDashboard({
         />
         <Stat label="Interested leads" value={stats.interestedLeads} accent="violet" icon={<IconStar />} />
         <Stat label="Closed leads" value={stats.convertedLeads} accent="emerald" icon={<IconTrophy />} />
+        <Stat
+          label="Leads reached"
+          value={stats.customersCalled}
+          hint={`${stats.connectRate}% of calls connected`}
+          accent="emerald"
+          icon={<IconUsers />}
+        />
+        <Stat
+          label="No answer / busy"
+          value={stats.noConnectCalls}
+          hint={stats.totalCalls ? `${percent(stats.noConnectCalls, stats.totalCalls)}% of calls` : undefined}
+          accent="rose"
+          icon={<IconPhone />}
+        />
+        <Stat
+          label="Calls per working day"
+          value={stats.callsPerActiveDay}
+          hint={`${stats.activeDays} day${stats.activeDays === 1 ? "" : "s"} with calls`}
+          accent="indigo"
+          icon={<IconActivity />}
+        />
+        <Stat
+          label="Follow-ups due"
+          value={stats.followUpsDue}
+          hint={`${stats.followUpsKept} kept in this period`}
+          accent="amber"
+          icon={<IconBell />}
+        />
         <Stat label="Avg call duration" value={formatDuration(stats.avgDuration)} accent="amber" icon={<IconClock />} />
         <Stat label="Talk time" value={formatDuration(stats.totalDuration)} accent="sky" icon={<IconActivity />} />
         <Stat
@@ -300,6 +328,32 @@ export default async function AdminDashboard({
         />
       </div>
 
+
+      <Card title={`Outcomes — ${filters.label}`}>
+        {stats.outcomes.length === 0 ? (
+          <p className="text-sm text-slate-500 dark:text-slate-400">No calls in this period.</p>
+        ) : (
+          <ul className="space-y-2">
+            {stats.outcomes.map((outcome) => (
+              <li key={outcome.status} className="flex flex-wrap items-center gap-3 text-sm">
+                <Badge tone={statusTone(outcome.status)}>{humanize(outcome.status)}</Badge>
+                <span className="tabular-nums font-semibold">{outcome.count}</span>
+                <span className="min-w-[6rem] flex-1">
+                  <span className="block h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
+                    <span
+                      className="block h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-400"
+                      style={{ width: `${percent(outcome.count, stats.totalCalls)}%` }}
+                    />
+                  </span>
+                </span>
+                <span className="tabular-nums text-xs text-slate-500 dark:text-slate-400">
+                  {percent(outcome.count, stats.totalCalls)}%
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card title="Calls per day (last 14 days)">
           <TimeBars data={perDay} />

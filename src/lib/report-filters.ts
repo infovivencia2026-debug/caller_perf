@@ -6,8 +6,12 @@ import { endOfDay, startOfDay, startOfMonth, startOfWeek } from "@/lib/metrics";
  */
 export const RANGES = [
   { key: "today", label: "Today" },
+  { key: "yesterday", label: "Yesterday" },
   { key: "week", label: "This week" },
+  { key: "last7", label: "Last 7 days" },
+  { key: "last30", label: "Last 30 days" },
   { key: "month", label: "This month" },
+  { key: "lastmonth", label: "Last month" },
   { key: "all", label: "All time" },
   { key: "custom", label: "Custom range" },
 ] as const;
@@ -60,6 +64,35 @@ export function resolveFilters(params: {
       to = endOfDay();
       label = "Today";
       break;
+    case "yesterday": {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      from = startOfDay(yesterday);
+      to = endOfDay(yesterday);
+      label = "Yesterday";
+      break;
+    }
+    case "last7":
+    case "last30": {
+      // Rolling windows include today, so "last 7 days" is today plus the six before
+      // it — what people mean when they say it.
+      const days = range === "last7" ? 7 : 30;
+      const start = new Date();
+      start.setDate(start.getDate() - (days - 1));
+      from = startOfDay(start);
+      to = endOfDay();
+      label = `Last ${days} days`;
+      break;
+    }
+    case "lastmonth": {
+      const firstOfThis = startOfMonth();
+      const firstOfLast = new Date(firstOfThis);
+      firstOfLast.setMonth(firstOfLast.getMonth() - 1);
+      from = firstOfLast;
+      to = firstOfThis;
+      label = "Last month";
+      break;
+    }
     case "week":
       from = startOfWeek();
       label = "This week";
