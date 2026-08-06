@@ -87,6 +87,12 @@ export default async function AdminDashboard({
   // --- Chart data ---
   const callerCallWhere = filters.callerId ? { callerId: filters.callerId } : {};
 
+  // Customers that have been contacted at least once (distinct), and those still untouched.
+  const calledCustomers = (
+    await prisma.call.findMany({ where: callerCallWhere, distinct: ["customerId"], select: { customerId: true } })
+  ).length;
+  const uncalledCustomers = Math.max(0, totalCustomers - calledCustomers);
+
   // Calls per day for the last 14 days (India time), regardless of the period filter.
   const chartFrom = new Date();
   chartFrom.setDate(chartFrom.getDate() - 13);
@@ -284,6 +290,13 @@ export default async function AdminDashboard({
           hint={selectedCaller ? `assigned to ${selectedCaller.name}` : "in the system"}
           accent="indigo"
           icon={<IconUsers />}
+        />
+        <Stat
+          label="Not yet called"
+          value={uncalledCustomers}
+          hint={`${calledCustomers.toLocaleString()} called so far`}
+          accent="amber"
+          icon={<IconPhone />}
         />
       </div>
 
