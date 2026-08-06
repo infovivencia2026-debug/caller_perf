@@ -6,7 +6,7 @@ import ImportWizard from "./import/import-wizard";
 import { DeleteMatchingButton } from "./delete-matching-button";
 import { SelectAll } from "./select-all";
 import { assignCountToCaller, assignSelected } from "@/app/actions/assign";
-import { assignListEqually } from "@/app/actions/lists";
+import { assignListEqually, updateList } from "@/app/actions/lists";
 import { parseTags } from "@/lib/tags";
 import { buildCustomerWhere, hasAnyFilter } from "@/lib/customer-filter";
 import { formatDateTime } from "@/lib/datetime";
@@ -223,6 +223,32 @@ export default async function CustomersPage({
           )}
         </div>
       </details>
+
+      {/* Renaming lives here as well as on the lists page: the moment you notice a
+          file is called "leads_final_v3 (2).csv" is the moment you have opened it. */}
+      {openList && (
+        <Card title="File name" glow="sky">
+          <form action={updateList} className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="listId" value={openList.id} />
+            <label className="text-sm font-medium">
+              Name
+              <input name="name" defaultValue={openList.name} className={`${inputClass} mt-1 min-w-[14rem]`} />
+            </label>
+            <label className="flex-1 text-sm font-medium">
+              Note (optional)
+              <input
+                name="note"
+                defaultValue={openList.note ?? ""}
+                placeholder="Where these leads came from"
+                className={`${inputClass} mt-1`}
+              />
+            </label>
+            <button type="submit" className={secondaryButtonClass}>
+              Rename
+            </button>
+          </form>
+        </Card>
+      )}
 
       {/* Split this file's unassigned leads evenly — the common way a file gets
           handed out to a team. */}

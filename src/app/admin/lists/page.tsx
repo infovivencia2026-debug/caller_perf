@@ -232,25 +232,26 @@ export default async function Lists({
 
                 {/* Rename, return and remove are all one-off admin jobs — folded away so
                     the common action above stays the obvious one. */}
+                {/* Renaming is the common edit, so it is not hidden. */}
+                <form action={updateList} className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                  <input type="hidden" name="listId" value={list.id} />
+                  <input name="name" defaultValue={list.name} aria-label="File name" className={bentoInputClass} />
+                  <input
+                    name="note"
+                    defaultValue={list.note ?? ""}
+                    placeholder="Where these leads came from"
+                    aria-label="Note"
+                    className={bentoInputClass}
+                  />
+                  <button type="submit" className={bentoGhostButtonClass}>
+                    Rename
+                  </button>
+                </form>
+
                 <details className="mt-3" open={isOpen}>
                   <summary className="cursor-pointer text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                    Rename, return leads, or remove this list
+                    Return leads or remove this list
                   </summary>
-
-                  <form action={updateList} className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                    <input type="hidden" name="listId" value={list.id} />
-                    <input name="name" defaultValue={list.name} aria-label="List name" className={bentoInputClass} />
-                    <input
-                      name="note"
-                      defaultValue={list.note ?? ""}
-                      placeholder="Where these leads came from"
-                      aria-label="Note"
-                      className={bentoInputClass}
-                    />
-                    <button type="submit" className={bentoGhostButtonClass}>
-                      Save
-                    </button>
-                  </form>
 
                   <div className="mt-2 flex flex-wrap gap-2">
                     <form action={unassignList}>

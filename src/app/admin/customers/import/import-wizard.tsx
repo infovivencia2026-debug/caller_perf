@@ -56,6 +56,7 @@ function pickRow(raw: Record<string, unknown>): ImportRow {
 export default function ImportWizard({ callers }: { callers: { id: string; name: string }[] }) {
   const [rows, setRows] = useState<ImportRow[] | null>(null);
   const [fileName, setFileName] = useState("");
+  const [listName, setListName] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
   const [assignedToId, setAssignedToId] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -103,6 +104,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
     setParseError(null);
     setRows(null);
     setFileName(file.name);
+    setListName((current) => current || file.name);
     canceledRef.current = false;
     setParsing(true);
 
@@ -155,6 +157,7 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
     setParsing(false);
     setRows(null);
     setFileName("");
+    setListName("");
     setParseError(null);
     if (inputRef.current) inputRef.current.value = "";
   }
@@ -174,7 +177,10 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
       for (let i = 0; i < total; i += BATCH) {
         const chunk = all.slice(i, i + BATCH);
         setProgress({ done: Math.min(i + chunk.length, total), total });
-        const outcome = await importCustomers(chunk, assignedToId || null, { fileName, listId });
+        const outcome = await importCustomers(chunk, assignedToId || null, {
+          fileName: listName.trim() || fileName,
+          listId,
+        });
         listId = outcome.listId ?? listId;
         if (outcome.error) {
           agg.error = outcome.error;
@@ -289,7 +295,18 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
             </table>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* What this upload will be called. Defaults to the filename, which is
+                usually right and almost never descriptive. */}
+            <label className="text-sm font-medium">
+              File name
+              <input
+                value={listName}
+                onChange={(event) => setListName(event.target.value)}
+                placeholder={fileName || "Name this upload"}
+                className={`${inputClass} mt-1 w-auto min-w-[14rem]`}
+              />
+            </label>
             <label className="text-sm font-medium">
               Assign all to
               <select
