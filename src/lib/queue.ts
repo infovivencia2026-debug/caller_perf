@@ -1,16 +1,19 @@
 import { prisma } from "@/lib/prisma";
 
 /**
- * Customer statuses that take a customer out of the calling queue.
+ * Customer statuses that take a customer out of the calling queue — and out of every
+ * assignment pool with it.
  *
- * Deliberately short. "Not interested" is a mood on the day, not a verdict — those
- * leads stay in the queue and come round again (tomorrow at the earliest, since the
- * queue skips anyone already called today), as do Interested and every other
- * outcome. Only two things end a lead: the sale is done (CLOSED), or the number is
- * not a real prospect (INVALID) — and invalid ones are deleted outright, so they are
- * listed here only to keep them out of the queue in the moment before that happens.
+ * Someone who has said no is done: calling them again tomorrow, and every tomorrow
+ * after that, wastes the counsellor's day and irritates the person. So NOT_INTERESTED
+ * sits here alongside a completed sale (CLOSED) and a number that is not a prospect
+ * (INVALID). Leads mid-conversation — callbacks, interested, no answer — are not
+ * closed and keep coming round.
+ *
+ * Nothing here is ever handed out again: the queue, auto-assign, the per-file assign
+ * and split, and the counsellor's own search all filter on it.
  */
-export const CLOSED_STATUSES = ["CLOSED", "INVALID"] as const;
+export const CLOSED_STATUSES = ["NOT_INTERESTED", "CLOSED", "INVALID"] as const;
 
 const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
 

@@ -50,8 +50,25 @@ export async function assignSelected(formData: FormData) {
     callerName = caller.name;
   }
 
+  // Finished leads are never handed out, however they were selected — a closed sale,
+  // an invalid number, or someone who has already said no. Unassigning is always
+  // allowed, since that is how you clear them off a counsellor.
+  const assignable = callerId
+    ? await prisma.customer.findMany({
+        where: { id: { in: ids }, ...openWhere },
+        select: { id: true },
+      })
+    : ids.map((id) => ({ id }));
+  const skipped = ids.length - assignable.length;
+
+  if (assignable.length === 0) {
+    redirect(
+      customersHref(undefined, "Nothing to assign — every ticked lead is closed, invalid or not interested"),
+    );
+  }
+
   await prisma.customer.updateMany({
-    where: { id: { in: ids } },
+    where: { id: { in: assignable.map((c) => c.id) } },
     data: { assignedToId: callerId || null },
   });
 
@@ -59,11 +76,17 @@ export async function assignSelected(formData: FormData) {
     userId: session.userId,
     action: "CUSTOMERS_ASSIGNED",
     entity: "Customer",
-    detail: `${ids.length} customer(s) → ${callerName}`,
+    detail: `${assignable.length} customer(s) → ${callerName}${skipped ? `; ${skipped} closed lead(s) skipped` : ""}`,
   });
 
   revalidate();
-  redirect(customersHref(`Assigned ${ids.length} customer(s) to ${callerName}.`));
+  redirect(
+    customersHref(
+      `Assigned ${assignable.length} customer(s) to ${callerName}.${
+        skipped ? ` ${skipped} closed or not-interested lead(s) were skipped.` : ""
+      }`,
+    ),
+  );
 }
 
 /**
