@@ -8,7 +8,7 @@ import {
 } from "@/app/actions/calls";
 import { BentoTile, bentoGhostButtonClass, bentoInputClass } from "@/components/ui";
 import type { CallTiming } from "@/lib/call-timer";
-import { currentClock, elapsedSecondsSince, formatClock } from "@/lib/datetime";
+import { elapsedSecondsSince, formatClock } from "@/lib/datetime";
 import { CALL_STATUSES, COURSES, PRIORITIES, formatDuration, humanize, shortStatus } from "@/lib/labels";
 import { CallShortcuts, FollowUpPresets, StartCallButton, SubmitButton } from "./call-controls";
 
@@ -132,18 +132,6 @@ export default function CallPanel({
             )}
           </p>
 
-          {startedAt && !ended && (
-            <p className="mt-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-              Call running
-            </p>
-          )}
-          {!startedAt && (
-            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-              Dial on your phone, then press Start call
-            </p>
-          )}
-
           {/* Both stamps, always visible once they exist — this is the record. */}
           <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-neutral-200 pt-3 text-left dark:border-neutral-800">
             <div>
@@ -163,12 +151,6 @@ export default function CallPanel({
               </dd>
             </div>
           </dl>
-
-          {startedAt && !ended && (
-            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-              Now <span id="call-now" className="tabular-nums">{currentClock()}</span>
-            </p>
-          )}
 
           {/* Both controls are always on screen, so the pair reads as one timer:
               Start is live until it is pressed, End until the call is stopped. Hiding
@@ -191,26 +173,23 @@ export default function CallPanel({
             </span>
           </div>
 
-          {startedAt && (
-            <div className="mt-2">
-              <SubmitButton
-                formAction={resetCall}
-                className={`${bentoGhostButtonClass} w-full`}
-                pendingLabel="…"
-              >
-                Reset timer
-              </SubmitButton>
-            </div>
-          )}
 
-          {/* Forgetting to press Call used to make the conversation unloggable — the
-              save is refused without both stamps. This is the way out: state the
-              length and log it. */}
+          {/* Kept out of the timer block deliberately: a mis-stamped clock still needs
+            clearing, and a call made without pressing Start still needs logging —
+            without these the save is simply refused and the call is lost. Both are
+            one quiet line, collapsed, below the timer. */}
           {!ended && (
-            <details className="mt-3">
-              <summary className="cursor-pointer text-sm font-semibold text-neutral-600 dark:text-neutral-300">
-                Called without the timer?
+            <details className="mt-3 text-left">
+              <summary className="cursor-pointer text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                Timer wrong, or called without it?
               </summary>
+              {startedAt && (
+                <div className="mt-2">
+                  <SubmitButton formAction={resetCall} className={bentoGhostButtonClass} pendingLabel="…">
+                    Reset timer
+                  </SubmitButton>
+                </div>
+              )}
               <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
                 Enter roughly how long you spoke and save as normal. The call is recorded as
                 manually timed.
