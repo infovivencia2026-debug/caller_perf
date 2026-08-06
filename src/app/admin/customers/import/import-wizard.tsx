@@ -169,10 +169,13 @@ export default function ImportWizard({ callers }: { callers: { id: string; name:
     startTransition(async () => {
       const total = all.length;
       const agg: ImportResult = { imported: 0, duplicatesInFile: 0, duplicatesInDb: 0, invalid: [] };
+      // One file is one list: the first chunk names it, the rest join it.
+      let listId: string | undefined;
       for (let i = 0; i < total; i += BATCH) {
         const chunk = all.slice(i, i + BATCH);
         setProgress({ done: Math.min(i + chunk.length, total), total });
-        const outcome = await importCustomers(chunk, assignedToId || null);
+        const outcome = await importCustomers(chunk, assignedToId || null, { fileName, listId });
+        listId = outcome.listId ?? listId;
         if (outcome.error) {
           agg.error = outcome.error;
           break;

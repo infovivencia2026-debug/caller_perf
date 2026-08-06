@@ -69,6 +69,7 @@ model User {
   activities  ActivityLog[]
   attendance  Attendance[]
   callEdits   CallEdit[]
+  uploadedLists ImportList[] @relation("UploadedLists")
 }
 
 /** One row per telecaller per day they were present (marked or derived from a call). */
@@ -81,6 +82,34 @@ model Attendance {
 
   @@unique([userId, date])
   @@index([date])
+}
+
+/**
+ * One uploaded file. Every customer imported from it belongs to it, so a list can be
+ * browsed, assigned and reported on as a unit — "the August walk-ins", "the Hyderabad
+ * batch" — instead of dissolving into one undifferentiated pool of 150,000 rows.
+ *
+ * Deleting a list leaves its customers in place (SetNull); emptying the file cabinet
+ * should not shred the leads.
+ */
+model ImportList {
+  id       String @id @default(cuid())
+  /** The uploaded file's name, which is what an admin recognises it by. */
+  name     String
+  /** Free text — where the leads came from, which campaign, anything worth knowing. */
+  note     String?
+  /** Row counts at import time; the live totals are counted from Customer. */
+  rowsImported  Int @default(0)
+  rowsDuplicate Int @default(0)
+  rowsInvalid   Int @default(0)
+
+  uploadedById String?
+  uploadedBy   User?   @relation("UploadedLists", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  customers Customer[]
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model Customer {
@@ -104,12 +133,18 @@ model Customer {
   assignedToId String?
   assignedTo   User?   @relation("AssignedCustomers", fields: [assignedToId], references: [id], onDelete: SetNull)
 
+  // Which upload this lead came from. Null for leads added by hand on the calling
+  // screen, which belong to no file.
+  listId String?
+  list   ImportList? @relation(fields: [listId], references: [id], onDelete: SetNull)
+
   calls     Call[]
   followUps FollowUp[]
 
   @@index([assignedToId, status])
   @@index([status])
   @@index([name])
+  @@index([listId, assignedToId])
 }
 
 model Call {

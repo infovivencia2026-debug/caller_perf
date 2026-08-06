@@ -19,6 +19,7 @@ type Search = {
   status?: string;
   caller?: string;
   priority?: string;
+  list?: string;
   page?: string;
   ok?: string;
   error?: string;
@@ -34,6 +35,11 @@ export default async function CustomersPage({
   const q = params.q?.trim() ?? "";
 
   const where = buildCustomerWhere(params);
+  const lists = await prisma.importList.findMany({
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true },
+    take: 200,
+  });
   const filtered = hasAnyFilter(params);
 
   const [customers, total, callers, importLogs] = await Promise.all([
@@ -143,6 +149,16 @@ export default async function CustomersPage({
               </option>
             ))}
           </select>
+          {/* Which uploaded file these leads came from. */}
+          <select name="list" defaultValue={params.list ?? ""} className={inputClass}>
+            <option value="">Any list</option>
+            <option value="none">Not in a list</option>
+            {lists.map((list) => (
+              <option key={list.id} value={list.id}>
+                {list.name}
+              </option>
+            ))}
+          </select>
           <select name="caller" defaultValue={params.caller ?? ""} className={inputClass}>
             <option value="">Any caller</option>
             <option value="unassigned">Unassigned</option>
@@ -181,7 +197,7 @@ export default async function CustomersPage({
           <DeleteMatchingButton
             count={total}
             filtered={filtered}
-            filters={{ q: params.q, status: params.status, caller: params.caller, priority: params.priority }}
+            filters={{ q: params.q, status: params.status, caller: params.caller, priority: params.priority, list: params.list }}
           />
         </div>
       </Card>

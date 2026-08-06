@@ -19,6 +19,8 @@ const rowSchema = z.object({
 export type ImportRow = z.infer<typeof rowSchema>;
 
 export type ImportResult = {
+  /** The list this upload created; passed back in for subsequent chunks. */
+  listId?: string;
   imported: number;
   duplicatesInFile: number;
   duplicatesInDb: number;
@@ -30,6 +32,12 @@ export type ImportResult = {
 export async function importCustomers(
   rows: unknown,
   assignedToId: string | null,
+  /**
+   * The upload this call belongs to. Large files are sent in chunks, so the first
+   * chunk passes the file's name and gets a list back; every later chunk passes that
+   * id, and the whole file ends up as one list rather than one list per chunk.
+   */
+  upload?: { fileName?: string; listId?: string },
 ): Promise<ImportResult> {
   const session = await requireAdmin();
   const empty: ImportResult = { imported: 0, duplicatesInFile: 0, duplicatesInDb: 0, invalid: [] };
@@ -75,9 +83,32 @@ export async function importCustomers(
   const existingPhones = new Set(existing.map((row) => row.phone));
   const toCreate = candidates.filter((row) => !existingPhones.has(row.phone));
 
+  // Every upload becomes its own list, and the leads it creates belong to it — so a
+  // file can be browsed, assigned and reported on as a unit later. Created even when
+  // every row was a duplicate, so the upload still leaves a trace of having happened.
+  const list = upload?.listId
+    ? await prisma.importList.update({
+        where: { id: upload.listId },
+        // Later chunks of the same file add to the running totals.
+        data: {
+          rowsImported: { increment: toCreate.length },
+          rowsDuplicate: { increment: duplicatesInFile + existingPhones.size },
+          rowsInvalid: { increment: invalid.length },
+        },
+      })
+    : await prisma.importList.create({
+        data: {
+          name: (upload?.fileName?.trim() || "Untitled upload").slice(0, 200),
+          uploadedById: session.userId,
+          rowsImported: toCreate.length,
+          rowsDuplicate: duplicatesInFile + existingPhones.size,
+          rowsInvalid: invalid.length,
+        },
+      });
+
   if (toCreate.length > 0) {
     await prisma.customer.createMany({
-      data: toCreate.map((row) => ({ ...row, assignedToId: assignedToId || null })),
+      data: toCreate.map((row) => ({ ...row, assignedToId: assignedToId || null, listId: list.id })),
     });
   }
 
@@ -89,15 +120,18 @@ export async function importCustomers(
     userId: session.userId,
     action: "CSV_IMPORT",
     entity: "Customer",
-    detail: `${toCreate.length} imported, ${existingPhones.size} existing, ${duplicatesInFile} duplicate rows, ${invalid.length} invalid${
+    entityId: list.id,
+    detail: `${list.name}: ${toCreate.length} imported, ${existingPhones.size} existing, ${duplicatesInFile} duplicate rows, ${invalid.length} invalid${
       assignee ? `, assigned to ${assignee.name}` : ", unassigned"
     }`,
   });
 
   revalidatePath("/admin/customers");
+  revalidatePath("/admin/lists");
   revalidatePath("/admin");
 
   return {
+    listId: list.id,
     imported: toCreate.length,
     duplicatesInFile,
     duplicatesInDb: existingPhones.size,

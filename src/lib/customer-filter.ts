@@ -6,6 +6,8 @@ export type CustomerFilter = {
   status?: string;
   caller?: string;
   priority?: string;
+  /** An ImportList id, or "none" for leads that came from no file. */
+  list?: string;
 };
 
 /**
@@ -15,6 +17,7 @@ export type CustomerFilter = {
 export function buildCustomerWhere(params: CustomerFilter): Prisma.CustomerWhereInput {
   const q = params.q?.trim() ?? "";
   return {
+    ...(params.list ? (params.list === "none" ? { listId: null } : { listId: params.list }) : {}),
     ...(params.status ? { status: params.status as never } : {}),
     ...(params.priority ? { priority: params.priority as never } : {}),
     ...(params.caller
@@ -37,5 +40,5 @@ export function buildCustomerWhere(params: CustomerFilter): Prisma.CustomerWhere
 
 /** True when at least one filter is set — i.e. the delete would not wipe every customer. */
 export function hasAnyFilter(params: CustomerFilter): boolean {
-  return Boolean(params.q?.trim() || params.status || params.caller || params.priority);
+  return Boolean(params.q?.trim() || params.status || params.caller || params.priority || params.list);
 }

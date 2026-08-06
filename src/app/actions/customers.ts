@@ -140,6 +140,7 @@ export async function deleteMatchingCustomers(formData: FormData) {
     status: String(formData.get("status") ?? ""),
     caller: String(formData.get("caller") ?? ""),
     priority: String(formData.get("priority") ?? ""),
+    list: String(formData.get("list") ?? ""),
   };
   const where = buildCustomerWhere(filter);
   const hasFilter = Object.values(filter).some(Boolean);

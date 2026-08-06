@@ -14,7 +14,7 @@ export function DeleteMatchingButton({
 }: {
   count: number;
   filtered: boolean;
-  filters: { q?: string; status?: string; caller?: string; priority?: string };
+  filters: { q?: string; status?: string; caller?: string; priority?: string; list?: string };
 }) {
   return (
     <form
@@ -39,6 +39,7 @@ export function DeleteMatchingButton({
       }}
     >
       <input type="hidden" name="confirmAll" value="" />
+      <input type="hidden" name="list" value={filters.list ?? ""} />
       <input type="hidden" name="q" value={filters.q ?? ""} />
       <input type="hidden" name="status" value={filters.status ?? ""} />
       <input type="hidden" name="caller" value={filters.caller ?? ""} />
