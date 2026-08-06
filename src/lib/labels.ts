@@ -6,6 +6,8 @@ export const CALL_STATUSES: CallStatus[] = [
   "NO_ANSWER",
   "BUSY",
   "SWITCHED_OFF",
+  "OUT_OF_SERVICE",
+  "DISCONNECTED",
   "WRONG_NUMBER",
   "CALLBACK_REQUESTED",
   "MEETING_SCHEDULED",
@@ -54,6 +56,8 @@ export const CALL_TO_CUSTOMER_STATUS: Record<CallStatus, CustomerStatus> = {
   NO_ANSWER: "IN_PROGRESS",
   BUSY: "IN_PROGRESS",
   SWITCHED_OFF: "IN_PROGRESS",
+  OUT_OF_SERVICE: "INVALID",
+  DISCONNECTED: "IN_PROGRESS",
   WRONG_NUMBER: "INVALID",
   CALLBACK_REQUESTED: "CALLBACK",
   MEETING_SCHEDULED: "MEETING_SCHEDULED",
@@ -98,9 +102,11 @@ export function customerLabel(customer: { name?: string | null; phone: string })
  * where two columns on a narrow phone leave no room for "Callback Requested".
  */
 const SHORT_STATUS: Record<string, string> = {
-  NO_ANSWER: "No answer",
+  NO_ANSWER: "Not answered",
   BUSY: "Busy",
   SWITCHED_OFF: "Switched off",
+  OUT_OF_SERVICE: "Out of service",
+  DISCONNECTED: "Disconnected",
   NOT_INTERESTED: "Not interested",
   INTERESTED: "Interested",
   WRONG_NUMBER: "Wrong number",
@@ -115,7 +121,11 @@ export function shortStatus(value: string) {
   return SHORT_STATUS[value] ?? humanize(value);
 }
 
+/** Display overrides where the auto-generated words aren't quite right. */
+const HUMANIZE_OVERRIDES: Record<string, string> = { NO_ANSWER: "Not answered" };
+
 export function humanize(value: string) {
+  if (HUMANIZE_OVERRIDES[value]) return HUMANIZE_OVERRIDES[value];
   return value
     .toLowerCase()
     .split("_")

@@ -16,7 +16,7 @@ import { CALL_STATUSES, CALL_TO_CUSTOMER_STATUS } from "@/lib/labels";
  * Outcomes that mean "try again" — if the caller doesn't pick a follow-up date, the
  * lead is automatically scheduled for tomorrow so it comes back into the queue then.
  */
-const RETRY_STATUSES = new Set(["NO_ANSWER", "BUSY", "SWITCHED_OFF", "CALLBACK_REQUESTED"]);
+const RETRY_STATUSES = new Set(["NO_ANSWER", "BUSY", "SWITCHED_OFF", "DISCONNECTED", "CALLBACK_REQUESTED"]);
 
 /**
  * Outcomes that mean the number is not a prospect at all. These leads are deleted from
