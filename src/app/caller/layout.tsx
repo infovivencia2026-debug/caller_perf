@@ -9,6 +9,7 @@ const NAV = [
   { href: "/caller/my-calls", label: "My calls" },
   { href: "/caller/customers/new", label: "Add customer" },
   { href: "/caller/follow-ups", label: "Follow-ups" },
+  { href: "/caller/callbacks", label: "Callbacks" },
   { href: "/caller/calendar", label: "Calendar" },
 ];
 

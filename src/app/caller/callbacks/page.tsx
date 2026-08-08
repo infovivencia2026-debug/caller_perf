@@ -9,19 +9,19 @@ import { AutoRefresh } from "@/components/auto-refresh";
 
 export const dynamic = "force-dynamic";
 
-export default async function FollowUpsPage() {
+/** Scheduled callbacks for leads that are NOT (yet) interested — the counterpart to the
+ *  Follow-ups page, which holds interested leads only. */
+export default async function CallbacksPage() {
   const session = await requireCaller();
   const todayStart = startOfDay();
   const todayEnd = endOfDay();
 
-  // Interested leads awaiting follow-up, due today or earlier. Other scheduled callbacks
-  // live on the separate "Callbacks" page.
-  const followUps = await prisma.followUp.findMany({
+  const callbacks = await prisma.followUp.findMany({
     where: {
       callerId: session.userId,
       status: "PENDING",
       dueAt: { lt: todayEnd },
-      customer: { is: { status: "INTERESTED" } },
+      customer: { is: { status: { not: "INTERESTED" } } },
     },
     orderBy: { dueAt: "asc" },
     include: {
@@ -31,23 +31,21 @@ export default async function FollowUpsPage() {
     },
   });
 
-  const overdue = followUps.filter((f) => f.dueAt < todayStart);
-  const dueToday = followUps.filter((f) => f.dueAt >= todayStart);
+  const overdue = callbacks.filter((f) => f.dueAt < todayStart);
+  const dueToday = callbacks.filter((f) => f.dueAt >= todayStart);
 
-  const Item = ({ fu }: { fu: (typeof followUps)[number] }) => (
+  const Item = ({ fu }: { fu: (typeof callbacks)[number] }) => (
     <li className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-base font-semibold">{customerLabel(fu.customer)}</span>
         <span className="flex items-center gap-3">
           <span className="text-sm text-slate-500 dark:text-slate-400">Due {formatDateTime(fu.dueAt)}</span>
-          {/* Opens the calling screen with this customer pinned as the current one. */}
           <Link href={`/caller/call?focus=${fu.customer.id}`} className={buttonClass}>
             Call
           </Link>
         </span>
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-300">
-        {/* Plain text — the caller dials on a separate phone, so this is just to read. */}
         <span className="font-medium tabular-nums tracking-wide text-slate-900 dark:text-slate-100">
           {fu.customer.phone}
         </span>
@@ -64,16 +62,16 @@ export default async function FollowUpsPage() {
     <div className="space-y-3">
       <AutoRefresh />
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-lg font-semibold">Interested follow-ups</h1>
+        <h1 className="text-lg font-semibold">Callbacks</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
           {overdue.length} overdue · {dueToday.length} due today
         </p>
       </div>
 
-      {followUps.length === 0 ? (
+      {callbacks.length === 0 ? (
         <Card title="All clear">
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            No interested follow-ups due today. Other scheduled callbacks are on the Callbacks page.
+            No callbacks due today. Interested leads are on the Follow-ups page.
           </p>
         </Card>
       ) : (
