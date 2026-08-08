@@ -15,6 +15,11 @@ import { prisma } from "@/lib/prisma";
  */
 export const CLOSED_STATUSES = ["NOT_INTERESTED", "CLOSED", "INVALID"] as const;
 
+/** Outcomes available through Should Call, but excluded from the normal daily queue. */
+export const SHOULD_CALL_ONLY_STATUSES = ["NO_ANSWER", "BUSY"] as const;
+
+const QUEUE_EXCLUDED_STATUSES = [...CLOSED_STATUSES, ...SHOULD_CALL_ONLY_STATUSES] as const;
+
 const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
 
 /**
@@ -27,7 +32,7 @@ export async function getNextCustomer(callerId: string, skipIds: string[] = []) 
   const candidates = await prisma.customer.findMany({
     where: {
       assignedToId: callerId,
-      status: { notIn: CLOSED_STATUSES as unknown as never },
+      status: { notIn: QUEUE_EXCLUDED_STATUSES as unknown as never },
       ...(skipIds.length > 0 ? { id: { notIn: skipIds } } : {}),
       // Either a follow-up is due now, or the customer is not scheduled for later
       // and has not been called today.
@@ -51,7 +56,27 @@ export async function getNextCustomer(callerId: string, skipIds: string[] = []) 
     take: 200,
   });
 
-  if (candidates.length === 0) return null;
+  // Daily assigned queue is empty → fall back to Should Call: no-connect leads
+  // (no answer / busy) whose last attempt was BEFORE today, so they only come back the
+  // NEXT day, appended after the day's assigned calls are done.
+  if (candidates.length === 0) {
+    const shouldCall = await prisma.customer.findMany({
+      where: {
+        assignedToId: callerId,
+        status: { in: SHOULD_CALL_ONLY_STATUSES as unknown as never },
+        ...(skipIds.length > 0 ? { id: { notIn: skipIds } } : {}),
+        calls: { none: { startedAt: { gte: startOfToday(now) } } },
+      },
+      include: {
+        calls: { orderBy: { startedAt: "desc" }, take: 3, include: { caller: { select: { name: true } } } },
+        followUps: { where: { status: "PENDING" }, orderBy: { dueAt: "asc" }, take: 1 },
+        _count: { select: { calls: true } },
+      },
+      orderBy: { updatedAt: "asc" },
+      take: 1,
+    });
+    return shouldCall[0] ?? null;
+  }
 
   const nowMs = now.getTime();
   const scored = candidates.map((customer) => {
@@ -78,7 +103,7 @@ export async function getNextCustomer(callerId: string, skipIds: string[] = []) 
 
 export async function getQueueCount(callerId: string) {
   return prisma.customer.count({
-    where: { assignedToId: callerId, status: { notIn: CLOSED_STATUSES as unknown as never } },
+    where: { assignedToId: callerId, status: { notIn: QUEUE_EXCLUDED_STATUSES as unknown as never } },
   });
 }
 

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { CLOSED_STATUSES } from "@/lib/queue";
+import { SHOULD_CALL_ONLY_STATUSES } from "@/lib/queue";
 import { startOfDay } from "@/lib/metrics";
 
 /**
@@ -7,10 +7,6 @@ import { startOfDay } from "@/lib/metrics";
  * same day — a busy line at 11am is usually free by 4pm — so these go on the
  * "should call" list rather than waiting for tomorrow's queue.
  */
-export const NO_CONNECT_STATUSES = ["NO_ANSWER", "BUSY", "SWITCHED_OFF"] as const;
-
-const NO_CONNECT = new Set<string>(NO_CONNECT_STATUSES);
-
 export type ShouldCallEntry = {
   customerId: string;
   name: string;
@@ -35,63 +31,74 @@ export type ShouldCallEntry = {
  * ever be dialled again.
  */
 export async function getShouldCallList(callerId: string): Promise<ShouldCallEntry[]> {
-  const calls = await prisma.call.findMany({
-    where: { callerId, startedAt: { gte: startOfDay() }, customerId: { not: null } },
-    orderBy: { startedAt: "desc" },
+  // Next-day only: leads whose current status is a no-connect (no answer / busy) AND whose
+  // last attempt was before today, so a lead tried today waits until tomorrow.
+  const customers = await prisma.customer.findMany({
+    where: {
+      assignedToId: callerId,
+      status: { in: SHOULD_CALL_ONLY_STATUSES as unknown as never },
+      calls: { none: { startedAt: { gte: startOfDay() } } },
+    },
     select: {
+      id: true,
+      name: true,
+      phone: true,
+      company: true,
+      city: true,
       status: true,
-      startedAt: true,
-      customer: {
-        select: { id: true, name: true, phone: true, company: true, city: true, status: true },
-      },
+      calls: { orderBy: { startedAt: "desc" }, take: 1, select: { status: true, startedAt: true } },
+      _count: { select: { calls: true } },
     },
   });
 
-  const seen = new Map<string, ShouldCallEntry>();
-  for (const call of calls) {
-    const customer = call.customer;
-    if (!customer) continue;
-    if ((CLOSED_STATUSES as readonly string[]).includes(customer.status)) continue;
-
-    // `has`, not a truthiness check: leads that were reached later in the day are
-    // recorded with a null sentinel, and testing the value would treat that as
-    // "unseen" and let an earlier no-connect put them back on the list.
-    if (seen.has(customer.id)) {
-      // Calls arrive newest first, so anything after the first is an earlier attempt.
-      const existing = seen.get(customer.id);
-      if (existing) existing.attemptsToday += 1;
-      continue;
-    }
-
-    // The first row for this customer is their latest attempt — that is the one that
-    // decides whether they still need calling.
-    if (!NO_CONNECT.has(call.status)) {
-      // Reached later in the day: mark them seen so earlier no-connects don't re-add
-      // them, but keep them off the list.
-      seen.set(customer.id, null as unknown as ShouldCallEntry);
-      continue;
-    }
-
-    seen.set(customer.id, {
+  return customers
+    .map((customer) => ({
       customerId: customer.id,
       name: customer.name,
       phone: customer.phone,
       company: customer.company,
       city: customer.city,
       status: customer.status,
-      lastStatus: call.status,
-      lastTriedAt: call.startedAt,
-      attemptsToday: 1,
-    });
-  }
-
-  return [...seen.values()]
-    .filter(Boolean)
-    // Longest since the last attempt first — the busy line from this morning is a
-    // better bet than the one from five minutes ago.
+      lastStatus: customer.calls[0]?.status ?? customer.status,
+      lastTriedAt: customer.calls[0]?.startedAt ?? new Date(0),
+      attemptsToday: customer._count.calls,
+    }))
+    // Longest since the last attempt first.
     .sort((a, b) => a.lastTriedAt.getTime() - b.lastTriedAt.getTime());
 }
 
 export async function getShouldCallCount(callerId: string) {
-  return (await getShouldCallList(callerId)).length;
+  return prisma.customer.count({
+    where: {
+      assignedToId: callerId,
+      status: { in: SHOULD_CALL_ONLY_STATUSES as unknown as never },
+      calls: { none: { startedAt: { gte: startOfDay() } } },
+    },
+  });
+}
+
+/**
+ * Should-call progress for today, tracked SEPARATELY from the daily target: how many
+ * no-connect leads were retried today vs. how many are still waiting, and the percentage.
+ * A retry is a call today to a lead that had also been called on an earlier day.
+ */
+export async function getShouldCallProgress(callerId: string) {
+  const pending = await getShouldCallCount(callerId);
+
+  const calledToday = await prisma.call.findMany({
+    where: { callerId, startedAt: { gte: startOfDay() }, customerId: { not: null } },
+    select: { customerId: true },
+    distinct: ["customerId"],
+  });
+  const ids = calledToday.map((r) => r.customerId).filter((v): v is string => Boolean(v));
+
+  let doneToday = 0;
+  if (ids.length > 0) {
+    doneToday = await prisma.customer.count({
+      where: { id: { in: ids }, calls: { some: { startedAt: { lt: startOfDay() } } } },
+    });
+  }
+
+  const total = pending + doneToday;
+  return { pending, doneToday, total, percent: total > 0 ? Math.round((doneToday / total) * 100) : 0 };
 }

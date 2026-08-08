@@ -4,6 +4,7 @@ import { requireCaller } from "@/lib/auth";
 import { Badge, Card, Stat, buttonClass, statusTone } from "@/components/ui";
 import { callLead, customerLabel, formatDuration, humanize } from "@/lib/labels";
 import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metrics";
+import { getShouldCallProgress } from "@/lib/should-call";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
 import { syncPresentFromWorkforce } from "@/lib/attendance";
@@ -21,7 +22,7 @@ export default async function CallerDashboard() {
   const today = startOfDay();
   const tomorrow = endOfDay();
 
-  const [me, todayStats, next, queueCount, pendingFollowUps, dueToday, recentCalls] =
+  const [me, todayStats, next, queueCount, pendingFollowUps, dueToday, recentCalls, shouldCall] =
     await Promise.all([
     prisma.user.findUnique({ where: { id: session.userId }, select: { dailyTarget: true } }),
     getStats({ callerId: session.userId, from: today, to: tomorrow }),
@@ -48,6 +49,7 @@ export default async function CallerDashboard() {
         customerName: true,
       },
     }),
+    getShouldCallProgress(session.userId),
   ]);
 
   const target = me?.dailyTarget ?? 0;
@@ -78,6 +80,13 @@ export default async function CallerDashboard() {
           hint={`${percent(todayStats.totalCalls, target)}% achieved`}
           accent="indigo"
           icon={<IconTarget />}
+        />
+        <Stat
+          label="Should call"
+          value={`${shouldCall.doneToday}/${shouldCall.total}`}
+          hint={`${shouldCall.percent}% done · ${shouldCall.pending} waiting · separate from target`}
+          accent="violet"
+          icon={<IconPhone />}
         />
         <Stat label="Calls completed" value={todayStats.totalCalls} accent="emerald" icon={<IconCheck />} />
         <Stat

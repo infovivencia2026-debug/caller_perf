@@ -13,10 +13,10 @@ import { endOfDay } from "@/lib/metrics";
 import { CALL_STATUSES, CALL_TO_CUSTOMER_STATUS } from "@/lib/labels";
 
 /**
- * Outcomes that mean "try again" — if the caller doesn't pick a follow-up date, the
- * lead is automatically scheduled for tomorrow so it comes back into the queue then.
+ * Retry outcomes that may safely receive a default follow-up. No Answer and Busy stay
+ * exclusively in Should Call; Callback must carry an explicit follow-up date.
  */
-const RETRY_STATUSES = new Set(["NO_ANSWER", "BUSY", "SWITCHED_OFF", "DISCONNECTED", "CALLBACK_REQUESTED"]);
+const RETRY_STATUSES = new Set(["SWITCHED_OFF", "DISCONNECTED"]);
 
 /**
  * Outcomes that mean the number is not a prospect at all. These leads are deleted from
@@ -221,7 +221,10 @@ export async function saveCall(formData: FormData) {
   if (explicitDue && Number.isNaN(explicitDue.getTime())) {
     redirect(queueHref(skipped, { error: "Follow-up date is invalid", focus }));
   }
-  // The caller's chosen date wins; otherwise a retry-type outcome schedules tomorrow.
+  if (input.status === "CALLBACK_REQUESTED" && !explicitDue) {
+    redirect(queueHref(skipped, { error: "Callback requires a follow-up date and time", focus }));
+  }
+  // The caller's chosen date wins; otherwise only a defaultable retry schedules tomorrow.
   const followUpDue = explicitDue ?? (RETRY_STATUSES.has(input.status) ? endOfDay() : null);
 
   let savedCallId: string | null = null;

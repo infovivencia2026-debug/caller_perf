@@ -14,7 +14,7 @@ import {
   statusTone,
 } from "@/components/ui";
 import { callLead, customerLabel, formatDuration, humanize } from "@/lib/labels";
-import { getAssignedCustomer, getNextCustomer, getQueueCount, searchAssignedCustomers } from "@/lib/queue";
+import { getAssignedCustomer, getNextCustomer, getQueueCount, searchAssignedCustomers, SHOULD_CALL_ONLY_STATUSES } from "@/lib/queue";
 import { getShouldCallList } from "@/lib/should-call";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
@@ -266,6 +266,9 @@ export default async function CallingScreen({
                 {customer.phone}
               </a>
               <span className="flex items-center gap-2">
+                {(SHOULD_CALL_ONLY_STATUSES as readonly string[]).includes(customer.status) && (
+                  <Badge tone="amber">Should call</Badge>
+                )}
                 <Badge tone={statusTone(customer.status)}>{humanize(customer.status)}</Badge>
                 <span className="text-slate-500 dark:text-slate-400">{humanize(customer.priority)}</span>
               </span>

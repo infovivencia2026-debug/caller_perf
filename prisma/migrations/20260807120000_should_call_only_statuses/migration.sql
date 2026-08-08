@@ -1,0 +1,2 @@
+ALTER TYPE "CustomerStatus" ADD VALUE 'NO_ANSWER';
+ALTER TYPE "CustomerStatus" ADD VALUE 'BUSY';

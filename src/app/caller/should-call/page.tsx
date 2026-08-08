@@ -20,13 +20,14 @@ export default async function ShouldCall() {
   const entries = await getShouldCallList(session.userId);
 
   const attempts = entries.reduce((sum, entry) => sum + entry.attemptsToday, 0);
-  const stale = entries.filter((entry) => Date.now() - entry.lastTriedAt.getTime() > 2 * 60 * 60 * 1000).length;
 
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <h1 className="text-lg font-semibold">Should call</h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">Tried today, not reached</p>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          No-answer / busy leads from earlier days — retried after today&apos;s queue
+        </p>
       </div>
 
       <div className="bento-grid">
@@ -34,10 +35,10 @@ export default async function ShouldCall() {
         <BentoStat label="Attempts" value={attempts} span={4} glow="indigo" hint="Tries logged against them" />
         <BentoStat
           label="Ready to retry"
-          value={stale}
+          value={entries.length}
           span={4}
           glow="emerald"
-          hint="Last tried over 2 hours ago"
+          hint="All from earlier days — callable now"
         />
 
         <BentoTile title={`Not reached (${entries.length})`} glow="amber" span={12}>

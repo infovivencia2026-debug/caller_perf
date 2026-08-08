@@ -18,6 +18,8 @@ export const CALL_STATUSES: CallStatus[] = [
 export const CUSTOMER_STATUSES: CustomerStatus[] = [
   "NEW",
   "IN_PROGRESS",
+  "NO_ANSWER",
+  "BUSY",
   "INTERESTED",
   "NOT_INTERESTED",
   "CALLBACK",
@@ -52,8 +54,8 @@ export const CONVERTED_STATUSES: CallStatus[] = ["SALE_CLOSED"];
 export const CALL_TO_CUSTOMER_STATUS: Record<CallStatus, CustomerStatus> = {
   INTERESTED: "INTERESTED",
   NOT_INTERESTED: "NOT_INTERESTED",
-  NO_ANSWER: "IN_PROGRESS",
-  BUSY: "IN_PROGRESS",
+  NO_ANSWER: "NO_ANSWER",
+  BUSY: "BUSY",
   SWITCHED_OFF: "IN_PROGRESS",
   OUT_OF_SERVICE: "INVALID",
   DISCONNECTED: "IN_PROGRESS",

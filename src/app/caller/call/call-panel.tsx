@@ -275,7 +275,7 @@ export default function CallPanel({
 
         <div>
           <label className="block text-sm font-medium">
-            Follow-up (optional)
+            Follow-up (required for Callback)
             <input
               type="datetime-local"
               name="followUpDate"
