@@ -1,18 +1,17 @@
 /**
- * Auto-assignment distributes unassigned customers to counsellors up to a chosen
- * target each, but balanced by how many calls they have made recently: each customer
- * goes to whoever has the lowest projected call load. So a caller who has been calling
- * a lot gets fewer new customers, and over time everyone's call volume evens out — the
- * "more calls today, fewer tomorrow" rule. A caller already holding open customers is
- * topped up toward the target rather than reset.
+ * Auto-assignment distributes unassigned customers to counsellors up to a chosen target
+ * each, split EQUALLY (round-robin) and independent of any metric — recent call volume no
+ * longer influences who gets what. A caller already holding open customers is only topped
+ * up toward the target rather than reset, so everyone ends level at the same target.
  */
 export type CallerQueue = {
   id: string;
   name: string;
   /** Open customers already assigned to this caller. */
   queued: number;
-  /** Calls made in the recent balancing window — the starting "load". */
-  recentCalls: number;
+  /** Recent call count — kept in the type for callers that still pass it, but no longer
+   *  used for balancing (assignment is equal regardless of metrics). */
+  recentCalls?: number;
 };
 
 export type AssignmentPlan = {
@@ -32,7 +31,9 @@ export function planBalancedAssignments(
       id: caller.id,
       name: caller.name,
       left: Math.max(0, target - caller.queued),
-      load: caller.recentCalls,
+      // Everyone starts level; the only thing that grows the load is getting a customer,
+      // so the pool is shared out equally (round-robin) rather than by recent calls.
+      load: 0,
     }))
     .filter((caller) => caller.left > 0);
 
@@ -40,7 +41,7 @@ export function planBalancedAssignments(
   let assigned = 0;
 
   for (const customerId of customerIds) {
-    // Whoever has the smallest projected load and still has room; ties break on name.
+    // Whoever has received the fewest so far and still has room; ties break on name.
     let best: (typeof state)[number] | null = null;
     for (const caller of state) {
       if (caller.left <= 0) continue;
