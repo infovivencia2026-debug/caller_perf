@@ -108,8 +108,7 @@ export default async function CallingScreen({
     </BentoTile>
   );
 
-  const [nextInQueue, queueCount, callsToday, me, lastCall, shouldCall] = await Promise.all([
-    focused ? Promise.resolve(null) : getNextCustomer(session.userId, skipIds),
+  const [queueCount, callsToday, me, lastCall, shouldCall] = await Promise.all([
     getQueueCount(session.userId),
     prisma.call.count({
       where: { callerId: session.userId, startedAt: { gte: startOfDay(), lt: endOfDay() } },
@@ -125,7 +124,15 @@ export default async function CallingScreen({
     getShouldCallList(session.userId),
   ]);
 
-  const shouldCallCard = shouldCall.length > 0 && (
+  // Once the daily target is reached, the queue stops serving fresh leads — only
+  // follow-ups/callbacks that are actually due keep coming through.
+  const target = me?.dailyTarget ?? 0;
+  const targetReached = target > 0 && callsToday >= target;
+  const nextInQueue = focused
+    ? null
+    : await getNextCustomer(session.userId, skipIds, { targetReached });
+
+  const shouldCallCard = shouldCall.length > 0 && !targetReached && (
     <BentoTile
       title={`Should call again (${shouldCall.length})`}
       glow="amber"
@@ -204,9 +211,11 @@ export default async function CallingScreen({
       <div className="space-y-3">
         {searchCard}
         {shouldCallCard}
-        <Card title="Calling screen">
+        <Card title={targetReached ? "Daily target reached 🎉" : "Calling screen"}>
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            {skipIds.length > 0
+            {targetReached
+              ? `You have hit your daily target of ${target} calls. New numbers stop here — only follow-ups and callbacks that fall due will still appear.`
+              : skipIds.length > 0
               ? "You have skipped every remaining customer in your queue."
               : queueCount > 0
                 ? // Customers are assigned, they have just all been called today. Saying

@@ -27,24 +27,31 @@ const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
  * skipped this session. Ordered by follow-up due first, then priority, then the
  * least recently contacted.
  */
-export async function getNextCustomer(callerId: string, skipIds: string[] = []) {
+export async function getNextCustomer(
+  callerId: string,
+  skipIds: string[] = [],
+  { targetReached = false }: { targetReached?: boolean } = {},
+) {
   const now = new Date();
   const candidates = await prisma.customer.findMany({
     where: {
       assignedToId: callerId,
       status: { notIn: QUEUE_EXCLUDED_STATUSES as unknown as never },
       ...(skipIds.length > 0 ? { id: { notIn: skipIds } } : {}),
-      // Either a follow-up is due now, or the customer is not scheduled for later
-      // and has not been called today.
-      OR: [
-        { followUps: { some: { status: "PENDING", dueAt: { lte: now } } } },
-        {
-          AND: [
-            { followUps: { none: { status: "PENDING" } } },
-            { calls: { none: { startedAt: { gte: startOfToday(now) } } } },
+      // Once the daily target is hit, only scheduled work that is DUE now keeps coming —
+      // no fresh leads. Otherwise: a follow-up is due now, OR the customer isn't scheduled
+      // for later and hasn't been called today.
+      OR: targetReached
+        ? [{ followUps: { some: { status: "PENDING", dueAt: { lte: now } } } }]
+        : [
+            { followUps: { some: { status: "PENDING", dueAt: { lte: now } } } },
+            {
+              // A fresh lead is one that has NEVER been called — an already-called number
+              // is never served again as a new call (only scheduled follow-ups/callbacks
+              // and Should Call bring a contacted number back).
+              AND: [{ followUps: { none: { status: "PENDING" } } }, { calls: { none: {} } }],
+            },
           ],
-        },
-      ],
     },
     include: {
       calls: { orderBy: { startedAt: "desc" }, take: 3, include: { caller: { select: { name: true } } } },
@@ -58,8 +65,9 @@ export async function getNextCustomer(callerId: string, skipIds: string[] = []) 
 
   // Daily assigned queue is empty → fall back to Should Call: no-connect leads
   // (no answer / busy) whose last attempt was BEFORE today, so they only come back the
-  // NEXT day, appended after the day's assigned calls are done.
-  if (candidates.length === 0) {
+  // NEXT day, appended after the day's assigned calls are done. Should Call is fresh work,
+  // so it stops once the target is reached — only due follow-ups/callbacks continue.
+  if (candidates.length === 0 && !targetReached) {
     const shouldCall = await prisma.customer.findMany({
       where: {
         assignedToId: callerId,
@@ -77,6 +85,9 @@ export async function getNextCustomer(callerId: string, skipIds: string[] = []) 
     });
     return shouldCall[0] ?? null;
   }
+
+  // Nothing left to serve (e.g. target reached and no due follow-ups/callbacks).
+  if (candidates.length === 0) return null;
 
   const nowMs = now.getTime();
   const scored = candidates.map((customer) => {
