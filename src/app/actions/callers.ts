@@ -167,10 +167,11 @@ export async function unassignCaller(formData: FormData) {
     redirect(callersHref(undefined, "Counsellor not found"));
   }
 
-  // Only untouched leads (never called, no pending follow-up) so nothing is stranded.
+  // Release any assigned lead that has NO pending follow-up/callback — including ones
+  // already called today (they never get re-dialed, so they just inflate the queue).
+  // Leads with a pending follow-up stay put so no scheduled callback is stranded.
   const untouchedWhere = {
     assignedToId: caller.id,
-    calls: { none: {} },
     followUps: { none: { status: "PENDING" as const } },
   };
 
@@ -198,13 +199,17 @@ export async function unassignCaller(formData: FormData) {
     action: "CALLER_UNASSIGNED",
     entity: "User",
     entityId: caller.id,
-    detail: `${count} untouched lead(s) returned to the pool from ${caller.name}`,
+    detail: `${count} lead(s) without a pending follow-up returned to the pool from ${caller.name}`,
   });
 
   revalidatePath("/admin/callers");
   revalidatePath("/admin/customers");
   revalidatePath("/admin");
-  redirect(callersHref(`${count} untouched lead(s) returned to the pool from ${caller.name}`));
+  redirect(
+    callersHref(
+      `${count} lead(s) returned to the pool from ${caller.name} (leads with a pending follow-up were kept)`,
+    ),
+  );
 }
 
 const autoAssignSchema = z.object({
