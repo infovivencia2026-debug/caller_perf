@@ -132,7 +132,7 @@ export default async function CallingScreen({
     ? null
     : await getNextCustomer(session.userId, skipIds, { targetReached });
 
-  const shouldCallCard = shouldCall.length > 0 && !targetReached && (
+  const shouldCallCard = shouldCall.length > 0 && (
     <BentoTile
       title={`Should call again (${shouldCall.length})`}
       glow="amber"
@@ -214,7 +214,7 @@ export default async function CallingScreen({
         <Card title={targetReached ? "Daily target reached 🎉" : "Calling screen"}>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {targetReached
-              ? `You have hit your daily target of ${target} calls. New numbers stop here — only follow-ups and callbacks that fall due will still appear.`
+              ? `You have hit your daily target of ${target} calls. New leads stop here — only Should Call retries (no answer / busy) and follow-ups/callbacks that fall due will still appear.`
               : skipIds.length > 0
               ? "You have skipped every remaining customer in your queue."
               : queueCount > 0
