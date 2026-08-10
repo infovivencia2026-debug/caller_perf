@@ -213,7 +213,7 @@ export async function autoAssign(formData: FormData) {
   );
 
   const pool = await prisma.customer.findMany({
-    where: { assignedToId: null, ...openWhere },
+    where: { assignedToId: null, calls: { none: {} }, ...openWhere },
     // HIGH before MEDIUM before LOW is alphabetical in reverse; then oldest first.
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     select: { id: true },

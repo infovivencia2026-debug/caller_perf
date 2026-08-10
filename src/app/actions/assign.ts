@@ -111,7 +111,7 @@ export async function assignCountToCaller(formData: FormData) {
   }
 
   const pool = await prisma.customer.findMany({
-    where: { assignedToId: null, ...openWhere },
+    where: { assignedToId: null, calls: { none: {} }, ...openWhere },
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     take: count,
     select: { id: true },

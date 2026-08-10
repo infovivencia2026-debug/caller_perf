@@ -36,7 +36,7 @@ export async function topUpPresentCounsellors(): Promise<TopUpResult> {
   if (totalNeed === 0) return { assigned: 0, present: callers.length, detail: "everyone already at target" };
 
   const pool = await prisma.customer.findMany({
-    where: { assignedToId: null, ...openWhere },
+    where: { assignedToId: null, calls: { none: {} }, ...openWhere },
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     take: totalNeed,
     select: { id: true },
