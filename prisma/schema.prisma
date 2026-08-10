@@ -239,8 +239,15 @@ model CallEdit {
 
 model FollowUp {
   id         String         @id @default(cuid())
-  customerId String
-  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  // Nullable + SetNull so deleting a lead never wipes its callback. The phone/name/status
+  // below are snapshotted at creation, so the callback stays visible and dialable even
+  // after the customer row is gone (shown as "lead deleted").
+  customerId String?
+  customer   Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  // Snapshot of the lead, preserved if the customer is later deleted.
+  customerPhone  String  @default("")
+  customerName   String?
+  customerStatus String?
   callerId   String
   caller     User           @relation(fields: [callerId], references: [id], onDelete: Cascade)
   callId     String?        @unique

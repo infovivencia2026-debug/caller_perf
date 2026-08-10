@@ -61,7 +61,7 @@ export default async function CallerDashboard() {
       <FollowUpAlerts
         items={dueToday.map((f) => ({
           id: f.id,
-          name: customerLabel(f.customer),
+          name: customerLabel(f.customer ?? { name: f.customerName, phone: f.customerPhone }),
           dueAt: f.dueAt.toISOString(),
         }))}
       />
@@ -151,8 +151,12 @@ export default async function CallerDashboard() {
                 <Badge tone={isOverdue(followUp.dueAt) ? "red" : "amber"}>
                   {formatShortTime(followUp.dueAt)}
                 </Badge>
-                <span className="font-medium">{customerLabel(followUp.customer)}</span>
-                <span className="tabular-nums text-slate-500 dark:text-slate-400">{followUp.customer.phone}</span>
+                <span className="font-medium">
+                  {customerLabel(followUp.customer ?? { name: followUp.customerName, phone: followUp.customerPhone })}
+                </span>
+                <span className="tabular-nums text-slate-500 dark:text-slate-400">
+                  {followUp.customer?.phone ?? followUp.customerPhone}
+                </span>
                 {followUp.notes && <span className="w-full text-slate-600 dark:text-slate-300">{followUp.notes}</span>}
               </li>
             ))}

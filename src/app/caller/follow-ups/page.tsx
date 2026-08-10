@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, buttonClass, statusTone } from "@/components/ui";
-import { customerLabel, humanize } from "@/lib/labels";
+import { humanize } from "@/lib/labels";
 import { formatDateTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
 import { AutoRefresh } from "@/components/auto-refresh";
@@ -20,7 +20,7 @@ export default async function FollowUpsPage() {
     where: {
       callerId: session.userId,
       status: "PENDING",
-      customer: { is: { status: "INTERESTED" } },
+      customerStatus: "INTERESTED",
     },
     orderBy: { dueAt: "asc" },
     include: {
@@ -34,31 +34,42 @@ export default async function FollowUpsPage() {
   const dueToday = followUps.filter((f) => f.dueAt >= todayStart && f.dueAt < todayEnd);
   const upcoming = followUps.filter((f) => f.dueAt >= todayEnd);
 
-  const Item = ({ fu }: { fu: (typeof followUps)[number] }) => (
-    <li className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-base font-semibold">{customerLabel(fu.customer)}</span>
-        <span className="flex items-center gap-3">
-          <span className="text-sm text-slate-500 dark:text-slate-400">Due {formatDateTime(fu.dueAt)}</span>
-          {/* Opens the calling screen with this customer pinned as the current one. */}
-          <Link href={`/caller/call?focus=${fu.customer.id}`} className={buttonClass}>
-            Call
-          </Link>
-        </span>
-      </div>
-      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-300">
-        {/* Plain text — the caller dials on a separate phone, so this is just to read. */}
-        <span className="font-medium tabular-nums tracking-wide text-slate-900 dark:text-slate-100">
-          {fu.customer.phone}
-        </span>
-        {fu.customer.company && <span>{fu.customer.company}</span>}
-        {fu.customer.city && <span>{fu.customer.city}</span>}
-        <Badge tone={statusTone(fu.customer.status)}>{humanize(fu.customer.status)}</Badge>
-        <span className="text-slate-500 dark:text-slate-400">{humanize(fu.priority)} priority</span>
-      </div>
-      {fu.notes && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{fu.notes}</p>}
-    </li>
-  );
+  const Item = ({ fu }: { fu: (typeof followUps)[number] }) => {
+    // Fall back to the snapshot when the underlying lead has been deleted.
+    const name = fu.customer?.name ?? fu.customerName;
+    const phone = fu.customer?.phone ?? fu.customerPhone;
+    const status = fu.customer?.status ?? fu.customerStatus;
+    const label = name?.trim() || phone || "Unknown";
+    return (
+      <li className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-base font-semibold">{label}</span>
+          <span className="flex items-center gap-3">
+            <span className="text-sm text-slate-500 dark:text-slate-400">Due {formatDateTime(fu.dueAt)}</span>
+            {/* Opens the calling screen with this customer pinned as the current one. */}
+            {fu.customer ? (
+              <Link href={`/caller/call?focus=${fu.customer.id}`} className={buttonClass}>
+                Call
+              </Link>
+            ) : (
+              <Badge tone="slate">lead deleted</Badge>
+            )}
+          </span>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-300">
+          {/* Plain text — the caller dials on a separate phone, so this is just to read. */}
+          <span className="font-medium tabular-nums tracking-wide text-slate-900 dark:text-slate-100">
+            {phone}
+          </span>
+          {fu.customer?.company && <span>{fu.customer.company}</span>}
+          {fu.customer?.city && <span>{fu.customer.city}</span>}
+          {status && <Badge tone={statusTone(status)}>{humanize(status)}</Badge>}
+          <span className="text-slate-500 dark:text-slate-400">{humanize(fu.priority)} priority</span>
+        </div>
+        {fu.notes && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{fu.notes}</p>}
+      </li>
+    );
+  };
 
   return (
     <div className="space-y-3">

@@ -139,17 +139,29 @@ export default async function CallerCalendar({
                   className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
                 >
                   <div className="min-w-0">
-                    <span className="font-semibold">{customerLabel(fu.customer)}</span>
-                    <span className="ml-2 tabular-nums text-neutral-500 dark:text-neutral-400">{fu.customer.phone}</span>
+                    <span className="font-semibold">
+                      {customerLabel(fu.customer ?? { name: fu.customerName, phone: fu.customerPhone })}
+                    </span>
+                    <span className="ml-2 tabular-nums text-neutral-500 dark:text-neutral-400">
+                      {fu.customer?.phone ?? fu.customerPhone}
+                    </span>
                     <span className="block text-xs text-neutral-500 dark:text-neutral-400">
                       Due {formatShortTime(fu.dueAt)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge tone={statusTone(fu.customer.status)}>{humanize(fu.customer.status)}</Badge>
-                    <Link href={`/caller/call?focus=${fu.customer.id}`} className={buttonClass}>
-                      Call
-                    </Link>
+                    {(fu.customer?.status ?? fu.customerStatus) && (
+                      <Badge tone={statusTone(fu.customer?.status ?? fu.customerStatus ?? "")}>
+                        {humanize(fu.customer?.status ?? fu.customerStatus ?? "")}
+                      </Badge>
+                    )}
+                    {fu.customer ? (
+                      <Link href={`/caller/call?focus=${fu.customer.id}`} className={buttonClass}>
+                        Call
+                      </Link>
+                    ) : (
+                      <Badge tone="slate">lead deleted</Badge>
+                    )}
                   </div>
                 </li>
               ))}

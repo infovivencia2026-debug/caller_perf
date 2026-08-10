@@ -232,6 +232,18 @@ export default async function CallingScreen({
 
   const timing = await readCallTiming(customer.id);
 
+  // Tell the caller WHY this number is in front of them — especially useful once the
+  // fresh daily queue is exhausted and the screen starts serving scheduled work.
+  const pendingFollowUp = customer.followUps[0];
+  const isShouldCall = (SHOULD_CALL_ONLY_STATUSES as readonly string[]).includes(customer.status);
+  const source = isShouldCall
+    ? { label: "Should call", tone: "amber" as const }
+    : pendingFollowUp
+      ? customer.status === "INTERESTED"
+        ? { label: "Follow-up", tone: "green" as const }
+        : { label: "Callback", tone: "blue" as const }
+      : null;
+
   const savedBanner = last && (
     <p className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-300">
       <span>Call saved.</span>
@@ -266,13 +278,16 @@ export default async function CallingScreen({
                 {customer.phone}
               </a>
               <span className="flex items-center gap-2">
-                {(SHOULD_CALL_ONLY_STATUSES as readonly string[]).includes(customer.status) && (
-                  <Badge tone="amber">Should call</Badge>
-                )}
+                {source && <Badge tone={source.tone}>{source.label}</Badge>}
                 <Badge tone={statusTone(customer.status)}>{humanize(customer.status)}</Badge>
                 <span className="text-slate-500 dark:text-slate-400">{humanize(customer.priority)}</span>
               </span>
             </div>
+            {source && pendingFollowUp && (
+              <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+                {source.label} scheduled for {formatDateTime(pendingFollowUp.dueAt)}
+              </p>
+            )}
             {parseTags(customer.tags).length > 0 && (
               <p className="mb-4 space-x-1">
                 {parseTags(customer.tags).map((tag) => (

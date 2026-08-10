@@ -279,6 +279,10 @@ export async function saveCall(formData: FormData) {
       await tx.followUp.create({
         data: {
           customerId: customer.id,
+          // Snapshot the lead so the callback survives if the customer is ever deleted.
+          customerPhone: customer.phone,
+          customerName: customer.name,
+          customerStatus: CALL_TO_CUSTOMER_STATUS[input.status as keyof typeof CALL_TO_CUSTOMER_STATUS],
           callerId: session.userId,
           callId: call.id,
           dueAt: followUpDue,
