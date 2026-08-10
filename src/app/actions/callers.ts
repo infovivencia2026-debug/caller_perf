@@ -151,6 +151,43 @@ export async function updateDailyTarget(formData: FormData) {
   redirect(callersHref(`${caller.name}'s daily target is now ${parsed.data.dailyTarget}`));
 }
 
+/**
+ * Returns a counsellor's UNCALLED leads to the pool without touching the counsellor.
+ * Only leads nobody has started on are pulled back — anything already called (or with a
+ * pending follow-up) stays put, so no conversation or callback is stranded.
+ */
+export async function unassignCaller(formData: FormData) {
+  const session = await requireAdmin();
+  const callerId = String(formData.get("callerId") ?? "");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (!caller || caller.role !== "TELECALLER") {
+    redirect(callersHref(undefined, "Counsellor not found"));
+  }
+
+  const { count } = await prisma.customer.updateMany({
+    where: {
+      assignedToId: caller.id,
+      calls: { none: {} },
+      followUps: { none: { status: "PENDING" } },
+    },
+    data: { assignedToId: null },
+  });
+
+  await logActivity({
+    userId: session.userId,
+    action: "CALLER_UNASSIGNED",
+    entity: "User",
+    entityId: caller.id,
+    detail: `${count} untouched lead(s) returned to the pool from ${caller.name}`,
+  });
+
+  revalidatePath("/admin/callers");
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin");
+  redirect(callersHref(`${count} untouched lead(s) returned to the pool from ${caller.name}`));
+}
+
 const autoAssignSchema = z.object({
   target: z.coerce.number().int().min(1).max(MAX_DAILY_TARGET),
 });

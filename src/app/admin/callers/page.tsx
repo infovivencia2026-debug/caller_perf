@@ -1,4 +1,4 @@
-import { autoAssign, createCaller, updateDailyTarget } from "@/app/actions/callers";
+import { autoAssign, createCaller, unassignCaller, updateDailyTarget } from "@/app/actions/callers";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { Badge, Card, buttonClass, inputClass, secondaryButtonClass } from "@/components/ui";
@@ -207,7 +207,16 @@ export default async function CallersPage({
                       </form>
                     </td>
                     <td className="px-3 py-2">
-                      <DeleteCallerButton callerId={row.id} name={row.name} />
+                      <div className="flex items-center gap-2">
+                        {/* Return this counsellor's untouched (never-called) leads to the pool. */}
+                        <form action={unassignCaller}>
+                          <input type="hidden" name="callerId" value={row.id} />
+                          <button type="submit" className={secondaryButtonClass} disabled={row.queued === 0}>
+                            Unassign leads
+                          </button>
+                        </form>
+                        <DeleteCallerButton callerId={row.id} name={row.name} />
+                      </div>
                     </td>
                   </tr>
                 ))}

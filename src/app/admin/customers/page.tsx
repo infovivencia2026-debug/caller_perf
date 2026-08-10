@@ -10,6 +10,7 @@ import {
   assignFromList,
   assignListEqually,
   deleteList,
+  deleteListWithLeads,
   groupUnfiledLeads,
   unassignList,
   updateList,
@@ -367,6 +368,26 @@ export default async function CustomersPage({
             Returning only takes back leads nobody has called yet, so no follow-up is stranded. Removing deletes the
             file, never the leads.
           </p>
+
+          {/* Destructive: kept behind its own toggle so it is never a stray click away. */}
+          <details className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/5 p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-rose-700 dark:text-rose-300">
+              Delete file AND its {openList._count.members.toLocaleString("en-IN")} lead(s)
+            </summary>
+            <p className="mt-2 text-xs text-rose-700/80 dark:text-rose-300/80">
+              This permanently deletes every lead in {openList.name}. Call history and scheduled callbacks are kept
+              (shown as “lead deleted”), but the leads themselves cannot be recovered.
+            </p>
+            <form action={deleteListWithLeads} className="mt-2">
+              <input type="hidden" name="listId" value={openList.id} />
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-lg border border-rose-500/50 bg-rose-500/10 px-3 py-1.5 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-500/20 dark:text-rose-300"
+              >
+                Delete file and its leads
+              </button>
+            </form>
+          </details>
         </details>
       )}
 

@@ -3,6 +3,15 @@ import { SHOULD_CALL_ONLY_STATUSES } from "@/lib/queue";
 import { startOfDay } from "@/lib/metrics";
 
 /**
+ * Sunday is not a working day, so no-connect leads are not retried on it — a Saturday
+ * no-answer waits for Monday rather than surfacing on Sunday. The server runs in IST,
+ * so getDay() is the India weekday (0 = Sunday).
+ */
+export function isSunday(now = new Date()) {
+  return now.getDay() === 0;
+}
+
+/**
  * Outcomes where nobody was actually spoken to. The lead is still worth a try later the
  * same day — a busy line at 11am is usually free by 4pm — so these go on the
  * "should call" list rather than waiting for tomorrow's queue.
@@ -31,6 +40,8 @@ export type ShouldCallEntry = {
  * ever be dialled again.
  */
 export async function getShouldCallList(callerId: string): Promise<ShouldCallEntry[]> {
+  // Not on Sunday — a Saturday no-connect waits for Monday.
+  if (isSunday()) return [];
   // Next-day only: leads whose current status is a no-connect (no answer / busy) AND whose
   // last attempt was before today, so a lead tried today waits until tomorrow.
   const customers = await prisma.customer.findMany({
@@ -68,6 +79,7 @@ export async function getShouldCallList(callerId: string): Promise<ShouldCallEnt
 }
 
 export async function getShouldCallCount(callerId: string) {
+  if (isSunday()) return 0;
   return prisma.customer.count({
     where: {
       assignedToId: callerId,

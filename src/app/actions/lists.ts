@@ -157,6 +157,43 @@ export async function deleteList(formData: FormData) {
 
 
 /**
+ * Deletes a file AND every lead in it — the real "throw this batch away".
+ *
+ * Unlike deleteList (which keeps the leads), this removes the customers themselves.
+ * That is safe now: a call's customerId is SET NULL with the phone/name snapshotted,
+ * and a callback/follow-up is likewise SET NULL + snapshotted, so the counsellors keep
+ * their call history and any scheduled callbacks survive as "lead deleted".
+ */
+export async function deleteListWithLeads(formData: FormData) {
+  const session = await requireAdmin();
+  const listId = String(formData.get("listId") ?? "");
+
+  const list = await prisma.importList.findUnique({
+    where: { id: listId },
+    select: { id: true, name: true, _count: { select: { members: true } } },
+  });
+  if (!list) redirect(listsHref(undefined, "That list no longer exists"));
+
+  // Delete the leads that belong to this file, then the file record itself.
+  const { count } = await prisma.customer.deleteMany({
+    where: { memberships: { some: { listId: list.id } } },
+  });
+  await prisma.importList.delete({ where: { id: list.id } });
+
+  await logActivity({
+    userId: session.userId,
+    action: "LIST_DELETED_WITH_LEADS",
+    entity: "ImportList",
+    entityId: list.id,
+    detail: `${list.name} deleted with ${count} lead(s); call history & callbacks kept`,
+  });
+
+  revalidatePath("/admin/customers");
+  redirect(listsHref(`${list.name} and its ${count.toLocaleString("en-IN")} lead(s) were deleted`));
+}
+
+
+/**
  * Files the leads that arrived before lists existed.
  *
  * Their original filenames are gone, so the grouping is reconstructed from creation

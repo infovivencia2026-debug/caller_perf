@@ -67,7 +67,7 @@ export async function getNextCustomer(
   // (no answer / busy) whose last attempt was BEFORE today, so they only come back the
   // NEXT day, appended after the day's assigned calls are done. Should Call is fresh work,
   // so it stops once the target is reached — only due follow-ups/callbacks continue.
-  if (candidates.length === 0 && !targetReached) {
+  if (candidates.length === 0 && !targetReached && now.getDay() !== 0) {
     const shouldCall = await prisma.customer.findMany({
       where: {
         assignedToId: callerId,
