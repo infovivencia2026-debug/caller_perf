@@ -159,20 +159,39 @@ export async function updateDailyTarget(formData: FormData) {
 export async function unassignCaller(formData: FormData) {
   const session = await requireAdmin();
   const callerId = String(formData.get("callerId") ?? "");
+  // Blank / 0 means "all untouched leads"; a positive number caps how many are returned.
+  const requested = Math.max(0, Math.floor(Number(formData.get("count") ?? 0) || 0));
 
   const caller = await prisma.user.findUnique({ where: { id: callerId } });
   if (!caller || caller.role !== "TELECALLER") {
     redirect(callersHref(undefined, "Counsellor not found"));
   }
 
-  const { count } = await prisma.customer.updateMany({
-    where: {
-      assignedToId: caller.id,
-      calls: { none: {} },
-      followUps: { none: { status: "PENDING" } },
-    },
-    data: { assignedToId: null },
-  });
+  // Only untouched leads (never called, no pending follow-up) so nothing is stranded.
+  const untouchedWhere = {
+    assignedToId: caller.id,
+    calls: { none: {} },
+    followUps: { none: { status: "PENDING" as const } },
+  };
+
+  let count: number;
+  if (requested > 0) {
+    // Take exactly the requested number, oldest first.
+    const picked = await prisma.customer.findMany({
+      where: untouchedWhere,
+      orderBy: { createdAt: "asc" },
+      take: requested,
+      select: { id: true },
+    });
+    const result = await prisma.customer.updateMany({
+      where: { id: { in: picked.map((c) => c.id) } },
+      data: { assignedToId: null },
+    });
+    count = result.count;
+  } else {
+    const result = await prisma.customer.updateMany({ where: untouchedWhere, data: { assignedToId: null } });
+    count = result.count;
+  }
 
   await logActivity({
     userId: session.userId,

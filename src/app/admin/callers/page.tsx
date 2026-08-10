@@ -208,11 +208,22 @@ export default async function CallersPage({
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        {/* Return this counsellor's untouched (never-called) leads to the pool. */}
-                        <form action={unassignCaller}>
+                        {/* Return this counsellor's untouched (never-called) leads to the pool.
+                            Leave the count blank to return all untouched leads. */}
+                        <form action={unassignCaller} className="flex items-center gap-1">
                           <input type="hidden" name="callerId" value={row.id} />
+                          <input
+                            type="number"
+                            name="count"
+                            min={1}
+                            max={row.queued || undefined}
+                            step={1}
+                            placeholder="all"
+                            aria-label={`How many leads to unassign from ${row.name}`}
+                            className={`${inputClass} w-20`}
+                          />
                           <button type="submit" className={secondaryButtonClass} disabled={row.queued === 0}>
-                            Unassign leads
+                            Unassign
                           </button>
                         </form>
                         <DeleteCallerButton callerId={row.id} name={row.name} />

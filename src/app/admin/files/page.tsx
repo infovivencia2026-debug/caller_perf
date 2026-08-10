@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { Card } from "@/components/ui";
 import { formatDateTime } from "@/lib/datetime";
 import { CLOSED_STATUSES } from "@/lib/queue";
+import { deleteList, deleteListWithLeads } from "@/app/actions/lists";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,7 @@ export default async function FileSettings() {
                   <th className="px-3 py-2 text-right font-bold">Assigned</th>
                   <th className="px-3 py-2 text-right font-bold">Called</th>
                   <th className="px-3 py-2 font-bold">Manage</th>
+                  <th className="px-3 py-2 font-bold">Delete</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
@@ -102,6 +104,34 @@ export default async function FileSettings() {
                         Open →
                       </Link>
                     </td>
+                    <td className="px-3 py-2">
+                      {/* Destructive actions kept behind a toggle so neither is a stray click away. */}
+                      <details className="min-w-[13rem]">
+                        <summary className="cursor-pointer text-sm font-bold text-rose-700 dark:text-rose-300">
+                          Delete…
+                        </summary>
+                        <div className="mt-2 flex flex-col gap-2">
+                          <form action={deleteList}>
+                            <input type="hidden" name="listId" value={r.id} />
+                            <button
+                              type="submit"
+                              className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-bold transition-colors hover:bg-neutral-500/10 dark:border-neutral-700"
+                            >
+                              Remove file (keep leads)
+                            </button>
+                          </form>
+                          <form action={deleteListWithLeads}>
+                            <input type="hidden" name="listId" value={r.id} />
+                            <button
+                              type="submit"
+                              className="w-full rounded-lg border border-rose-500/50 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-500/20 dark:text-rose-300"
+                            >
+                              Delete file &amp; {r._count.members.toLocaleString("en-IN")} lead(s)
+                            </button>
+                          </form>
+                        </div>
+                      </details>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -116,6 +146,7 @@ export default async function FileSettings() {
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">{totals.assigned.toLocaleString("en-IN")}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{totals.called.toLocaleString("en-IN")}</td>
+                  <td className="px-3 py-2" />
                   <td className="px-3 py-2" />
                 </tr>
               </tfoot>
