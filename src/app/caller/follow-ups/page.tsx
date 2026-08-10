@@ -14,13 +14,12 @@ export default async function FollowUpsPage() {
   const todayStart = startOfDay();
   const todayEnd = endOfDay();
 
-  // Interested leads awaiting follow-up, due today or earlier. Other scheduled callbacks
-  // live on the separate "Callbacks" page.
+  // Interested leads awaiting follow-up (any due date, upcoming included). Other scheduled
+  // callbacks live on the separate "Callbacks" page.
   const followUps = await prisma.followUp.findMany({
     where: {
       callerId: session.userId,
       status: "PENDING",
-      dueAt: { lt: todayEnd },
       customer: { is: { status: "INTERESTED" } },
     },
     orderBy: { dueAt: "asc" },
@@ -32,7 +31,8 @@ export default async function FollowUpsPage() {
   });
 
   const overdue = followUps.filter((f) => f.dueAt < todayStart);
-  const dueToday = followUps.filter((f) => f.dueAt >= todayStart);
+  const dueToday = followUps.filter((f) => f.dueAt >= todayStart && f.dueAt < todayEnd);
+  const upcoming = followUps.filter((f) => f.dueAt >= todayEnd);
 
   const Item = ({ fu }: { fu: (typeof followUps)[number] }) => (
     <li className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
@@ -66,7 +66,7 @@ export default async function FollowUpsPage() {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold">Interested follow-ups</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
-          {overdue.length} overdue · {dueToday.length} due today
+          {overdue.length} overdue · {dueToday.length} due today · {upcoming.length} upcoming
         </p>
       </div>
 
@@ -91,6 +91,15 @@ export default async function FollowUpsPage() {
             <Card title={`Due today (${dueToday.length})`}>
               <ul>
                 {dueToday.map((fu) => (
+                  <Item key={fu.id} fu={fu} />
+                ))}
+              </ul>
+            </Card>
+          )}
+          {upcoming.length > 0 && (
+            <Card title={`Upcoming (${upcoming.length})`}>
+              <ul>
+                {upcoming.map((fu) => (
                   <Item key={fu.id} fu={fu} />
                 ))}
               </ul>

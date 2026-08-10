@@ -4,7 +4,6 @@ import { requireCaller } from "@/lib/auth";
 import { Badge, Card, buttonClass, statusTone } from "@/components/ui";
 import { customerLabel, humanize } from "@/lib/labels";
 import { formatDateTime, isCallbackMissed } from "@/lib/datetime";
-import { endOfDay } from "@/lib/metrics";
 import { AutoRefresh } from "@/components/auto-refresh";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +12,13 @@ export const dynamic = "force-dynamic";
  *  Follow-ups page, which holds interested leads only. */
 export default async function CallbacksPage() {
   const session = await requireCaller();
-  const todayEnd = endOfDay();
 
+  // Every pending non-interested callback for this counsellor (any due date — upcoming
+  // ones included, so nothing scheduled is hidden).
   const callbacks = await prisma.followUp.findMany({
     where: {
       callerId: session.userId,
       status: "PENDING",
-      dueAt: { lt: todayEnd },
       customer: { is: { status: { not: "INTERESTED" } } },
     },
     orderBy: { dueAt: "asc" },
