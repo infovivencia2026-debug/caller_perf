@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireCaller } from "@/lib/auth";
 import { Badge, Card, buttonClass, statusTone } from "@/components/ui";
 import { customerLabel, humanize } from "@/lib/labels";
-import { formatDateTime } from "@/lib/datetime";
-import { endOfDay, startOfDay } from "@/lib/metrics";
+import { formatDateTime, isCallbackMissed } from "@/lib/datetime";
+import { endOfDay } from "@/lib/metrics";
 import { AutoRefresh } from "@/components/auto-refresh";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,6 @@ export const dynamic = "force-dynamic";
  *  Follow-ups page, which holds interested leads only. */
 export default async function CallbacksPage() {
   const session = await requireCaller();
-  const todayStart = startOfDay();
   const todayEnd = endOfDay();
 
   const callbacks = await prisma.followUp.findMany({
@@ -31,8 +30,10 @@ export default async function CallbacksPage() {
     },
   });
 
-  const overdue = callbacks.filter((f) => f.dueAt < todayStart);
-  const dueToday = callbacks.filter((f) => f.dueAt >= todayStart);
+  // A callback is active on its due day and the next working day; after that (Sundays not
+  // counted) it drops to the Missed list. Saturday's callbacks therefore surface on Monday.
+  const missed = callbacks.filter((f) => isCallbackMissed(f.dueAt));
+  const active = callbacks.filter((f) => !isCallbackMissed(f.dueAt));
 
   const Item = ({ fu }: { fu: (typeof callbacks)[number] }) => (
     <li className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
@@ -64,31 +65,36 @@ export default async function CallbacksPage() {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold">Callbacks</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
-          {overdue.length} overdue · {dueToday.length} due today
+          {active.length} active · {missed.length} missed
         </p>
       </div>
 
       {callbacks.length === 0 ? (
         <Card title="All clear">
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            No callbacks due today. Interested leads are on the Follow-ups page.
+            No callbacks due. Interested leads are on the Follow-ups page.
           </p>
         </Card>
       ) : (
         <>
-          {overdue.length > 0 && (
-            <Card title={`Overdue (${overdue.length})`}>
+          <Card title={`Callbacks (${active.length})`}>
+            {active.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">Nothing active right now.</p>
+            ) : (
               <ul>
-                {overdue.map((fu) => (
+                {active.map((fu) => (
                   <Item key={fu.id} fu={fu} />
                 ))}
               </ul>
-            </Card>
-          )}
-          {dueToday.length > 0 && (
-            <Card title={`Due today (${dueToday.length})`}>
+            )}
+          </Card>
+          {missed.length > 0 && (
+            <Card title={`Missed (${missed.length})`} glow="rose">
+              <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                Not called within a day of the due date. Still callable — click Call to reach them.
+              </p>
               <ul>
-                {dueToday.map((fu) => (
+                {missed.map((fu) => (
                   <Item key={fu.id} fu={fu} />
                 ))}
               </ul>

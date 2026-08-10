@@ -83,3 +83,29 @@ export function currentClock() {
 export function minutesSince(date: Date) {
   return Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
 }
+
+/**
+ * Whole days a due date is overdue, NOT counting Sundays (nobody works Sunday). 0 means
+ * due today or in the future. The server runs in IST, so getDay() is the India weekday.
+ * A callback due Saturday reads as 0 overdue on Saturday and 1 on Monday (Sunday skipped),
+ * so it carries to Monday rather than lapsing over the weekend.
+ */
+export function workingDaysOverdue(dueAt: Date, now = new Date()) {
+  const due = new Date(dueAt);
+  due.setHours(0, 0, 0, 0);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  if (today <= due) return 0;
+  let count = 0;
+  const cursor = new Date(due);
+  while (cursor < today) {
+    cursor.setDate(cursor.getDate() + 1);
+    if (cursor.getDay() !== 0) count += 1; // 0 = Sunday, doesn't count
+  }
+  return count;
+}
+
+/** A callback gets its due day plus one working day; after that it's "missed". */
+export function isCallbackMissed(dueAt: Date, now = new Date()) {
+  return workingDaysOverdue(dueAt, now) >= 2;
+}
