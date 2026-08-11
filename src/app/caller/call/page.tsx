@@ -293,8 +293,16 @@ export default async function CallingScreen({
               </span>
             </div>
             {source && pendingFollowUp && (
-              <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">
                 {source.label} scheduled for {formatDateTime(pendingFollowUp.dueAt)}
+              </p>
+            )}
+            {/* When a number comes back (callback / should call / any prior contact), show
+                when it was last called and what happened, so the caller has context. */}
+            {customer.calls[0] && (
+              <p className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span>Last called {formatDateTime(customer.calls[0].startedAt)}</span>
+                <Badge tone={statusTone(customer.calls[0].status)}>{humanize(customer.calls[0].status)}</Badge>
               </p>
             )}
             {parseTags(customer.tags).length > 0 && (
