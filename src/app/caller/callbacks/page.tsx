@@ -13,14 +13,14 @@ export const dynamic = "force-dynamic";
 export default async function CallbacksPage() {
   const session = await requireCaller();
 
-  // Every pending non-interested callback for this counsellor (any due date — upcoming
-  // ones included, so nothing scheduled is hidden). Classified by the snapshot status so
-  // callbacks whose lead was deleted still show up ("lead deleted").
+  // Only genuine callbacks — leads whose status is CALLBACK (the customer asked to be
+  // called back). Switched-off / disconnected / no-connect retries are NOT callbacks and
+  // are excluded here. Classified by the snapshot status so a deleted lead still shows.
   const callbacks = await prisma.followUp.findMany({
     where: {
       callerId: session.userId,
       status: "PENDING",
-      OR: [{ customerStatus: { not: "INTERESTED" } }, { customerStatus: null }],
+      customerStatus: "CALLBACK",
     },
     orderBy: { dueAt: "asc" },
     include: {

@@ -82,10 +82,12 @@ export default async function AdminFollowUps() {
     },
   });
 
-  // Classify by the snapshot status so callbacks whose lead was deleted still appear.
+  // Classify by the snapshot status so entries whose lead was deleted still appear. Only
+  // interested follow-ups and genuine CALLBACK leads are shown — switched-off /
+  // disconnected / other in-progress retries are ignored here.
   const statusOf = (f: (typeof followUps)[number]) => f.customer?.status ?? f.customerStatus;
   const interested = followUps.filter((f) => statusOf(f) === "INTERESTED");
-  const callbacks = followUps.filter((f) => statusOf(f) !== "INTERESTED");
+  const callbacks = followUps.filter((f) => statusOf(f) === "CALLBACK");
 
   return (
     <div className="space-y-3">
