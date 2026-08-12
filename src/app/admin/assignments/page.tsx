@@ -91,8 +91,8 @@ export default async function AssignmentLog({
         {logs.length === 0 ? (
           <p className="text-sm text-neutral-500 dark:text-neutral-400">No assignment activity in this range.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+          <div className="stack-table-wrap table-scroll max-w-full">
+            <table className="stack-table w-full min-w-[720px] text-left text-sm">
               <thead className="border-b border-neutral-200 text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
                 <tr>
                   <th className="px-3 py-2 font-bold">Date &amp; time</th>

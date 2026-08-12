@@ -33,25 +33,39 @@ export async function getNextCustomer(
   { targetReached = false }: { targetReached?: boolean } = {},
 ) {
   const now = new Date();
+  const dayStart = startOfToday(now);
+  const past6pm = now.getHours() >= 18; // 6 PM: callbacks lapse for the day after this
+  // Interested leads awaiting follow-up — served whenever due, no matter how overdue.
+  const interestedDue = {
+    status: "INTERESTED" as const,
+    followUps: { some: { status: "PENDING" as const, dueAt: { lte: now } } },
+  };
+  // Callbacks / other scheduled retries — only on the due day (due now, not before today).
+  const callbackToday = {
+    status: { not: "INTERESTED" as const },
+    followUps: { some: { status: "PENDING" as const, dueAt: { lte: now, gte: dayStart } } },
+  };
+  // A fresh lead has never been called — an already-called number is never re-served.
+  const freshLead = {
+    AND: [{ followUps: { none: { status: "PENDING" as const } } }, { calls: { none: {} } }],
+  };
   const candidates = await prisma.customer.findMany({
     where: {
       assignedToId: callerId,
       status: { notIn: QUEUE_EXCLUDED_STATUSES as unknown as never },
       ...(skipIds.length > 0 ? { id: { notIn: skipIds } } : {}),
-      // Once the daily target is hit, only scheduled work that is DUE now keeps coming —
-      // no fresh leads. Otherwise: a follow-up is due now, OR the customer isn't scheduled
-      // for later and hasn't been called today.
-      OR: targetReached
-        ? [{ followUps: { some: { status: "PENDING", dueAt: { lte: now } } } }]
-        : [
-            { followUps: { some: { status: "PENDING", dueAt: { lte: now } } } },
-            {
-              // A fresh lead is one that has NEVER been called — an already-called number
-              // is never served again as a new call (only scheduled follow-ups/callbacks
-              // and Should Call bring a contacted number back).
-              AND: [{ followUps: { none: { status: "PENDING" } } }, { calls: { none: {} } }],
-            },
-          ],
+      // Scheduled work comes in two shapes:
+      //  • Interested follow-ups PERSIST until responded to — served whenever due, however
+      //    long overdue.
+      //  • Callbacks (and other scheduled retries) live only through their due day, until
+      //    6 PM. After 6 PM, or on a later day, they lapse (Missed) and stop being served.
+      // Below the daily target a fresh never-called lead is also eligible; at/after target
+      // only the scheduled work continues.
+      OR: [
+        interestedDue,
+        ...(past6pm ? [] : [callbackToday]),
+        ...(targetReached ? [] : [freshLead]),
+      ],
     },
     include: {
       calls: { orderBy: { startedAt: "desc" }, take: 3, include: { caller: { select: { name: true } } } },

@@ -84,28 +84,18 @@ export function minutesSince(date: Date) {
   return Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
 }
 
-/**
- * Whole days a due date is overdue, NOT counting Sundays (nobody works Sunday). 0 means
- * due today or in the future. The server runs in IST, so getDay() is the India weekday.
- * A callback due Saturday reads as 0 overdue on Saturday and 1 on Monday (Sunday skipped),
- * so it carries to Monday rather than lapsing over the weekend.
- */
-export function workingDaysOverdue(dueAt: Date, now = new Date()) {
-  const due = new Date(dueAt);
-  due.setHours(0, 0, 0, 0);
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  if (today <= due) return 0;
-  let count = 0;
-  const cursor = new Date(due);
-  while (cursor < today) {
-    cursor.setDate(cursor.getDate() + 1);
-    if (cursor.getDay() !== 0) count += 1; // 0 = Sunday, doesn't count
-  }
-  return count;
-}
+/** 6 PM (end of the working day) — the cut-off after which a callback lapses. */
+const CALLBACK_CUTOFF_HOUR = 18;
 
-/** A callback gets its due day plus one working day; after that it's "missed". */
+/**
+ * A callback is live only through its due day, until 6 PM. After 6 PM on the due day it
+ * is "missed" and drops off the active list. If the customer asked to be called back at a
+ * specific time later than 6 PM, that later time is honoured as the cut-off instead.
+ * The server runs in IST, so these hours are India time.
+ */
 export function isCallbackMissed(dueAt: Date, now = new Date()) {
-  return workingDaysOverdue(dueAt, now) >= 2;
+  const cutoff = new Date(dueAt);
+  cutoff.setHours(CALLBACK_CUTOFF_HOUR, 0, 0, 0);
+  if (dueAt.getTime() > cutoff.getTime()) cutoff.setTime(dueAt.getTime());
+  return now.getTime() > cutoff.getTime();
 }

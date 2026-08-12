@@ -22,8 +22,8 @@ function FollowUpTable({ rows }: { rows: FollowUpRow[] }) {
     return <p className="text-sm text-neutral-500 dark:text-neutral-400">None.</p>;
   }
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] text-left text-sm">
+    <div className="stack-table-wrap table-scroll max-w-full">
+      <table className="stack-table w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-neutral-200 text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
           <tr>
             <th className="px-3 py-2 font-bold">Due</th>
