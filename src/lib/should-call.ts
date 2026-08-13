@@ -25,9 +25,10 @@ export type ShouldCallEntry = {
   status: string;
   /** Outcome of the most recent attempt. */
   lastStatus: string;
+  /** When this lead was last attempted (date + time). */
   lastTriedAt: Date;
-  /** How many times this lead has been tried today. */
-  attemptsToday: number;
+  /** Total number of times this lead has ever been called (all days). */
+  attempts: number;
 };
 
 /**
@@ -72,7 +73,7 @@ export async function getShouldCallList(callerId: string): Promise<ShouldCallEnt
       status: customer.status,
       lastStatus: customer.calls[0]?.status ?? customer.status,
       lastTriedAt: customer.calls[0]?.startedAt ?? new Date(0),
-      attemptsToday: customer._count.calls,
+      attempts: customer._count.calls,
     }))
     // Longest since the last attempt first.
     .sort((a, b) => a.lastTriedAt.getTime() - b.lastTriedAt.getTime());

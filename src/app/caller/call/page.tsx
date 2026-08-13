@@ -18,7 +18,7 @@ import { getAssignedCustomer, getNextCustomer, getQueueCount, searchAssignedCust
 import { getShouldCallList } from "@/lib/should-call";
 import { readCallTiming } from "@/lib/call-timer";
 import { parseTags } from "@/lib/tags";
-import { formatDateTime, formatShortTime } from "@/lib/datetime";
+import { formatDateTime } from "@/lib/datetime";
 import { endOfDay, startOfDay } from "@/lib/metrics";
 import { clearSkips } from "@/app/actions/calls";
 import CallPanel from "./call-panel";
@@ -157,8 +157,8 @@ export default async function CallingScreen({
               <span className="font-semibold">{customerLabel(entry)}</span>
               <span className="ml-2 tabular-nums text-neutral-500 dark:text-neutral-400">{entry.phone}</span>
               <span className="block text-xs text-neutral-500 dark:text-neutral-400">
-                {humanize(entry.lastStatus)} at {formatShortTime(entry.lastTriedAt)}
-                {entry.attemptsToday > 1 ? ` · ${entry.attemptsToday} attempts` : ""}
+                {humanize(entry.lastStatus)} · last tried {formatDateTime(entry.lastTriedAt)}
+                {entry.attempts > 1 ? ` · ${entry.attempts} attempts` : ""}
               </span>
             </span>
             <Link

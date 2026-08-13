@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireCaller } from "@/lib/auth";
 import { BentoStat, BentoTile, Badge, bentoButtonClass, statusTone } from "@/components/ui";
 import { customerLabel, humanize } from "@/lib/labels";
-import { formatShortTime } from "@/lib/datetime";
+import { formatDateTime } from "@/lib/datetime";
 import { getShouldCallList } from "@/lib/should-call";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export default async function ShouldCall() {
   const session = await requireCaller();
   const entries = await getShouldCallList(session.userId);
 
-  const attempts = entries.reduce((sum, entry) => sum + entry.attemptsToday, 0);
+  const attempts = entries.reduce((sum, entry) => sum + entry.attempts, 0);
 
   return (
     <div className="space-y-3">
@@ -62,8 +62,8 @@ export default async function ShouldCall() {
                     </Link>
                     <span className="ml-2 tabular-nums text-neutral-500 dark:text-neutral-400">{entry.phone}</span>
                     <span className="block text-xs text-neutral-500 dark:text-neutral-400">
-                      Last tried {formatShortTime(entry.lastTriedAt)}
-                      {entry.attemptsToday > 1 ? ` · ${entry.attemptsToday} attempts today` : ""}
+                      Last tried {formatDateTime(entry.lastTriedAt)}
+                      {entry.attempts > 1 ? ` · ${entry.attempts} attempts` : ""}
                       {entry.company ? ` · ${entry.company}` : ""}
                     </span>
                   </div>
