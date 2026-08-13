@@ -248,10 +248,19 @@ export async function saveCall(formData: FormData) {
       },
     });
 
+    // A no-connect (no answer / busy) lead gets exactly ONE retry via Should Call. On the
+    // second such attempt it is given up — marked NOT_INTERESTED so it drops off Should
+    // Call and the queue. The call row keeps its true outcome; only the lead status closes.
+    let customerStatus = CALL_TO_CUSTOMER_STATUS[input.status as keyof typeof CALL_TO_CUSTOMER_STATUS];
+    if (input.status === "NO_ANSWER" || input.status === "BUSY") {
+      const attempts = await tx.call.count({ where: { customerId: customer.id } });
+      if (attempts >= 2) customerStatus = "NOT_INTERESTED";
+    }
+
     await tx.customer.update({
       where: { id: customer.id },
       data: {
-        status: CALL_TO_CUSTOMER_STATUS[input.status as keyof typeof CALL_TO_CUSTOMER_STATUS],
+        status: customerStatus,
         // Only when the caller actively chose a priority — see saveSchema.
         ...(input.priority ? { priority: input.priority as never } : {}),
         // A scheduled callback stays with the counsellor who took the call, so it never
