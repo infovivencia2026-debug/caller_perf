@@ -167,13 +167,13 @@ export async function unassignCaller(formData: FormData) {
     redirect(callersHref(undefined, "Counsellor not found"));
   }
 
-  // Release every assigned lead EXCEPT those with a pending follow-up or callback. This
-  // clears fresh leads, already-called leads, and no-answer/busy should-call leads back to
-  // the pool — so the counsellor can be given a new file — while keeping their scheduled
-  // follow-ups (interested) and callbacks intact.
+  // Release every assigned lead EXCEPT genuine interested follow-ups and callbacks, so the
+  // counsellor can be handed a fresh file. This clears fresh leads, already-called leads,
+  // no-answer/busy should-call leads, and switched-off/disconnected retries back to the
+  // pool — keeping only INTERESTED and CALLBACK leads.
   const untouchedWhere = {
     assignedToId: caller.id,
-    followUps: { none: { status: "PENDING" as const } },
+    status: { notIn: ["INTERESTED", "CALLBACK"] as unknown as never },
   };
 
   let count: number;
