@@ -9,7 +9,7 @@ import { requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { planBalancedAssignments, type CallerQueue } from "@/lib/assign";
 import { dayDate, syncPresentFromWorkforce } from "@/lib/attendance";
-import { CLOSED_STATUSES, SHOULD_CALL_ONLY_STATUSES } from "@/lib/queue";
+import { CLOSED_STATUSES } from "@/lib/queue";
 
 /** A sane ceiling — a typo like 5000 would swallow the whole customer list. */
 const MAX_DAILY_TARGET = 500;
@@ -152,9 +152,9 @@ export async function updateDailyTarget(formData: FormData) {
 }
 
 /**
- * Returns a counsellor's UNCALLED leads to the pool without touching the counsellor.
- * Only leads nobody has started on are pulled back — anything already called (or with a
- * pending follow-up) stays put, so no conversation or callback is stranded.
+ * Returns a counsellor's leads to the pool (keeping the counsellor) so they can be given a
+ * fresh file. Everything is released EXCEPT leads with a pending follow-up or callback,
+ * which stay so no scheduled conversation is stranded.
  */
 export async function unassignCaller(formData: FormData) {
   const session = await requireAdmin();
@@ -167,13 +167,12 @@ export async function unassignCaller(formData: FormData) {
     redirect(callersHref(undefined, "Counsellor not found"));
   }
 
-  // Release assigned leads with no future action on them: no pending follow-up/callback
-  // AND not a no-answer/busy (those belong to Should Call and stay with the counsellor
-  // for the next day). This returns fresh never-called leads and dead-end outcomes
-  // (out of service, disconnected, …) to the pool, and keeps all scheduled work.
+  // Release every assigned lead EXCEPT those with a pending follow-up or callback. This
+  // clears fresh leads, already-called leads, and no-answer/busy should-call leads back to
+  // the pool — so the counsellor can be given a new file — while keeping their scheduled
+  // follow-ups (interested) and callbacks intact.
   const untouchedWhere = {
     assignedToId: caller.id,
-    status: { notIn: SHOULD_CALL_ONLY_STATUSES as unknown as never },
     followUps: { none: { status: "PENDING" as const } },
   };
 
