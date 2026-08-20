@@ -7,7 +7,8 @@ import { endOfDay, getStats, isOverdue, percent, startOfDay } from "@/lib/metric
 import { getShouldCallProgress } from "@/lib/should-call";
 import { getNextCustomer, getQueueCount } from "@/lib/queue";
 import { formatDateTime, formatShortTime } from "@/lib/datetime";
-import { syncPresentFromWorkforce } from "@/lib/attendance";
+import { isPresentToday, syncPresentFromWorkforce } from "@/lib/attendance";
+import { checkIn } from "@/app/actions/attendance";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { IconBell, IconCheck, IconPhone, IconTarget } from "@/components/icons";
@@ -19,6 +20,7 @@ export default async function CallerDashboard() {
   // Presence is driven by workforce-os punch-ins, so there's no manual button here — just
   // keep attendance in sync in the background.
   await syncPresentFromWorkforce();
+  const present = await isPresentToday(session.userId);
   const today = startOfDay();
   const tomorrow = endOfDay();
 
@@ -67,10 +69,27 @@ export default async function CallerDashboard() {
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <h1 className="text-lg font-semibold">Hello, {session.name}</h1>
-        {/* Attendance comes from workforce-os punch-ins — no manual present button here. */}
-        <Link href="/caller/call" className={buttonClass}>
-          Start calling
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Self mark-present: turns into a confirmed state once done. Workforce-os
+              punch-ins also mark present automatically for those who use it. */}
+          {present ? (
+            <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+              <IconCheck /> Marked as present
+            </span>
+          ) : (
+            <form action={checkIn}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-sm font-bold uppercase tracking-wide text-emerald-700 transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
+              >
+                Mark present
+              </button>
+            </form>
+          )}
+          <Link href="/caller/call" className={buttonClass}>
+            Start calling
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
